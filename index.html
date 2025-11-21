@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORCA 2.0 - Inventory Service</title>
+
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Header (wird dynamisch gefüllt) -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-logo">
+                    <img src="assets/orca-logo.svg" alt="ORCA Logo">
+                </div>
+                <div class="header-text">
+                    <h1 id="headerTitle">ORCA 2.0 - Inventory Service</h1>
+                    <div class="subtitle" id="headerSubtitle">Werkzeug-Inventur Management</div>
+                </div>
+            </div>
+
+            <!-- Header Stats -->
+            <div class="header-stats" id="headerStats" style="display: none;">
+                <div class="stat-item">
+                    <span>Gesamt:</span>
+                    <span class="stat-value" id="statTotal">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Aktiv:</span>
+                    <span class="stat-value" id="statActive">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Lieferanten:</span>
+                    <span class="stat-value" id="statSuppliers">0</span>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="nav-menu">
+                <a class="nav-link active" data-route="/" onclick="router.navigate('/')">🔧 Werkzeugübersicht</a>
+                <a class="nav-link" data-route="/inventur" onclick="router.navigate('/inventur')">🔍 Inventur</a>
+                <a class="nav-link" data-route="/planung" onclick="router.navigate('/planung')">📅 Planung</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app">
+        <!-- Content wird hier dynamisch geladen -->
+        <div class="container" style="text-align: center; padding: 4rem 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+            <p style="color: #6b7280;">Lade Anwendung...</p>
+        </div>
+    </div>
+
+    <!-- Footer (wird dynamisch gefüllt) -->
+    <div class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <strong>ORCA 2.0</strong> Inventory Service |
+                <span id="apiStatus" style="color: #f97316;">⚠️ API nicht verbunden (Mock-Daten)</span>
+            </div>
+            <div class="footer-actions" id="footerActions">
+                <!-- Wird von Seiten dynamisch gefüllt -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Configuration & Auth müssen zuerst geladen werden -->
+    <script src="js/config/api-config.js"></script>
+    <script src="js/services/auth.js"></script>
+    <script src="js/services/api.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/pages/fm-list.js"></script>
+    <script src="js/pages/fm-detail.js"></script>
+    <script src="js/pages/inventur.js"></script>
+    <script src="js/pages/planung.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
