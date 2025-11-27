@@ -440,22 +440,22 @@ class APIService {
         const parts = ['Motorhaube', 'Türblech vorn links', 'Kotflügel', 'Dachholm', 'A-Säule links'];
         const locations = ['Halle A - Regal 1', 'Halle B - Lager 1', 'Außenlager Nord'];
 
-        const today = new Date();
+        const today = new Date('2025-01-27');
         const items = [];
         for (let i = 1; i <= 10; i++) {
             const toolType = toolTypes[(i - 1) % toolTypes.length];
             const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 1000).padStart(4, '0');
-            const year = 2023;
+            const year = 2025;
 
-            // Berechne Fälligkeitsdatum - erste 3 sind überfällig
+            // Berechne Fälligkeitsdatum - erste 4 sind überfällig
             const dueDate = new Date(today);
-            if (i <= 3) {
-                // Überfällig: 5-15 Tage in der Vergangenheit
+            if (i <= 4) {
+                // Überfällig: 5-20 Tage in der Vergangenheit
                 dueDate.setDate(today.getDate() - (5 * i));
             } else {
                 // Zukünftig: 5-30 Tage in der Zukunft
-                dueDate.setDate(today.getDate() + (5 * (i - 3)));
+                dueDate.setDate(today.getDate() + (5 * (i - 4)));
             }
 
             items.push({
@@ -465,8 +465,8 @@ class APIService {
                 name: `${toolType} ${part}`,
                 supplier: 'Bosch Rexroth AG',
                 location: locations[(i - 1) % locations.length],
-                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: `2024-0${((i - 1) % 9) + 1}-15`,
+                status: i <= 4 ? 'offen' : (i <= 7 ? 'feinplanung' : 'in-inventur'),
+                lastInventory: `2025-01-${String((i - 1) % 28 + 1).padStart(2, '0')}`,
                 dueDate: dueDate.toISOString().split('T')[0]
             });
         }
@@ -505,22 +505,22 @@ class APIService {
         const parts = ['Seitenteil links', 'Querträger vorn', 'Schweller links', 'Radhaus hinten', 'Bodenblech'];
         const locations = ['Halle A - Regal 2', 'Halle C - Werkstatt', 'Außenlager Süd'];
 
-        const today = new Date();
+        const today = new Date('2025-01-27');
         const items = [];
         for (let i = 1; i <= 10; i++) {
             const toolType = toolTypes[(i - 1) % toolTypes.length];
             const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 2000).padStart(4, '0');
-            const year = 2023;
+            const year = 2025;
 
-            // Berechne Fälligkeitsdatum - erste 2 sind überfällig
+            // Berechne Fälligkeitsdatum - erste 3 sind überfällig
             const dueDate = new Date(today);
-            if (i <= 2) {
-                // Überfällig: 7-14 Tage in der Vergangenheit
+            if (i <= 3) {
+                // Überfällig: 7-21 Tage in der Vergangenheit
                 dueDate.setDate(today.getDate() - (7 * i));
             } else {
                 // Zukünftig: 3-40 Tage in der Zukunft
-                dueDate.setDate(today.getDate() + (5 * (i - 2)));
+                dueDate.setDate(today.getDate() + (5 * (i - 3)));
             }
 
             items.push({
@@ -531,7 +531,7 @@ class APIService {
                 supplier: 'Bosch Rexroth AG',
                 location: locations[(i - 1) % locations.length],
                 status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: `2024-0${((i - 1) % 9) + 1}-20`,
+                lastInventory: `2025-01-${String((i - 1) % 28 + 1).padStart(2, '0')}`,
                 dueDate: dueDate.toISOString().split('T')[0]
             });
         }
@@ -570,22 +570,22 @@ class APIService {
         const parts = ['B-Säule rechts', 'C-Säule links', 'Dachblech', 'Heckklappe', 'Stoßfänger vorn'];
         const locations = ['Halle A - Regal 3', 'Halle B - Lager 2', 'Montage Bereich 1'];
 
-        const today = new Date();
+        const today = new Date('2025-01-27');
         const items = [];
         for (let i = 1; i <= 10; i++) {
             const toolType = toolTypes[(i - 1) % toolTypes.length];
             const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 3000).padStart(4, '0');
-            const year = 2023;
+            const year = 2025;
 
-            // Berechne Fälligkeitsdatum - erste 4 sind überfällig
+            // Berechne Fälligkeitsdatum - erste 5 sind überfällig
             const dueDate = new Date(today);
-            if (i <= 4) {
-                // Überfällig: 3-12 Tage in der Vergangenheit
+            if (i <= 5) {
+                // Überfällig: 3-15 Tage in der Vergangenheit
                 dueDate.setDate(today.getDate() - (3 * i));
             } else {
                 // Zukünftig: 7-35 Tage in der Zukunft
-                dueDate.setDate(today.getDate() + (7 * (i - 4)));
+                dueDate.setDate(today.getDate() + (7 * (i - 5)));
             }
 
             items.push({
@@ -595,8 +595,8 @@ class APIService {
                 name: `${toolType} ${part}`,
                 supplier: 'Bosch Rexroth AG',
                 location: locations[(i - 1) % locations.length],
-                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: `2024-0${((i - 1) % 9) + 1}-25`,
+                status: i <= 5 ? 'offen' : (i <= 7 ? 'feinplanung' : 'in-inventur'),
+                lastInventory: `2025-01-${String((i - 1) % 28 + 1).padStart(2, '0')}`,
                 dueDate: dueDate.toISOString().split('T')[0]
             });
         }
@@ -635,22 +635,22 @@ class APIService {
         const parts = ['Türblech hinten links', 'Kofferraumdeckel', 'Fensterrahmen', 'Verstrebung', 'Halterung'];
         const locations = ['Halle C - Montage', 'Außenlager Nord', 'Halle A - Regal 1'];
 
-        const today = new Date();
+        const today = new Date('2025-01-27');
         const items = [];
         for (let i = 1; i <= 10; i++) {
             const toolType = toolTypes[(i - 1) % toolTypes.length];
             const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 4000).padStart(4, '0');
-            const year = 2023;
+            const year = 2025;
 
-            // Berechne Fälligkeitsdatum - erste 1 ist überfällig
+            // Berechne Fälligkeitsdatum - erste 3 sind überfällig
             const dueDate = new Date(today);
-            if (i <= 1) {
-                // Überfällig: 10 Tage in der Vergangenheit
-                dueDate.setDate(today.getDate() - 10);
+            if (i <= 3) {
+                // Überfällig: 10-30 Tage in der Vergangenheit
+                dueDate.setDate(today.getDate() - (10 * i));
             } else {
                 // Zukünftig: 4-45 Tage in der Zukunft
-                dueDate.setDate(today.getDate() + (5 * (i - 1)));
+                dueDate.setDate(today.getDate() + (5 * (i - 3)));
             }
 
             items.push({
@@ -661,7 +661,7 @@ class APIService {
                 supplier: 'Bosch Rexroth AG',
                 location: locations[(i - 1) % locations.length],
                 status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: `2024-0${((i - 1) % 9) + 1}-10`,
+                lastInventory: `2025-01-${String((i - 1) % 28 + 1).padStart(2, '0')}`,
                 dueDate: dueDate.toISOString().split('T')[0]
             });
         }

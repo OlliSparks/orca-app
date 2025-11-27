@@ -143,8 +143,8 @@ class Dashboard {
                 api.getVerschrottungList()
             ]);
 
-            // Heute als Referenz
-            const today = new Date();
+            // Heute als Referenz (2025-01-27 für Testdaten)
+            const today = new Date('2025-01-27');
             today.setHours(0, 0, 0, 0);
 
             // Funktion zum Zählen von überfälligen und offenen Aufgaben

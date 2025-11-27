@@ -111,6 +111,15 @@ class VerschrottungPage {
             if (response.success) {
                 this.allTools = response.data;
                 this.filteredTools = [...this.allTools];
+
+                // Check for filter from sessionStorage (from dashboard navigation)
+                const savedFilter = sessionStorage.getItem('verschrottungFilter');
+                if (savedFilter) {
+                    this.currentFilter = savedFilter;
+                    sessionStorage.removeItem('verschrottungFilter');
+                    this.applyFilter();
+                }
+
                 this.updateStats();
                 this.renderTable();
             }
@@ -166,6 +175,17 @@ class VerschrottungPage {
     applyFilter() {
         if (this.currentFilter === 'all') {
             this.filteredTools = [...this.allTools];
+        } else if (this.currentFilter === 'overdue') {
+            // Filter für überfällige Aufgaben
+            const today = new Date('2025-01-27');
+            today.setHours(0, 0, 0, 0);
+            this.filteredTools = this.allTools.filter(tool => {
+                if (tool.dueDate) {
+                    const dueDate = new Date(tool.dueDate);
+                    return dueDate < today;
+                }
+                return false;
+            });
         } else {
             this.filteredTools = this.allTools.filter(tool => tool.status === this.currentFilter);
         }
