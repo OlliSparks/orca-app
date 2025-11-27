@@ -79,7 +79,6 @@ class InventurPage {
                         📄 Lade lokale Werkzeuginformationen
                     </button>
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
-                        <button class="bulk-btn primary" id="confirmAllBtn">✓ Alle bestätigen</button>
                         <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
                     </div>
                 </div>
@@ -122,7 +121,12 @@ class InventurPage {
                                 <th class="sortable" data-sort="lastChange">Letzte Änderung</th>
                                 <th>Status</th>
                                 <th>Kommentar</th>
-                                <th>Aktionen</th>
+                                <th>
+                                    Aktionen
+                                    <input type="checkbox" class="checkbox-custom" id="confirmAllCheckbox"
+                                           style="margin-left: 0.5rem; vertical-align: middle;"
+                                           title="Alle gefilterten Werkzeuge bestätigen">
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="tableBody">
@@ -264,8 +268,15 @@ class InventurPage {
             });
         });
 
+        // Confirm all checkbox
+        document.getElementById('confirmAllCheckbox').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                this.confirmAllFiltered();
+                e.target.checked = false; // Reset checkbox
+            }
+        });
+
         // Bulk actions
-        document.getElementById('confirmAllBtn').addEventListener('click', () => this.confirmAll());
         document.getElementById('filterLocationBtn').addEventListener('click', () => this.openLocationFilterModal());
         document.getElementById('apiLoadBtn').addEventListener('click', () => this.loadFromAPI());
         document.getElementById('submitBtn').addEventListener('click', () => this.submitInventory());
@@ -666,7 +677,7 @@ class InventurPage {
         }
     }
 
-    confirmAll() {
+    confirmAllFiltered() {
         const filtered = this.getFilteredTools();
         const pending = filtered.filter(t => t.status === 'pending');
 
@@ -675,7 +686,7 @@ class InventurPage {
             return;
         }
 
-        const confirmed = confirm(`Möchten Sie wirklich alle ${pending.length} angezeigten Werkzeuge bestätigen?`);
+        const confirmed = confirm(`Möchten Sie wirklich alle ${pending.length} gefilterten Werkzeuge bestätigen?`);
         if (!confirmed) return;
 
         pending.forEach(tool => {
