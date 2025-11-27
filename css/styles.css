@@ -1623,3 +1623,16 @@ table td span,
 table td input[type="text"] {
     font-size: 0.9rem !important;
 }
+
+/* === DASHBOARD SECTION STYLING === */
+.section-title.must-do {
+    color: #dc2626;
+}
+
+.section-title.can-do {
+    color: #2c4a8c;
+}
+
+.section-title.want-to-do {
+    color: #059669;
+}

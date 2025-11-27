@@ -20,27 +20,43 @@ class Dashboard {
             <div class="container dashboard-container">
                 <h2 class="page-title">Willkommen bei ORCA 2.0</h2>
 
-                <!-- Abschnitt 1: Aktuelle Aufgaben -->
+                <!-- Abschnitt 1: Was MUSS ich tun? (Überfällige Aufgaben) -->
                 <section class="dashboard-section">
-                    <h3 class="section-title">
-                        <span class="section-icon">📋</span>
-                        Ihre aktuellen Aufgaben
+                    <h3 class="section-title must-do">
+                        <span class="section-icon">⚠️</span>
+                        Was MUSS ich tun?
                     </h3>
-                    <div class="dashboard-cards" id="currentTasksCards">
+                    <div class="dashboard-cards" id="mustDoCards">
                         <div class="dashboard-card loading">
                             <div class="card-content">
                                 <div class="loading-spinner">⏳</div>
-                                <p>Lade Aufgaben...</p>
+                                <p>Lade überfällige Aufgaben...</p>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Abschnitt 2: Standardaufgaben -->
+                <!-- Abschnitt 2: Was KANN ich tun? (Offene Aufgaben) -->
                 <section class="dashboard-section">
-                    <h3 class="section-title">
-                        <span class="section-icon">🔧</span>
-                        Ihre Standardaufgaben
+                    <h3 class="section-title can-do">
+                        <span class="section-icon">📋</span>
+                        Was KANN ich tun?
+                    </h3>
+                    <div class="dashboard-cards" id="canDoCards">
+                        <div class="dashboard-card loading">
+                            <div class="card-content">
+                                <div class="loading-spinner">⏳</div>
+                                <p>Lade offene Aufgaben...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Abschnitt 3: Was MÖCHTE ich tun? (Standardaufgaben) -->
+                <section class="dashboard-section">
+                    <h3 class="section-title want-to-do">
+                        <span class="section-icon">🎯</span>
+                        Was MÖCHTE ich tun?
                     </h3>
                     <div class="dashboard-cards">
                         <div class="dashboard-card clickable" onclick="router.navigate('/tools')">
@@ -111,8 +127,8 @@ class Dashboard {
                 verschrottung: { open: 0, overdue: 0 }
             };
 
-            // Zeige Task-Karten
-            this.renderTaskCards(tasksContainer, taskCounts);
+            // Zeige Task-Karten in den richtigen Abschnitten
+            this.renderTaskCards(taskCounts);
 
         } catch (error) {
             console.error('Fehler beim Laden der Inventur-Daten:', error);
@@ -124,11 +140,11 @@ class Dashboard {
                 partnerwechsel: { open: 0, overdue: 0 },
                 verschrottung: { open: 0, overdue: 0 }
             };
-            this.renderTaskCards(tasksContainer, taskCounts);
+            this.renderTaskCards(taskCounts);
         }
     }
 
-    renderTaskCards(container, taskCounts) {
+    renderTaskCards(taskCounts) {
         const processes = [
             {
                 key: 'inventur',
@@ -172,18 +188,15 @@ class Dashboard {
             }
         ];
 
-        let html = '';
-        let hasAnyTasks = false;
+        // Abschnitt 1: Was MUSS ich tun? (Überfällige)
+        let mustDoHtml = '';
+        let hasMustDo = false;
 
         processes.forEach(process => {
             const counts = taskCounts[process.key];
-            const hasOverdue = counts.overdue > 0;
-            const hasOpen = counts.open > 0;
-
-            // Überfällige Aufgaben (falls vorhanden)
-            if (hasOverdue) {
-                hasAnyTasks = true;
-                html += `
+            if (counts.overdue > 0) {
+                hasMustDo = true;
+                mustDoHtml += `
                     <div class="dashboard-card task-card urgent clickable"
                          onclick="dashboardPage.navigateToProcess('${process.route}', 'overdue')">
                         <div class="card-badge badge-danger">${counts.overdue}</div>
@@ -198,11 +211,29 @@ class Dashboard {
                     </div>
                 `;
             }
+        });
 
-            // Offene Aufgaben (falls vorhanden)
-            if (hasOpen) {
-                hasAnyTasks = true;
-                html += `
+        if (!hasMustDo) {
+            mustDoHtml = `
+                <div class="dashboard-card no-tasks">
+                    <div class="card-icon">✅</div>
+                    <div class="card-content">
+                        <h4>Keine überfälligen Aufgaben</h4>
+                        <p>Aktuell sind keine Aufgaben überfällig. Gut gemacht!</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Abschnitt 2: Was KANN ich tun? (Offene)
+        let canDoHtml = '';
+        let hasCanDo = false;
+
+        processes.forEach(process => {
+            const counts = taskCounts[process.key];
+            if (counts.open > 0) {
+                hasCanDo = true;
+                canDoHtml += `
                     <div class="dashboard-card task-card clickable"
                          onclick="dashboardPage.navigateToProcess('${process.route}', '${process.filter}')">
                         <div class="card-badge badge-info">${counts.open}</div>
@@ -219,20 +250,21 @@ class Dashboard {
             }
         });
 
-        // Wenn keine Aufgaben
-        if (!hasAnyTasks) {
-            html = `
+        if (!hasCanDo) {
+            canDoHtml = `
                 <div class="dashboard-card no-tasks">
-                    <div class="card-icon">✅</div>
+                    <div class="card-icon">📭</div>
                     <div class="card-content">
                         <h4>Keine offenen Aufgaben</h4>
-                        <p>Aktuell sind keine Aufgaben offen oder überfällig.</p>
+                        <p>Aktuell sind keine Aufgaben offen.</p>
                     </div>
                 </div>
             `;
         }
 
-        container.innerHTML = html;
+        // Rendern in die Container
+        document.getElementById('mustDoCards').innerHTML = mustDoHtml;
+        document.getElementById('canDoCards').innerHTML = canDoHtml;
     }
 
     navigateToInventur(filter) {
