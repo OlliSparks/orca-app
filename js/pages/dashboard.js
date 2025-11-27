@@ -83,34 +83,38 @@ class Dashboard {
 
         try {
             // Lade Inventurdaten
-            const response = await api.get('/inventur');
-            this.inventurData = response;
+            const response = await api.getInventoryList();
+            this.inventurData = response.data || [];
 
-            // Zähle Status
-            const openCount = this.inventurData.filter(inv => inv.status === 'OFFEN').length;
+            // Heute als Referenz
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Zähle überfällige Werkzeuge (deadline < heute)
             const overdueCount = this.inventurData.filter(inv => {
-                if (inv.status !== 'OFFEN') return false;
-
-                // Prüfe ob überfällig (deadline überschritten)
-                if (inv.deadline) {
-                    const deadline = new Date(inv.deadline);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return deadline < today;
+                if (inv.dueDate) {
+                    const dueDate = new Date(inv.dueDate);
+                    return dueDate < today;
                 }
                 return false;
             }).length;
 
-            // Zeige Task-Karten
+            // Zähle offene Werkzeuge (deadline >= heute)
+            const openCount = this.inventurData.filter(inv => {
+                if (inv.dueDate) {
+                    const dueDate = new Date(inv.dueDate);
+                    return dueDate >= today;
+                }
+                return false;
+            }).length;
+
+            // Zeige Task-Karten (überfällig zuerst, dann offen)
             this.renderTaskCards(tasksContainer, openCount, overdueCount);
 
         } catch (error) {
             console.error('Fehler beim Laden der Inventur-Daten:', error);
-
-            // Zeige Fehler oder Mock-Daten
-            const openCount = 5;
-            const overdueCount = 2;
-            this.renderTaskCards(tasksContainer, openCount, overdueCount);
+            // Bei Fehler: leere Karte anzeigen
+            this.renderTaskCards(tasksContainer, 0, 0);
         }
     }
 
@@ -120,25 +124,7 @@ class Dashboard {
 
         let html = '';
 
-        // Karte für offene Inventuren
-        if (hasOpenTasks) {
-            html += `
-                <div class="dashboard-card task-card clickable"
-                     onclick="dashboardPage.navigateToInventur('pending')">
-                    <div class="card-badge badge-info">${openCount}</div>
-                    <div class="card-icon">📝</div>
-                    <div class="card-content">
-                        <h4>Offene Inventuren</h4>
-                        <p>${openCount} ${openCount === 1 ? 'Inventur' : 'Inventuren'} im Status "Offen"</p>
-                        <div class="card-footer">
-                            <span class="task-label">Zur Inventur →</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Karte für überfällige Inventuren
+        // Karte für überfällige Inventuren (zuerst anzeigen)
         if (hasOverdueTasks) {
             html += `
                 <div class="dashboard-card task-card urgent clickable"
@@ -150,6 +136,24 @@ class Dashboard {
                         <p>${overdueCount} ${overdueCount === 1 ? 'Inventur ist' : 'Inventuren sind'} überfällig</p>
                         <div class="card-footer">
                             <span class="task-label urgent">Dringend bearbeiten →</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Karte für offene Inventuren (danach anzeigen)
+        if (hasOpenTasks) {
+            html += `
+                <div class="dashboard-card task-card clickable"
+                     onclick="dashboardPage.navigateToInventur('pending')">
+                    <div class="card-badge badge-info">${openCount}</div>
+                    <div class="card-icon">📝</div>
+                    <div class="card-content">
+                        <h4>Offene Inventuren</h4>
+                        <p>${openCount} ${openCount === 1 ? 'Inventur' : 'Inventuren'} im Status "Offen"</p>
+                        <div class="card-footer">
+                            <span class="task-label">Zur Inventur →</span>
                         </div>
                     </div>
                 </div>
