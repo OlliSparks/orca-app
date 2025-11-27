@@ -36,11 +36,11 @@ class Dashboard {
                     </div>
                 </section>
 
-                <!-- Abschnitt 2: Was KANN ich tun? (Offene Aufgaben) -->
+                <!-- Abschnitt 2: Was SOLL ich tun? (Offene Aufgaben) -->
                 <section class="dashboard-section">
-                    <h3 class="section-title can-do">
+                    <h3 class="section-title should-do">
                         <span class="section-icon">📋</span>
-                        Was KANN ich tun?
+                        Was SOLL ich tun?
                     </h3>
                     <div class="dashboard-cards" id="canDoCards">
                         <div class="dashboard-card loading">
@@ -52,11 +52,11 @@ class Dashboard {
                     </div>
                 </section>
 
-                <!-- Abschnitt 3: Was MÖCHTE ich tun? (Standardaufgaben) -->
+                <!-- Abschnitt 3: Was KANN ich tun? (Standardaufgaben) -->
                 <section class="dashboard-section">
-                    <h3 class="section-title want-to-do">
+                    <h3 class="section-title can-do">
                         <span class="section-icon">🎯</span>
-                        Was MÖCHTE ich tun?
+                        Was KANN ich tun?
                     </h3>
                     <div class="dashboard-cards">
                         <div class="dashboard-card clickable" onclick="router.navigate('/tools')">

@@ -1629,10 +1629,10 @@ table td input[type="text"] {
     color: #dc2626;
 }
 
-.section-title.can-do {
+.section-title.should-do {
     color: #2c4a8c;
 }
 
-.section-title.want-to-do {
+.section-title.can-do {
     color: #059669;
 }
