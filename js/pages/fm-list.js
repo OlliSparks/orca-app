@@ -16,10 +16,10 @@ class FMListPage {
         document.getElementById('headerTitle').textContent = 'ORCA 2.0 - Inventory Service';
         document.getElementById('headerSubtitle').textContent = 'Werkzeug-Inventur Management';
 
-        // Show header stats
+        // Hide header stats
         const headerStats = document.getElementById('headerStats');
         if (headerStats) {
-            headerStats.style.display = 'flex';
+            headerStats.style.display = 'none';
         }
 
         // Initial HTML
@@ -210,7 +210,6 @@ class FMListPage {
         const offen = this.allTools.filter(t => t.status === 'offen').length;
         const feinplanung = this.allTools.filter(t => t.status === 'feinplanung').length;
         const inInventur = this.allTools.filter(t => t.status === 'in-inventur').length;
-        const suppliers = new Set(this.allTools.map(t => t.supplier)).size;
 
         // Update filter counts
         document.getElementById('countAll').textContent = total;
@@ -218,14 +217,7 @@ class FMListPage {
         document.getElementById('countFeinplanung').textContent = feinplanung;
         document.getElementById('countInInventur').textContent = inInventur;
 
-        // Update header stats
-        const statTotal = document.getElementById('statTotal');
-        const statActive = document.getElementById('statActive');
-        const statSuppliers = document.getElementById('statSuppliers');
-
-        if (statTotal) statTotal.textContent = total;
-        if (statActive) statActive.textContent = inInventur;
-        if (statSuppliers) statSuppliers.textContent = suppliers;
+        // Header stats are hidden - no update needed
     }
 
     renderTable() {
