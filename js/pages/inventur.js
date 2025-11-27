@@ -11,6 +11,7 @@ class InventurPage {
 
         this.tools = [];
         this.currentFilter = 'all';
+        this.currentLocationFilter = null;
         this.currentView = 'table';
         this.currentTool = null;
         this.currentPage = 1;
@@ -78,8 +79,8 @@ class InventurPage {
                         📄 Lade lokale Werkzeuginformationen
                     </button>
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
-                        <button class="bulk-btn primary" id="bulkConfirmBtn">✓ Ausgewählte bestätigen</button>
-                        <button class="bulk-btn secondary" id="bulkLocationBtn">📌 Nach Standort</button>
+                        <button class="bulk-btn primary" id="confirmAllBtn">✓ Alle bestätigen</button>
+                        <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
                     </div>
                 </div>
 
@@ -113,9 +114,6 @@ class InventurPage {
                     <table>
                         <thead>
                             <tr>
-                                <th class="checkbox-col">
-                                    <input type="checkbox" class="checkbox-custom" id="selectAll">
-                                </th>
                                 <th class="sortable" data-sort="number">Werkzeugnummer</th>
                                 <th class="sortable" data-sort="name">Werkzeug</th>
                                 <th class="sortable" data-sort="location">Standort</th>
@@ -179,19 +177,19 @@ class InventurPage {
                 </div>
             </div>
 
-            <!-- Bulk Location Modal -->
+            <!-- Location Filter Modal -->
             <div class="modal" id="bulkLocationModal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>Nach Standort bestätigen</h2>
-                        <div class="modal-subtitle">Alle Werkzeuge an diesem Standort werden bestätigt</div>
+                        <h2>Nach Standort filtern</h2>
+                        <div class="modal-subtitle">Nur Werkzeuge an diesem Standort anzeigen</div>
                     </div>
                     <select class="location-select" id="bulkLocationSelect">
                         <option value="">-- Standort wählen --</option>
                     </select>
                     <div class="modal-actions">
                         <button class="modal-btn secondary" id="cancelBulkLocation">Abbrechen</button>
-                        <button class="modal-btn primary" id="confirmBulkLocation">Bestätigen</button>
+                        <button class="modal-btn primary" id="confirmBulkLocation">Filtern</button>
                     </div>
                 </div>
             </div>
@@ -266,21 +264,9 @@ class InventurPage {
             });
         });
 
-        // Select all checkbox
-        document.getElementById('selectAll').addEventListener('change', (e) => {
-            const filtered = this.getFilteredTools();
-            const paginated = this.getPaginatedTools(filtered);
-            paginated.forEach(tool => {
-                if (tool.status === 'pending') {
-                    tool.selected = e.target.checked;
-                }
-            });
-            this.renderTable();
-        });
-
         // Bulk actions
-        document.getElementById('bulkConfirmBtn').addEventListener('click', () => this.bulkConfirm());
-        document.getElementById('bulkLocationBtn').addEventListener('click', () => this.openBulkLocationModal());
+        document.getElementById('confirmAllBtn').addEventListener('click', () => this.confirmAll());
+        document.getElementById('filterLocationBtn').addEventListener('click', () => this.openLocationFilterModal());
         document.getElementById('apiLoadBtn').addEventListener('click', () => this.loadFromAPI());
         document.getElementById('submitBtn').addEventListener('click', () => this.submitInventory());
 
@@ -301,8 +287,8 @@ class InventurPage {
         // Modal events
         document.getElementById('cancelRelocation').addEventListener('click', () => this.closeRelocationModal());
         document.getElementById('confirmRelocation').addEventListener('click', () => this.confirmRelocation());
-        document.getElementById('cancelBulkLocation').addEventListener('click', () => this.closeBulkLocationModal());
-        document.getElementById('confirmBulkLocation').addEventListener('click', () => this.confirmBulkLocation());
+        document.getElementById('cancelBulkLocation').addEventListener('click', () => this.closeLocationFilterModal());
+        document.getElementById('confirmBulkLocation').addEventListener('click', () => this.confirmLocationFilter());
         document.getElementById('cancelSubmit').addEventListener('click', () => this.closeSubmitModal());
         document.getElementById('confirmSubmit').addEventListener('click', () => this.confirmSubmit());
 
@@ -329,6 +315,12 @@ class InventurPage {
 
     getFilteredTools() {
         let filtered = this.tools.filter(tool => {
+            // Standort-Filter
+            if (this.currentLocationFilter && tool.location !== this.currentLocationFilter) {
+                return false;
+            }
+
+            // Status-Filter
             if (this.currentFilter === 'all') return true;
             if (this.currentFilter === 'overdue') return this.isOverdue(tool.dueDate);
             return tool.status === this.currentFilter;
@@ -382,7 +374,7 @@ class InventurPage {
         if (paginated.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" style="text-align: center; padding: 3rem; color: #6b7280;">
+                    <td colspan="9" style="text-align: center; padding: 3rem; color: #6b7280;">
                         📦 Keine Werkzeuge mit diesem Filter gefunden
                     </td>
                 </tr>
@@ -410,12 +402,6 @@ class InventurPage {
 
                 return `
                     <tr class="${rowClass}">
-                        <td>
-                            <input type="checkbox" class="checkbox-custom tool-checkbox"
-                                   data-id="${tool.id}" ${tool.selected ? 'checked' : ''}
-                                   ${tool.status !== 'pending' ? 'disabled' : ''}
-                                   onchange="inventurPage.toggleSelection(${tool.id})">
-                        </td>
                         <td class="tool-number"><a href="#/detail/${tool.id}" style="color: #2c4a8c; text-decoration: none; font-weight: 600;">${tool.number}</a></td>
                         <td class="tool-name">${tool.name}</td>
                         <td>${locationText}</td>
@@ -680,16 +666,22 @@ class InventurPage {
         }
     }
 
-    bulkConfirm() {
-        const selected = this.tools.filter(t => t.selected && t.status === 'pending');
-        if (selected.length === 0) {
-            alert('Bitte wählen Sie mindestens ein Werkzeug aus.');
+    confirmAll() {
+        const filtered = this.getFilteredTools();
+        const pending = filtered.filter(t => t.status === 'pending');
+
+        if (pending.length === 0) {
+            alert('Keine offenen Werkzeuge zum Bestätigen gefunden.');
             return;
         }
-        selected.forEach(tool => {
+
+        const confirmed = confirm(`Möchten Sie wirklich alle ${pending.length} angezeigten Werkzeuge bestätigen?`);
+        if (!confirmed) return;
+
+        pending.forEach(tool => {
             tool.status = 'confirmed';
-            tool.selected = false;
         });
+
         if (this.currentView === 'table') {
             this.renderTable();
         } else {
@@ -697,15 +689,15 @@ class InventurPage {
         }
     }
 
-    openBulkLocationModal() {
+    openLocationFilterModal() {
         document.getElementById('bulkLocationModal').classList.add('active');
     }
 
-    closeBulkLocationModal() {
+    closeLocationFilterModal() {
         document.getElementById('bulkLocationModal').classList.remove('active');
     }
 
-    confirmBulkLocation() {
+    confirmLocationFilter() {
         const select = document.getElementById('bulkLocationSelect');
         const locationId = select.value;
 
@@ -714,13 +706,10 @@ class InventurPage {
             return;
         }
 
-        const toolsAtLocation = this.tools.filter(t => t.location === locationId && t.status === 'pending');
-        toolsAtLocation.forEach(tool => {
-            tool.status = 'confirmed';
-            tool.selected = false;
-        });
+        this.currentLocationFilter = locationId;
+        this.currentPage = 1; // Reset to first page
 
-        this.closeBulkLocationModal();
+        this.closeLocationFilterModal();
         if (this.currentView === 'table') {
             this.renderTable();
         } else {
@@ -762,29 +751,14 @@ class InventurPage {
         btn.innerHTML = '⏳ Lade Daten...';
 
         setTimeout(() => {
-            const numToSelect = Math.floor(Math.random() * 6) + 10;
-            const pendingTools = this.tools.filter(t => t.status === 'pending');
-            const shuffled = pendingTools.sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, Math.min(numToSelect, pendingTools.length));
-
-            selected.forEach(tool => {
-                tool.selected = true;
-            });
-
-            btn.innerHTML = '✓ Daten geladen (' + selected.length + ' Werkzeuge ausgewählt)';
+            btn.innerHTML = '✓ Daten geladen';
             btn.style.background = '#10b981';
-
-            if (this.currentView === 'table') {
-                this.renderTable();
-            } else {
-                this.renderCards();
-            }
 
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
                 btn.style.background = '#f97316';
-            }, 3000);
+            }, 2000);
         }, 1500);
     }
 
