@@ -84,6 +84,14 @@ class Router {
 
     // Update active state of navigation links
     updateActiveNavLinks() {
+        // Update dropdown selection
+        const dropdown = document.getElementById('navDropdown');
+        if (dropdown) {
+            // Set dropdown to current route
+            dropdown.value = this.currentRoute;
+        }
+
+        // Keep old nav-link logic for backwards compatibility
         const links = document.querySelectorAll('.nav-link');
         const currentBasePath = this.currentRoute.split('/')[1] || '/';
 

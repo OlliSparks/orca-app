@@ -98,40 +98,46 @@ class Dashboard {
         const tasksContainer = document.getElementById('currentTasksCards');
 
         try {
-            // Lade Inventurdaten
-            const response = await api.getInventoryList();
-            this.inventurData = response.data || [];
+            // Lade Daten von allen Services parallel
+            const [inventurResponse, ablResponse, verlagerungResponse, partnerwechselResponse, verschrottungResponse] = await Promise.all([
+                api.getInventoryList(),
+                api.getABLList(),
+                api.getVerlagerungList(),
+                api.getPartnerwechselList(),
+                api.getVerschrottungList()
+            ]);
 
             // Heute als Referenz
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Zähle überfällige Werkzeuge (deadline < heute)
-            const overdueInventur = this.inventurData.filter(inv => {
-                if (inv.dueDate) {
-                    const dueDate = new Date(inv.dueDate);
-                    return dueDate < today;
-                }
-                return false;
-            }).length;
+            // Funktion zum Zählen von überfälligen und offenen Aufgaben
+            const countTasks = (data) => {
+                const items = data.data || [];
+                const overdue = items.filter(item => {
+                    if (item.dueDate) {
+                        const dueDate = new Date(item.dueDate);
+                        return dueDate < today;
+                    }
+                    return false;
+                }).length;
+                return { open: items.length, overdue };
+            };
 
-            // Alle Werkzeuge zählen als "offen" (inklusive überfällige)
-            const openInventur = this.inventurData.length;
-
-            // Platzhalter für weitere Prozesse (TODO: durch echte Daten ersetzen)
+            // Zähle für alle Services
             const taskCounts = {
-                inventur: { open: openInventur, overdue: overdueInventur },
-                abl: { open: 0, overdue: 0 },
-                verlagerung: { open: 0, overdue: 0 },
-                partnerwechsel: { open: 0, overdue: 0 },
-                verschrottung: { open: 0, overdue: 0 }
+                inventur: countTasks(inventurResponse),
+                abl: countTasks(ablResponse),
+                verlagerung: countTasks(verlagerungResponse),
+                partnerwechsel: countTasks(partnerwechselResponse),
+                verschrottung: countTasks(verschrottungResponse)
             };
 
             // Zeige Task-Karten in den richtigen Abschnitten
             this.renderTaskCards(taskCounts);
 
         } catch (error) {
-            console.error('Fehler beim Laden der Inventur-Daten:', error);
+            console.error('Fehler beim Laden der Task-Daten:', error);
             // Bei Fehler: alle Zähler auf 0
             const taskCounts = {
                 inventur: { open: 0, overdue: 0 },

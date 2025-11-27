@@ -38,23 +38,18 @@
                 </div>
             </div>
 
-            <!-- Navigation - Two Rows -->
-            <div class="nav-menu-container">
-                <!-- Main Navigation Row -->
-                <div class="nav-menu nav-menu-main">
-                    <a class="nav-link active" data-route="/dashboard" onclick="router.navigate('/dashboard')">🏠 Dashboard</a>
-                    <a class="nav-link" data-route="/tools" onclick="router.navigate('/tools')">🔧 Werkzeugübersicht</a>
-                    <a class="nav-link" data-route="/inventur" onclick="router.navigate('/inventur')">🔍 Inventur</a>
-                    <a class="nav-link" data-route="/planung" onclick="router.navigate('/planung')">📅 Planung</a>
-                </div>
-
-                <!-- Process Navigation Row -->
-                <div class="nav-menu nav-menu-process">
-                    <a class="nav-link" data-route="/abl" onclick="router.navigate('/abl')">📦 ABL</a>
-                    <a class="nav-link" data-route="/verlagerung" onclick="router.navigate('/verlagerung')">🚚 Verlagerung</a>
-                    <a class="nav-link" data-route="/partnerwechsel" onclick="router.navigate('/partnerwechsel')">🔄 VPW</a>
-                    <a class="nav-link" data-route="/verschrottung" onclick="router.navigate('/verschrottung')">♻️ Verschrottung</a>
-                </div>
+            <!-- Navigation Dropdown -->
+            <div class="nav-dropdown-container">
+                <select id="navDropdown" class="nav-dropdown" onchange="router.navigate(this.value)">
+                    <option value="/dashboard">🏠 Dashboard</option>
+                    <option value="/tools">🔧 Werkzeugübersicht</option>
+                    <option value="/inventur">🔍 Inventur</option>
+                    <option value="/planung">📅 Planung</option>
+                    <option value="/abl">📦 ABL</option>
+                    <option value="/verlagerung">🚚 Verlagerung</option>
+                    <option value="/partnerwechsel">🔄 Vertragspartnerwechsel</option>
+                    <option value="/verschrottung">♻️ Verschrottung</option>
+                </select>
             </div>
         </div>
     </div>
