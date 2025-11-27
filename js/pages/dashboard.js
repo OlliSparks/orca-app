@@ -91,7 +91,7 @@ class Dashboard {
             today.setHours(0, 0, 0, 0);
 
             // Zähle überfällige Werkzeuge (deadline < heute)
-            const overdueCount = this.inventurData.filter(inv => {
+            const overdueInventur = this.inventurData.filter(inv => {
                 if (inv.dueDate) {
                     const dueDate = new Date(inv.dueDate);
                     return dueDate < today;
@@ -100,68 +100,133 @@ class Dashboard {
             }).length;
 
             // Alle Werkzeuge zählen als "offen" (inklusive überfällige)
-            const openCount = this.inventurData.length;
+            const openInventur = this.inventurData.length;
 
-            // Zeige Task-Karten (überfällig zuerst, dann offen)
-            this.renderTaskCards(tasksContainer, openCount, overdueCount);
+            // Platzhalter für weitere Prozesse (TODO: durch echte Daten ersetzen)
+            const taskCounts = {
+                inventur: { open: openInventur, overdue: overdueInventur },
+                abl: { open: 0, overdue: 0 },
+                verlagerung: { open: 0, overdue: 0 },
+                partnerwechsel: { open: 0, overdue: 0 },
+                verschrottung: { open: 0, overdue: 0 }
+            };
+
+            // Zeige Task-Karten
+            this.renderTaskCards(tasksContainer, taskCounts);
 
         } catch (error) {
             console.error('Fehler beim Laden der Inventur-Daten:', error);
-            // Bei Fehler: leere Karte anzeigen
-            this.renderTaskCards(tasksContainer, 0, 0);
+            // Bei Fehler: alle Zähler auf 0
+            const taskCounts = {
+                inventur: { open: 0, overdue: 0 },
+                abl: { open: 0, overdue: 0 },
+                verlagerung: { open: 0, overdue: 0 },
+                partnerwechsel: { open: 0, overdue: 0 },
+                verschrottung: { open: 0, overdue: 0 }
+            };
+            this.renderTaskCards(tasksContainer, taskCounts);
         }
     }
 
-    renderTaskCards(container, openCount, overdueCount) {
-        const hasOpenTasks = openCount > 0;
-        const hasOverdueTasks = overdueCount > 0;
+    renderTaskCards(container, taskCounts) {
+        const processes = [
+            {
+                key: 'inventur',
+                name: 'Inventuren',
+                nameSingular: 'Inventur',
+                icon: '📋',
+                route: '/inventur',
+                filter: 'pending'
+            },
+            {
+                key: 'abl',
+                name: 'ABL-Aufträge',
+                nameSingular: 'ABL-Auftrag',
+                icon: '📦',
+                route: '/abl',
+                filter: 'pending'
+            },
+            {
+                key: 'verlagerung',
+                name: 'Verlagerungen',
+                nameSingular: 'Verlagerung',
+                icon: '🚚',
+                route: '/verlagerung',
+                filter: 'pending'
+            },
+            {
+                key: 'partnerwechsel',
+                name: 'Vertragspartnerwechsel',
+                nameSingular: 'Vertragspartnerwechsel',
+                icon: '🔄',
+                route: '/partnerwechsel',
+                filter: 'pending'
+            },
+            {
+                key: 'verschrottung',
+                name: 'Verschrottungen',
+                nameSingular: 'Verschrottung',
+                icon: '♻️',
+                route: '/verschrottung',
+                filter: 'pending'
+            }
+        ];
 
         let html = '';
+        let hasAnyTasks = false;
 
-        // Karte für überfällige Inventuren (zuerst anzeigen)
-        if (hasOverdueTasks) {
-            html += `
-                <div class="dashboard-card task-card urgent clickable"
-                     onclick="dashboardPage.navigateToInventur('overdue')">
-                    <div class="card-badge badge-danger">${overdueCount}</div>
-                    <div class="card-icon">⚠️</div>
-                    <div class="card-content">
-                        <h4>Überfällige Inventuren</h4>
-                        <p>${overdueCount} ${overdueCount === 1 ? 'Inventur ist' : 'Inventuren sind'} überfällig</p>
-                        <div class="card-footer">
-                            <span class="task-label urgent">Dringend bearbeiten →</span>
+        processes.forEach(process => {
+            const counts = taskCounts[process.key];
+            const hasOverdue = counts.overdue > 0;
+            const hasOpen = counts.open > 0;
+
+            // Überfällige Aufgaben (falls vorhanden)
+            if (hasOverdue) {
+                hasAnyTasks = true;
+                html += `
+                    <div class="dashboard-card task-card urgent clickable"
+                         onclick="dashboardPage.navigateToProcess('${process.route}', 'overdue')">
+                        <div class="card-badge badge-danger">${counts.overdue}</div>
+                        <div class="card-icon">⚠️</div>
+                        <div class="card-content">
+                            <h4>Überfällige ${process.name}</h4>
+                            <p>${counts.overdue} ${counts.overdue === 1 ? process.nameSingular + ' ist' : process.name + ' sind'} überfällig</p>
+                            <div class="card-footer">
+                                <span class="task-label urgent">Dringend bearbeiten →</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        }
+                `;
+            }
 
-        // Karte für offene Inventuren (danach anzeigen)
-        if (hasOpenTasks) {
-            html += `
-                <div class="dashboard-card task-card clickable"
-                     onclick="dashboardPage.navigateToInventur('pending')">
-                    <div class="card-badge badge-info">${openCount}</div>
-                    <div class="card-icon">📝</div>
-                    <div class="card-content">
-                        <h4>Offene Inventuren</h4>
-                        <p>${openCount} ${openCount === 1 ? 'Inventur' : 'Inventuren'} im Status "Offen"</p>
-                        <div class="card-footer">
-                            <span class="task-label">Zur Inventur →</span>
+            // Offene Aufgaben (falls vorhanden)
+            if (hasOpen) {
+                hasAnyTasks = true;
+                html += `
+                    <div class="dashboard-card task-card clickable"
+                         onclick="dashboardPage.navigateToProcess('${process.route}', '${process.filter}')">
+                        <div class="card-badge badge-info">${counts.open}</div>
+                        <div class="card-icon">${process.icon}</div>
+                        <div class="card-content">
+                            <h4>Offene ${process.name}</h4>
+                            <p>${counts.open} ${counts.open === 1 ? process.nameSingular : process.name} im Status "Offen"</p>
+                            <div class="card-footer">
+                                <span class="task-label">Bearbeiten →</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        }
+                `;
+            }
+        });
 
         // Wenn keine Aufgaben
-        if (!hasOpenTasks && !hasOverdueTasks) {
+        if (!hasAnyTasks) {
             html = `
                 <div class="dashboard-card no-tasks">
                     <div class="card-icon">✅</div>
                     <div class="card-content">
                         <h4>Keine offenen Aufgaben</h4>
-                        <p>Aktuell sind keine Inventuren offen oder überfällig.</p>
+                        <p>Aktuell sind keine Aufgaben offen oder überfällig.</p>
                     </div>
                 </div>
             `;
@@ -175,6 +240,14 @@ class Dashboard {
         sessionStorage.setItem('inventurFilter', filter);
         // Navigiere zur Inventur-Seite
         router.navigate('/inventur');
+    }
+
+    navigateToProcess(route, filter) {
+        // Speichere den gewünschten Filter für den jeweiligen Prozess
+        const processName = route.substring(1); // Entferne führenden Slash
+        sessionStorage.setItem(`${processName}Filter`, filter);
+        // Navigiere zur entsprechenden Seite
+        router.navigate(route);
     }
 }
 
