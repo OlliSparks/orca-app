@@ -87,8 +87,12 @@ class Router {
         // Update dropdown selection
         const dropdown = document.getElementById('navDropdown');
         if (dropdown) {
-            // Set dropdown to current route
-            dropdown.value = this.currentRoute;
+            // Map root route to /dashboard
+            let dropdownValue = this.currentRoute;
+            if (dropdownValue === '/') {
+                dropdownValue = '/dashboard';
+            }
+            dropdown.value = dropdownValue;
         }
 
         // Keep old nav-link logic for backwards compatibility
