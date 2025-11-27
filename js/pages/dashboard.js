@@ -63,7 +63,7 @@ class Dashboard {
                             <div class="card-icon">🔧</div>
                             <div class="card-content">
                                 <h4>Werkzeugübersicht</h4>
-                                <p>Alle Fertigungsmittel anzeigen und verwalten</p>
+                                <p>Meine Fertigungsmittel anzeigen und verwalten</p>
                             </div>
                             <div class="card-arrow">→</div>
                         </div>
@@ -72,7 +72,7 @@ class Dashboard {
                             <div class="card-icon">🔍</div>
                             <div class="card-content">
                                 <h4>Inventur</h4>
-                                <p>Inventuraufträge verwalten und durchführen</p>
+                                <p>Meine Inventuraufträge verwalten und durchführen</p>
                             </div>
                             <div class="card-arrow">→</div>
                         </div>
@@ -81,7 +81,43 @@ class Dashboard {
                             <div class="card-icon">📅</div>
                             <div class="card-content">
                                 <h4>Planung</h4>
-                                <p>Zukünftige Inventuren planen</p>
+                                <p>Meine zukünftigen Inventuren planen</p>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+
+                        <div class="dashboard-card clickable" onclick="router.navigate('/abl')">
+                            <div class="card-icon">📦</div>
+                            <div class="card-content">
+                                <h4>ABL</h4>
+                                <p>Meine Abnahmebereitschaften verwalten</p>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+
+                        <div class="dashboard-card clickable" onclick="router.navigate('/verlagerung')">
+                            <div class="card-icon">🚚</div>
+                            <div class="card-content">
+                                <h4>Verlagerung</h4>
+                                <p>Meine Verlagerungen verwalten und durchführen</p>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+
+                        <div class="dashboard-card clickable" onclick="router.navigate('/partnerwechsel')">
+                            <div class="card-icon">🔄</div>
+                            <div class="card-content">
+                                <h4>Vertragspartnerwechsel</h4>
+                                <p>Meine Vertragspartnerwechsel verwalten</p>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+
+                        <div class="dashboard-card clickable" onclick="router.navigate('/verschrottung')">
+                            <div class="card-icon">♻️</div>
+                            <div class="card-content">
+                                <h4>Verschrottung</h4>
+                                <p>Meine Verschrottungen verwalten und durchführen</p>
                             </div>
                             <div class="card-arrow">→</div>
                         </div>
