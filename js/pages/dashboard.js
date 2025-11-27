@@ -194,7 +194,7 @@ class Dashboard {
                 nameSingular: 'Inventur',
                 icon: '📋',
                 route: '/inventur',
-                filter: 'pending'
+                filter: 'all'
             },
             {
                 key: 'abl',
@@ -202,7 +202,7 @@ class Dashboard {
                 nameSingular: 'ABL-Auftrag',
                 icon: '📦',
                 route: '/abl',
-                filter: 'pending'
+                filter: 'all'
             },
             {
                 key: 'verlagerung',
@@ -210,7 +210,7 @@ class Dashboard {
                 nameSingular: 'Verlagerung',
                 icon: '🚚',
                 route: '/verlagerung',
-                filter: 'pending'
+                filter: 'all'
             },
             {
                 key: 'partnerwechsel',
@@ -218,7 +218,7 @@ class Dashboard {
                 nameSingular: 'Vertragspartnerwechsel',
                 icon: '🔄',
                 route: '/partnerwechsel',
-                filter: 'pending'
+                filter: 'all'
             },
             {
                 key: 'verschrottung',
@@ -226,7 +226,7 @@ class Dashboard {
                 nameSingular: 'Verschrottung',
                 icon: '♻️',
                 route: '/verschrottung',
-                filter: 'pending'
+                filter: 'all'
             }
         ];
 
