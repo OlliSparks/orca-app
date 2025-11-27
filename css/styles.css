@@ -1588,3 +1588,38 @@ tr.relocated {
         font-size: 2rem;
     }
 }
+
+/* === INVENTUR TABLE ENHANCEMENTS === */
+/* Kommentar-Eingabefeld */
+.comment-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: 'Oswald', sans-serif;
+    transition: border-color 0.2s;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #2c4a8c;
+    box-shadow: 0 0 0 2px rgba(44, 74, 140, 0.1);
+}
+
+.comment-input::placeholder {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Einheitliche Schriftgrößen für alle Tabellen-Inhalte */
+table td,
+table th {
+    font-size: 0.9rem !important;
+}
+
+table td a,
+table td span,
+table td input[type="text"] {
+    font-size: 0.9rem !important;
+}

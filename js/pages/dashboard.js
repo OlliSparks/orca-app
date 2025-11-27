@@ -99,14 +99,8 @@ class Dashboard {
                 return false;
             }).length;
 
-            // Zähle offene Werkzeuge (deadline >= heute)
-            const openCount = this.inventurData.filter(inv => {
-                if (inv.dueDate) {
-                    const dueDate = new Date(inv.dueDate);
-                    return dueDate >= today;
-                }
-                return false;
-            }).length;
+            // Alle Werkzeuge zählen als "offen" (inklusive überfällige)
+            const openCount = this.inventurData.length;
 
             // Zeige Task-Karten (überfällig zuerst, dann offen)
             this.renderTaskCards(tasksContainer, openCount, overdueCount);

@@ -369,12 +369,20 @@ class APIService {
 
     getMockInventoryData(filters = {}) {
         // Greife auf gecachte Daten zu - nur die ersten 50
-        const items = this.mockToolsCache.slice(0, 50).map(tool => ({
+        const responsiblePersons = [
+            'Max Mustermann', 'Anna Schmidt', 'Peter Weber', 'Lisa Müller',
+            'Thomas Becker', 'Sarah Klein', 'Michael Wagner', 'Julia Fischer'
+        ];
+
+        const items = this.mockToolsCache.slice(0, 50).map((tool, index) => ({
             id: tool.id,
             name: tool.name,
             number: tool.toolNumber,
             location: tool.locationId,
-            dueDate: tool.dueDate
+            dueDate: tool.dueDate,
+            responsible: responsiblePersons[index % responsiblePersons.length],
+            lastChange: tool.lastInventory,
+            comment: ''
         }));
 
         return Promise.resolve({

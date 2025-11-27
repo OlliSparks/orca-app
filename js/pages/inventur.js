@@ -119,8 +119,11 @@ class InventurPage {
                                 <th class="sortable" data-sort="number">Werkzeugnummer</th>
                                 <th class="sortable" data-sort="name">Werkzeug</th>
                                 <th class="sortable" data-sort="location">Standort</th>
+                                <th class="sortable" data-sort="responsible">Verantwortlicher</th>
                                 <th class="sortable" data-sort="dueDate">Fälligkeitsdatum</th>
+                                <th class="sortable" data-sort="lastChange">Letzte Änderung</th>
                                 <th>Status</th>
+                                <th>Kommentar</th>
                                 <th>Aktionen</th>
                             </tr>
                         </thead>
@@ -345,9 +348,15 @@ class InventurPage {
                 } else if (this.sortColumn === 'location') {
                     aVal = this.getLocationName(a.location).toLowerCase();
                     bVal = this.getLocationName(b.location).toLowerCase();
+                } else if (this.sortColumn === 'responsible') {
+                    aVal = (a.responsible || '').toLowerCase();
+                    bVal = (b.responsible || '').toLowerCase();
                 } else if (this.sortColumn === 'dueDate') {
                     aVal = new Date(a.dueDate);
                     bVal = new Date(b.dueDate);
+                } else if (this.sortColumn === 'lastChange') {
+                    aVal = a.lastChange ? new Date(a.lastChange) : new Date(0);
+                    bVal = b.lastChange ? new Date(b.lastChange) : new Date(0);
                 }
 
                 if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
@@ -373,7 +382,7 @@ class InventurPage {
         if (paginated.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 3rem; color: #6b7280;">
+                    <td colspan="10" style="text-align: center; padding: 3rem; color: #6b7280;">
                         📦 Keine Werkzeuge mit diesem Filter gefunden
                     </td>
                 </tr>
@@ -410,8 +419,13 @@ class InventurPage {
                         <td class="tool-number"><a href="#/detail/${tool.id}" style="color: #2c4a8c; text-decoration: none; font-weight: 600;">${tool.number}</a></td>
                         <td class="tool-name">${tool.name}</td>
                         <td>${locationText}</td>
+                        <td>${tool.responsible || 'N/A'}</td>
                         <td><span class="due-date ${dueDateClass}">${this.formatDate(tool.dueDate)}</span></td>
+                        <td>${tool.lastChange ? this.formatDate(tool.lastChange) : 'N/A'}</td>
                         <td><span class="status-badge ${statusInfo.class}">${statusInfo.icon} ${statusInfo.text}</span></td>
+                        <td><input type="text" class="comment-input" value="${tool.comment || ''}"
+                                   onchange="inventurPage.updateComment(${tool.id}, this.value)"
+                                   placeholder="Kommentar hinzufügen..."></td>
                         <td><div class="action-cell">${actionsHtml}</div></td>
                     </tr>
                 `;
@@ -559,6 +573,13 @@ class InventurPage {
         if (tool && tool.status === 'pending') {
             tool.selected = !tool.selected;
             this.renderTable();
+        }
+    }
+
+    updateComment(id, comment) {
+        const tool = this.tools.find(t => t.id === id);
+        if (tool) {
+            tool.comment = comment;
         }
     }
 
