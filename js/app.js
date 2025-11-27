@@ -47,6 +47,26 @@ class OrcaApp {
         router.addRoute('/planung', () => {
             planungPage.render();
         });
+
+        // ABL (Abnahmebereitschaft)
+        router.addRoute('/abl', () => {
+            ablPage.render();
+        });
+
+        // Verlagerung
+        router.addRoute('/verlagerung', () => {
+            verlagerungPage.render();
+        });
+
+        // Vertragspartnerwechsel
+        router.addRoute('/partnerwechsel', () => {
+            partnerwechselPage.render();
+        });
+
+        // Verschrottung
+        router.addRoute('/verschrottung', () => {
+            verschrottungPage.render();
+        });
     }
 
     async checkAPIStatus() {

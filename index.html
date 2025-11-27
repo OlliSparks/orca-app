@@ -38,12 +38,23 @@
                 </div>
             </div>
 
-            <!-- Navigation -->
-            <div class="nav-menu">
-                <a class="nav-link active" data-route="/dashboard" onclick="router.navigate('/dashboard')">🏠 Dashboard</a>
-                <a class="nav-link" data-route="/tools" onclick="router.navigate('/tools')">🔧 Werkzeugübersicht</a>
-                <a class="nav-link" data-route="/inventur" onclick="router.navigate('/inventur')">🔍 Inventur</a>
-                <a class="nav-link" data-route="/planung" onclick="router.navigate('/planung')">📅 Planung</a>
+            <!-- Navigation - Two Rows -->
+            <div class="nav-menu-container">
+                <!-- Main Navigation Row -->
+                <div class="nav-menu nav-menu-main">
+                    <a class="nav-link active" data-route="/dashboard" onclick="router.navigate('/dashboard')">🏠 Dashboard</a>
+                    <a class="nav-link" data-route="/tools" onclick="router.navigate('/tools')">🔧 Werkzeugübersicht</a>
+                    <a class="nav-link" data-route="/inventur" onclick="router.navigate('/inventur')">🔍 Inventur</a>
+                    <a class="nav-link" data-route="/planung" onclick="router.navigate('/planung')">📅 Planung</a>
+                </div>
+
+                <!-- Process Navigation Row -->
+                <div class="nav-menu nav-menu-process">
+                    <a class="nav-link" data-route="/abl" onclick="router.navigate('/abl')">📦 ABL</a>
+                    <a class="nav-link" data-route="/verlagerung" onclick="router.navigate('/verlagerung')">🚚 Verlagerung</a>
+                    <a class="nav-link" data-route="/partnerwechsel" onclick="router.navigate('/partnerwechsel')">🔄 VPW</a>
+                    <a class="nav-link" data-route="/verschrottung" onclick="router.navigate('/verschrottung')">♻️ Verschrottung</a>
+                </div>
             </div>
         </div>
     </div>
@@ -81,6 +92,10 @@
     <script src="js/pages/fm-detail.js"></script>
     <script src="js/pages/inventur.js"></script>
     <script src="js/pages/planung.js"></script>
+    <script src="js/pages/abl.js"></script>
+    <script src="js/pages/verlagerung.js"></script>
+    <script src="js/pages/partnerwechsel.js"></script>
+    <script src="js/pages/verschrottung.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

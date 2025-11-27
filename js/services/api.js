@@ -413,6 +413,218 @@ class APIService {
         });
     }
 
+    // === ABL (Abnahmebereitschaft) Endpoints ===
+    async getABLList(filters = {}) {
+        return this.callWithFallback(
+            // Live API call
+            async () => {
+                const params = new URLSearchParams();
+                if (filters.status) params.append('status', filters.status);
+
+                const endpoint = `/abl-list?${params.toString()}`;
+                const response = await this.call(endpoint, 'GET');
+
+                return {
+                    success: true,
+                    data: response.data || response,
+                    total: response.total || (response.data ? response.data.length : 0)
+                };
+            },
+            // Mock fallback
+            () => this.getMockABLData(filters)
+        );
+    }
+
+    getMockABLData(filters = {}) {
+        const toolTypes = ['ABL-Werkzeug', 'Prüfwerkzeug', 'Kontrolle'];
+        const parts = ['Motorhaube', 'Türblech vorn links', 'Kotflügel', 'Dachholm', 'A-Säule links'];
+        const locations = ['Halle A - Regal 1', 'Halle B - Lager 1', 'Außenlager Nord'];
+
+        const items = [];
+        for (let i = 1; i <= 10; i++) {
+            const toolType = toolTypes[(i - 1) % toolTypes.length];
+            const part = parts[(i - 1) % parts.length];
+            const paddedNum = String(i + 1000).padStart(4, '0');
+            const year = 2023;
+
+            items.push({
+                id: 1000 + i,
+                number: `ABL-${paddedNum}`,
+                toolNumber: `${toolType.substring(0, 3).toUpperCase()}-${year}-${paddedNum}`,
+                name: `${toolType} ${part}`,
+                supplier: 'Bosch Rexroth AG',
+                location: locations[(i - 1) % locations.length],
+                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
+                lastInventory: `2024-0${((i - 1) % 9) + 1}-15`
+            });
+        }
+
+        return Promise.resolve({
+            success: true,
+            data: items,
+            total: items.length
+        });
+    }
+
+    // === Verlagerung Endpoints ===
+    async getVerlagerungList(filters = {}) {
+        return this.callWithFallback(
+            // Live API call
+            async () => {
+                const params = new URLSearchParams();
+                if (filters.status) params.append('status', filters.status);
+
+                const endpoint = `/verlagerung-list?${params.toString()}`;
+                const response = await this.call(endpoint, 'GET');
+
+                return {
+                    success: true,
+                    data: response.data || response,
+                    total: response.total || (response.data ? response.data.length : 0)
+                };
+            },
+            // Mock fallback
+            () => this.getMockVerlagerungData(filters)
+        );
+    }
+
+    getMockVerlagerungData(filters = {}) {
+        const toolTypes = ['Verlagerungs-Tool', 'Transport-Werkzeug', 'Umzugs-Tool'];
+        const parts = ['Seitenteil links', 'Querträger vorn', 'Schweller links', 'Radhaus hinten', 'Bodenblech'];
+        const locations = ['Halle A - Regal 2', 'Halle C - Werkstatt', 'Außenlager Süd'];
+
+        const items = [];
+        for (let i = 1; i <= 10; i++) {
+            const toolType = toolTypes[(i - 1) % toolTypes.length];
+            const part = parts[(i - 1) % parts.length];
+            const paddedNum = String(i + 2000).padStart(4, '0');
+            const year = 2023;
+
+            items.push({
+                id: 2000 + i,
+                number: `VRL-${paddedNum}`,
+                toolNumber: `${toolType.substring(0, 3).toUpperCase()}-${year}-${paddedNum}`,
+                name: `${toolType} ${part}`,
+                supplier: 'Bosch Rexroth AG',
+                location: locations[(i - 1) % locations.length],
+                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
+                lastInventory: `2024-0${((i - 1) % 9) + 1}-20`
+            });
+        }
+
+        return Promise.resolve({
+            success: true,
+            data: items,
+            total: items.length
+        });
+    }
+
+    // === Partnerwechsel Endpoints ===
+    async getPartnerwechselList(filters = {}) {
+        return this.callWithFallback(
+            // Live API call
+            async () => {
+                const params = new URLSearchParams();
+                if (filters.status) params.append('status', filters.status);
+
+                const endpoint = `/partnerwechsel-list?${params.toString()}`;
+                const response = await this.call(endpoint, 'GET');
+
+                return {
+                    success: true,
+                    data: response.data || response,
+                    total: response.total || (response.data ? response.data.length : 0)
+                };
+            },
+            // Mock fallback
+            () => this.getMockPartnerwechselData(filters)
+        );
+    }
+
+    getMockPartnerwechselData(filters = {}) {
+        const toolTypes = ['VPW-Werkzeug', 'Partner-Tool', 'Wechsel-Tool'];
+        const parts = ['B-Säule rechts', 'C-Säule links', 'Dachblech', 'Heckklappe', 'Stoßfänger vorn'];
+        const locations = ['Halle A - Regal 3', 'Halle B - Lager 2', 'Montage Bereich 1'];
+
+        const items = [];
+        for (let i = 1; i <= 10; i++) {
+            const toolType = toolTypes[(i - 1) % toolTypes.length];
+            const part = parts[(i - 1) % parts.length];
+            const paddedNum = String(i + 3000).padStart(4, '0');
+            const year = 2023;
+
+            items.push({
+                id: 3000 + i,
+                number: `VPW-${paddedNum}`,
+                toolNumber: `${toolType.substring(0, 3).toUpperCase()}-${year}-${paddedNum}`,
+                name: `${toolType} ${part}`,
+                supplier: 'Bosch Rexroth AG',
+                location: locations[(i - 1) % locations.length],
+                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
+                lastInventory: `2024-0${((i - 1) % 9) + 1}-25`
+            });
+        }
+
+        return Promise.resolve({
+            success: true,
+            data: items,
+            total: items.length
+        });
+    }
+
+    // === Verschrottung Endpoints ===
+    async getVerschrottungList(filters = {}) {
+        return this.callWithFallback(
+            // Live API call
+            async () => {
+                const params = new URLSearchParams();
+                if (filters.status) params.append('status', filters.status);
+
+                const endpoint = `/verschrottung-list?${params.toString()}`;
+                const response = await this.call(endpoint, 'GET');
+
+                return {
+                    success: true,
+                    data: response.data || response,
+                    total: response.total || (response.data ? response.data.length : 0)
+                };
+            },
+            // Mock fallback
+            () => this.getMockVerschrottungData(filters)
+        );
+    }
+
+    getMockVerschrottungData(filters = {}) {
+        const toolTypes = ['Schrott-Werkzeug', 'Entsorgung-Tool', 'Recycling-Tool'];
+        const parts = ['Türblech hinten links', 'Kofferraumdeckel', 'Fensterrahmen', 'Verstrebung', 'Halterung'];
+        const locations = ['Halle C - Montage', 'Außenlager Nord', 'Halle A - Regal 1'];
+
+        const items = [];
+        for (let i = 1; i <= 10; i++) {
+            const toolType = toolTypes[(i - 1) % toolTypes.length];
+            const part = parts[(i - 1) % parts.length];
+            const paddedNum = String(i + 4000).padStart(4, '0');
+            const year = 2023;
+
+            items.push({
+                id: 4000 + i,
+                number: `SCH-${paddedNum}`,
+                toolNumber: `${toolType.substring(0, 3).toUpperCase()}-${year}-${paddedNum}`,
+                name: `${toolType} ${part}`,
+                supplier: 'Bosch Rexroth AG',
+                location: locations[(i - 1) % locations.length],
+                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
+                lastInventory: `2024-0${((i - 1) % 9) + 1}-10`
+            });
+        }
+
+        return Promise.resolve({
+            success: true,
+            data: items,
+            total: items.length
+        });
+    }
+
     // Check if API is connected
     async checkConnection() {
         try {

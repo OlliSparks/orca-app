@@ -86,10 +86,28 @@ body {
 }
 
 /* === NAVIGATION === */
+.nav-menu-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
 .nav-menu {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+}
+
+.nav-menu-main {
+    /* Main navigation row - primary items */
+}
+
+.nav-menu-process {
+    /* Process navigation row - secondary items with subtle background */
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.4rem;
+    border-radius: 6px;
 }
 
 .nav-link {
