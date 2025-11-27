@@ -22,6 +22,14 @@ class InventurPage {
     async render() {
         const app = document.getElementById('app');
 
+        // Check for filter from dashboard
+        const filterFromDashboard = sessionStorage.getItem('inventurFilter');
+        if (filterFromDashboard) {
+            this.currentFilter = filterFromDashboard;
+            // Clear the filter from sessionStorage
+            sessionStorage.removeItem('inventurFilter');
+        }
+
         // Update Header
         document.getElementById('headerTitle').textContent = 'Orca 2.0 - Inventory Service';
         document.getElementById('headerSubtitle').textContent = 'Werkzeug-Inventur Management';
@@ -77,19 +85,19 @@ class InventurPage {
 
                 <div class="toolbar">
                     <div class="toolbar-left">
-                        <div class="filter-chip active" data-filter="all">
+                        <div class="filter-chip ${this.currentFilter === 'all' ? 'active' : ''}" data-filter="all">
                             Alle <span class="count" id="count-all">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="pending">
+                        <div class="filter-chip ${this.currentFilter === 'pending' ? 'active' : ''}" data-filter="pending">
                             Offen <span class="count" id="count-pending">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="confirmed">
+                        <div class="filter-chip ${this.currentFilter === 'confirmed' ? 'active' : ''}" data-filter="confirmed">
                             Bestätigt <span class="count" id="count-confirmed">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="relocated">
+                        <div class="filter-chip ${this.currentFilter === 'relocated' ? 'active' : ''}" data-filter="relocated">
                             Verschoben <span class="count" id="count-relocated">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="overdue">
+                        <div class="filter-chip ${this.currentFilter === 'overdue' ? 'active' : ''}" data-filter="overdue">
                             Überfällig <span class="count" id="count-overdue">0</span>
                         </div>
                     </div>

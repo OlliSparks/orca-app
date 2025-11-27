@@ -40,7 +40,8 @@
 
             <!-- Navigation -->
             <div class="nav-menu">
-                <a class="nav-link active" data-route="/" onclick="router.navigate('/')">🔧 Werkzeugübersicht</a>
+                <a class="nav-link active" data-route="/dashboard" onclick="router.navigate('/dashboard')">🏠 Dashboard</a>
+                <a class="nav-link" data-route="/tools" onclick="router.navigate('/tools')">🔧 Werkzeugübersicht</a>
                 <a class="nav-link" data-route="/inventur" onclick="router.navigate('/inventur')">🔍 Inventur</a>
                 <a class="nav-link" data-route="/planung" onclick="router.navigate('/planung')">📅 Planung</a>
             </div>
@@ -75,6 +76,7 @@
     <script src="js/services/auth.js"></script>
     <script src="js/services/api.js"></script>
     <script src="js/router.js"></script>
+    <script src="js/pages/dashboard.js"></script>
     <script src="js/pages/fm-list.js"></script>
     <script src="js/pages/fm-detail.js"></script>
     <script src="js/pages/inventur.js"></script>

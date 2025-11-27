@@ -18,8 +18,17 @@ class OrcaApp {
     }
 
     registerRoutes() {
-        // Werkzeugübersicht (Homepage)
+        // Dashboard (Homepage - wird als Startseite angezeigt)
         router.addRoute('/', () => {
+            dashboardPage.render();
+        });
+
+        router.addRoute('/dashboard', () => {
+            dashboardPage.render();
+        });
+
+        // Werkzeugübersicht
+        router.addRoute('/tools', () => {
             fmListPage.render();
         });
 
