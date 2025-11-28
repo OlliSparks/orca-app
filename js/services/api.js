@@ -383,7 +383,7 @@ class APIService {
                 if (filters.status) params.append('status', filters.status);
                 if (filters.location) params.append('location', filters.location);
                 params.append('limit', filters.limit || 100);
-                params.append('offset', filters.offset || 0);
+                params.append('skip', filters.skip || 0);
 
                 const endpoint = `/asset-list?${params.toString()}`;
                 console.log('Calling asset-list:', endpoint);
@@ -391,15 +391,51 @@ class APIService {
                 console.log('Asset-list response:', response);
 
                 // Transform API response to our format
+                const items = Array.isArray(response) ? response : (response.data || []);
+                const transformedData = items.map((item, index) => ({
+                    id: item.context?.key || index,
+                    number: item.meta?.inventoryNumber || item.context?.key || '',
+                    toolNumber: item.meta?.inventoryNumber || '',
+                    name: item.meta?.inventoryText || item.meta?.partNumberText || 'Unbekannt',
+                    supplier: item.meta?.supplier || '',
+                    location: `${item.meta?.assetCity || ''}, ${item.meta?.assetCountry || ''}`.replace(/^, |, $/g, '') || 'Unbekannt',
+                    status: this.mapAssetStatus(item.meta?.status, item.meta?.processStatus),
+                    lastInventory: item.meta?.['p.inv.plan.due'] || null,
+                    // Zusätzliche Felder für Details
+                    client: item.meta?.client || '',
+                    lifecycleStatus: item.meta?.lifecycleStatus || '',
+                    processStatus: item.meta?.processStatus || '',
+                    project: item.meta?.project || '',
+                    derivat: item.meta?.derivat || '',
+                    category: item.meta?.category || '',
+                    department: item.meta?.department || '',
+                    factNumberAI: item.meta?.factNumberAI || '',
+                    wvoName: item.meta?.WVO_Name || '',
+                    wet: item.meta?.WET || '',
+                    originalData: item
+                }));
+
                 return {
                     success: true,
-                    data: response.data || response,
-                    total: response.total || (response.data ? response.data.length : 0)
+                    data: transformedData,
+                    total: transformedData.length
                 };
             },
             // Mock fallback
             () => this.getMockFMData(filters)
         );
+    }
+
+    // Mappe API-Status zu internem Status
+    mapAssetStatus(status, processStatus) {
+        // Status-Mapping basierend auf API-Werten
+        if (status === 'IDLE') return 'offen';
+        if (status === 'LOCKED') {
+            // Bei LOCKED schauen wir auf processStatus
+            if (processStatus === 'A3' || processStatus === 'A4') return 'feinplanung';
+            if (processStatus === 'A6') return 'in-inventur';
+        }
+        return 'offen';
     }
 
     // Get single FM item
