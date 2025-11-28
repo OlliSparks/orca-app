@@ -1328,21 +1328,21 @@ td {
 }
 
 .action-btn-small.photo {
-    background: #8b5cf6;
+    background: #f97316;
     color: white;
 }
 
 .action-btn-small.photo:hover {
-    background: #7c3aed;
+    background: #ea580c;
 }
 
 .action-btn-small.missing {
-    background: #ef4444;
+    background: #f97316;
     color: white;
 }
 
 .action-btn-small.missing:hover {
-    background: #dc2626;
+    background: #ea580c;
 }
 
 /* Success Message */
@@ -1427,11 +1427,11 @@ tr.missing {
 
 /* Missing confirm button */
 .modal-btn.missing-confirm {
-    background: #ef4444;
+    background: #f97316;
 }
 
 .modal-btn.missing-confirm:hover {
-    background: #dc2626;
+    background: #ea580c;
 }
 
 /* Card view missing status */
