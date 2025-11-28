@@ -1519,21 +1519,22 @@ tr.missing {
 }
 
 .block-info {
-    flex: 1;
+    flex: 1 1 0;
     border-right: 1px solid #e5e7eb;
-    min-width: 0;
+    min-width: 250px;
 }
 
 .block-status {
-    flex: 1;
+    flex: 1 1 0;
     border-right: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    min-width: 250px;
 }
 
 .block-actions {
-    flex: 0 0 180px;
+    flex: 0 0 200px;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
