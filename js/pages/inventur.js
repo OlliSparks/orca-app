@@ -1076,6 +1076,7 @@ class InventurPage {
             const reason = document.getElementById('missingReason').value;
             this.currentTool.status = 'missing';
             this.currentTool.missingReason = reason;
+            this.currentTool.comment = reason; // Übertrage Grund ins Kommentarfeld
             this.currentTool.selected = false;
 
             this.closeMissingModal();
