@@ -139,6 +139,13 @@ class InventurPage {
                     </div>
                 </div>
 
+                <div class="card-view-header" id="cardViewHeader" style="display: none;">
+                    <label class="confirm-all-label">
+                        <input type="checkbox" class="checkbox-custom" id="confirmAllCheckboxCards" title="Alle gefilterten Werkzeuge bestätigen">
+                        <span>Alle gefilterten Werkzeuge bestätigen</span>
+                    </label>
+                </div>
+
                 <div class="card-view" id="cardView">
                 </div>
 
@@ -324,8 +331,16 @@ class InventurPage {
             });
         });
 
-        // Confirm all checkbox
+        // Confirm all checkbox (table view)
         document.getElementById('confirmAllCheckbox').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                this.confirmAllFiltered();
+                e.target.checked = false; // Reset checkbox
+            }
+        });
+
+        // Confirm all checkbox (card view)
+        document.getElementById('confirmAllCheckboxCards').addEventListener('change', (e) => {
             if (e.target.checked) {
                 this.confirmAllFiltered();
                 e.target.checked = false; // Reset checkbox
@@ -716,11 +731,14 @@ class InventurPage {
     switchView() {
         if (this.currentView === 'table') {
             document.getElementById('tableView').style.display = 'block';
-            document.getElementById('cardView').style.display = 'none';
+            document.getElementById('cardViewHeader').style.display = 'none';
+            document.getElementById('cardView').classList.remove('active');
             document.getElementById('pagination').style.display = 'flex';
             document.getElementById('paginationCards').style.display = 'none';
+            this.renderTable();
         } else {
             document.getElementById('tableView').style.display = 'none';
+            document.getElementById('cardViewHeader').style.display = 'flex';
             document.getElementById('cardView').classList.add('active');
             document.getElementById('pagination').style.display = 'none';
             document.getElementById('paginationCards').style.display = 'flex';
