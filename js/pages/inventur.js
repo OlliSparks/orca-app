@@ -465,9 +465,9 @@ class InventurPage {
                 if (tool.status === 'pending') {
                     actionsHtml = `
                         <button class="action-btn-small confirm" onclick="inventurPage.confirmTool(${tool.id})">✓</button>
-                        <button class="action-btn-small relocate" onclick="inventurPage.relocateTool(${tool.id})">📌</button>
+                        <button class="action-btn-small relocate" onclick="inventurPage.relocateTool(${tool.id})">📍</button>
                         <button class="action-btn-small photo" onclick="inventurPage.addPhoto(${tool.id})">📷</button>
-                        <button class="action-btn-small missing" onclick="inventurPage.markMissing(${tool.id})">❌</button>
+                        <button class="action-btn-small missing" onclick="inventurPage.markMissing(${tool.id})">🚫</button>
                     `;
                 } else {
                     actionsHtml = `
@@ -518,9 +518,9 @@ class InventurPage {
                 if (tool.status === 'pending') {
                     actionsHtml = `
                         <button class="action-btn-card confirm" onclick="inventurPage.confirmTool(${tool.id})">✓ Bestätigen</button>
-                        <button class="action-btn-card relocate" onclick="inventurPage.relocateTool(${tool.id})">📌 Verschoben</button>
+                        <button class="action-btn-card relocate" onclick="inventurPage.relocateTool(${tool.id})">📍 Verschoben</button>
                         <button class="action-btn-card photo" onclick="inventurPage.addPhoto(${tool.id})">📷 Foto hinzufügen</button>
-                        <button class="action-btn-card missing" onclick="inventurPage.markMissing(${tool.id})">❌ Nicht vorhanden</button>
+                        <button class="action-btn-card missing" onclick="inventurPage.markMissing(${tool.id})">🚫 Nicht vorhanden</button>
                     `;
                 } else {
                     actionsHtml = `
