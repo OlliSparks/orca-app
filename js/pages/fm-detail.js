@@ -13,6 +13,12 @@ class FMDetailPage {
         document.getElementById('headerTitle').textContent = 'orca 2.0 - Werkzeug Management';
         document.getElementById('headerSubtitle').textContent = 'FM-Akte';
 
+        // Update Dropdown
+        const dropdown = document.getElementById('navDropdown');
+        if (dropdown) {
+            dropdown.value = '/fm-akte';
+        }
+
         // Hide header stats
         const headerStats = document.getElementById('headerStats');
         if (headerStats) {
