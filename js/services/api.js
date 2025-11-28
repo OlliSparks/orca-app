@@ -478,8 +478,8 @@ class APIService {
                 const statuses = filters.status || ['I1'];
                 statuses.forEach(s => params.append('status', s));
 
-                // Lieferantennummer
-                params.append('supplier', this.supplierNumber);
+                // Lieferantennummer als query (Freitext-Suche)
+                params.append('query', this.supplierNumber);
 
                 // Pagination
                 params.append('limit', filters.limit || 100);
