@@ -300,9 +300,7 @@ class InventurPage {
     }
 
     async loadData() {
-        console.log('loadData called');
         const response = await api.getInventoryList();
-        console.log('API Response:', response);
         if (response.success) {
             this.tools = response.data.map(tool => ({
                 ...tool,
@@ -310,9 +308,6 @@ class InventurPage {
                 selected: false,
                 newLocation: null
             }));
-            console.log('Tools loaded:', this.tools.length);
-        } else {
-            console.error('Failed to load inventory data');
         }
     }
 
@@ -863,14 +858,12 @@ class InventurPage {
     }
 
     async loadFromAPI() {
-        console.log('loadFromAPI called, currentView:', this.currentView);
         const btn = document.getElementById('apiLoadBtn');
         btn.disabled = true;
         btn.innerHTML = '⏳ Lade Daten...';
 
         try {
             await this.loadData();
-            console.log('Data loaded, tools count:', this.tools.length);
 
             btn.innerHTML = '✓ Daten geladen';
             btn.style.background = '#10b981';
@@ -878,13 +871,11 @@ class InventurPage {
             // Update display
             this.updateCounts();
             this.updateSpeedometer();
-            console.log('About to render, currentView:', this.currentView);
             if (this.currentView === 'table') {
                 this.renderTable();
             } else {
                 this.renderCards();
             }
-            console.log('Render complete');
 
             setTimeout(() => {
                 btn.disabled = false;
@@ -892,7 +883,6 @@ class InventurPage {
                 btn.style.background = '#f97316';
             }, 2000);
         } catch (error) {
-            console.error('loadFromAPI error:', error);
             btn.innerHTML = '❌ Fehler beim Laden';
             btn.style.background = '#ef4444';
             setTimeout(() => {
