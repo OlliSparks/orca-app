@@ -12,7 +12,7 @@ class InventurPage {
         this.tools = [];
         this.currentFilter = 'all';
         this.currentLocationFilter = null;
-        this.currentView = 'table';
+        this.currentView = 'card';
         this.currentTool = null;
         this.currentPage = 1;
         this.itemsPerPage = 20;
@@ -103,8 +103,8 @@ class InventurPage {
                     </div>
                     <div class="toolbar-right">
                         <div class="view-toggle">
-                            <button class="view-btn active" data-view="table">📋 Tabelle</button>
-                            <button class="view-btn" data-view="card">🗂️ Karten</button>
+                            <button class="view-btn" data-view="table">📋 Tabelle</button>
+                            <button class="view-btn active" data-view="card">🗂️ Karten</button>
                         </div>
                     </div>
                 </div>
@@ -283,7 +283,7 @@ class InventurPage {
         // Initialize display
         this.updateCounts();
         this.updateSpeedometer();
-        this.renderTable();
+        this.switchView(); // Start with card view
     }
 
     async loadData() {
@@ -517,32 +517,38 @@ class InventurPage {
                 let actionsHtml = '';
                 if (tool.status === 'pending') {
                     actionsHtml = `
-                        <button class="action-btn-small confirm" onclick="inventurPage.confirmTool(${tool.id})">✓ Bestätigen</button>
-                        <button class="action-btn-small relocate" onclick="inventurPage.relocateTool(${tool.id})">📌 Verschoben</button>
-                        <button class="action-btn-small photo" onclick="inventurPage.addPhoto(${tool.id})">📷 Foto</button>
-                        <button class="action-btn-small missing" onclick="inventurPage.markMissing(${tool.id})">❌ Fehlt</button>
+                        <button class="action-btn-card confirm" onclick="inventurPage.confirmTool(${tool.id})">✓ Bestätigen</button>
+                        <button class="action-btn-card relocate" onclick="inventurPage.relocateTool(${tool.id})">📌 Verschoben</button>
+                        <button class="action-btn-card photo" onclick="inventurPage.addPhoto(${tool.id})">📷 Foto hinzufügen</button>
+                        <button class="action-btn-card missing" onclick="inventurPage.markMissing(${tool.id})">❌ Nicht vorhanden</button>
                     `;
                 } else {
                     actionsHtml = `
-                        <button class="action-btn-small undo" onclick="inventurPage.resetTool(${tool.id})">↶ Rückgängig</button>
+                        <button class="action-btn-card undo" onclick="inventurPage.resetTool(${tool.id})">↶ Rückgängig</button>
                     `;
                 }
 
                 return `
-                    <div class="tool-card-compact ${cardClass}">
-                        <div class="card-header">
-                            <div>
-                                <div class="card-title">${tool.name}</div>
-                                <div class="tool-number"><a href="#/detail/${tool.id}" style="color: #2c4a8c; text-decoration: none; font-weight: 600;">${tool.number}</a></div>
+                    <div class="tool-card-row ${cardClass}">
+                        <div class="card-block block-info">
+                            <div class="card-tool-name">${tool.name}</div>
+                            <div class="card-tool-number"><a href="#/detail/${tool.id}">${tool.number}</a></div>
+                            <div class="card-detail"><span class="label">📌</span> ${locationText}</div>
+                            <div class="card-detail">
+                                <span class="label">Fällig:</span> <span class="due-date ${dueDateClass}">${this.formatDate(tool.dueDate)}</span>
+                                ${tool.lastChange ? `<span class="separator">|</span> <span class="label">Änderung:</span> ${this.formatDate(tool.lastChange)}` : ''}
                             </div>
-                            <span class="status-badge ${statusInfo.class}">${statusInfo.icon}</span>
                         </div>
-                        <div class="card-location">📌 ${locationText}</div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <span style="color: #6b7280; font-size: 0.85rem;">Fällig: </span>
-                            <span class="due-date ${dueDateClass}">${this.formatDate(tool.dueDate)}</span>
+                        <div class="card-block block-status">
+                            <div class="card-detail"><span class="label">Verantwortlich:</span> ${tool.responsible || 'N/A'}</div>
+                            <div class="card-detail"><span class="status-badge ${statusInfo.class}">${statusInfo.icon} ${statusInfo.text}</span></div>
+                            <input type="text" class="comment-input-card" value="${tool.comment || ''}"
+                                   onchange="inventurPage.updateComment(${tool.id}, this.value)"
+                                   placeholder="Kommentar...">
                         </div>
-                        <div class="action-cell">${actionsHtml}</div>
+                        <div class="card-block block-actions">
+                            ${actionsHtml}
+                        </div>
                     </div>
                 `;
             }).join('');

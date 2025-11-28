@@ -1440,6 +1440,180 @@ tr.missing {
     background: #fef2f2;
 }
 
+/* New Card Row Layout - 3 Blocks */
+.tool-card-row {
+    display: flex;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.tool-card-row.confirmed {
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+}
+
+.tool-card-row.relocated {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+}
+
+.tool-card-row.missing {
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+}
+
+.card-block {
+    padding: 0.75rem;
+}
+
+.block-info {
+    flex: 2;
+    border-right: 1px solid #e5e7eb;
+    min-width: 0;
+}
+
+.block-status {
+    flex: 1.5;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 180px;
+}
+
+.block-actions {
+    flex: 0 0 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    justify-content: center;
+    background: #f9fafb;
+}
+
+.card-tool-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-tool-number a {
+    color: #2c4a8c;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.card-tool-number a:hover {
+    text-decoration: underline;
+}
+
+.card-detail {
+    font-size: 0.8rem;
+    color: #4b5563;
+    margin-top: 0.2rem;
+}
+
+.card-detail .label {
+    color: #6b7280;
+}
+
+.card-detail .separator {
+    margin: 0 0.5rem;
+    color: #d1d5db;
+}
+
+.comment-input-card {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    margin-top: 0.25rem;
+}
+
+.comment-input-card:focus {
+    outline: none;
+    border-color: #f97316;
+}
+
+/* Card Action Buttons */
+.action-btn-card {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    text-align: left;
+}
+
+.action-btn-card.confirm {
+    background: #2c4a8c;
+    color: white;
+}
+
+.action-btn-card.confirm:hover {
+    background: #1e3a6d;
+}
+
+.action-btn-card.relocate,
+.action-btn-card.photo,
+.action-btn-card.missing {
+    background: #f97316;
+    color: white;
+}
+
+.action-btn-card.relocate:hover,
+.action-btn-card.photo:hover,
+.action-btn-card.missing:hover {
+    background: #ea580c;
+}
+
+.action-btn-card.undo {
+    background: #6b7280;
+    color: white;
+}
+
+.action-btn-card.undo:hover {
+    background: #4b5563;
+}
+
+/* Responsive for Card Row Layout */
+@media (max-width: 768px) {
+    .tool-card-row {
+        flex-direction: column;
+    }
+
+    .block-info,
+    .block-status {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .block-actions {
+        flex: none;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .action-btn-card {
+        flex: 1;
+        min-width: calc(50% - 0.25rem);
+        text-align: center;
+    }
+}
+
 /* Responsive for Planung Page */
 @media (max-width: 768px) {
     .speedometer-header {
