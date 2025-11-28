@@ -378,12 +378,17 @@ class APIService {
             // Live API call
             async () => {
                 const params = new URLSearchParams();
+                // Lieferantennummer ist erforderlich
+                params.append('supplier', this.supplierNumber);
                 if (filters.status) params.append('status', filters.status);
-                if (filters.supplier) params.append('supplier', filters.supplier);
                 if (filters.location) params.append('location', filters.location);
+                params.append('limit', filters.limit || 100);
+                params.append('offset', filters.offset || 0);
 
                 const endpoint = `/asset-list?${params.toString()}`;
+                console.log('Calling asset-list:', endpoint);
                 const response = await this.call(endpoint, 'GET');
+                console.log('Asset-list response:', response);
 
                 // Transform API response to our format
                 return {
@@ -433,11 +438,17 @@ class APIService {
             // Live API call
             async () => {
                 const params = new URLSearchParams();
+                // Lieferantennummer ist erforderlich
+                params.append('supplier', this.supplierNumber);
                 if (filters.status) params.append('status', filters.status);
                 if (filters.location) params.append('location', filters.location);
+                params.append('limit', filters.limit || 100);
+                params.append('offset', filters.offset || 0);
 
                 const endpoint = `/inventory-list?${params.toString()}`;
+                console.log('Calling inventory-list:', endpoint);
                 const response = await this.call(endpoint, 'GET');
+                console.log('Inventory-list response:', response);
 
                 // Transform API response to our format
                 return {
