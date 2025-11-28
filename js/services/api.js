@@ -443,18 +443,96 @@ class APIService {
         return this.callWithFallback(
             // Live API call
             async () => {
-                const endpoint = `/assets/${id}`;
+                const endpoint = `/asset/${id}`;
+                console.log('Calling asset detail:', endpoint);
                 const response = await this.call(endpoint, 'GET');
+                console.log('Asset detail response:', response);
 
                 // Transform API response to our format
+                const item = response.data || response;
+                const transformedData = {
+                    id: item.context?.key || id,
+                    number: item.meta?.inventoryNumber || '',
+                    toolNumber: item.meta?.inventoryNumber || '',
+                    name: item.meta?.inventoryText || item.meta?.partNumberText || 'Werkzeug',
+                    assetNumber: item.meta?.assetNr || '',
+                    supplierAssetNumber: item.meta?.infoText || '',
+                    lifecycleStatus: this.mapLifecycleStatus(item.meta?.lifecycleStatus),
+                    processStatus: this.mapProcessStatus(item.meta?.processStatus),
+                    client: {
+                        company: item.meta?.client || ''
+                    },
+                    contractor: {
+                        company: item.supplier?.meta?.supplierText || item.supplier?.meta?.name || ''
+                    },
+                    location: {
+                        company: item.supplier?.meta?.supplierText || '',
+                        address: item.meta?.assetStreet || '',
+                        postalCode: item.meta?.assetPostcode || '',
+                        city: item.meta?.assetCity || '',
+                        country: item.meta?.assetCountry || ''
+                    },
+                    finance: {
+                        customsTariffNumber: item.meta?.hsCode || '',
+                        acquisitionCost: item.assetAccounting?.meta?.manufacturingCostEUR
+                            ? `${item.assetAccounting.meta.manufacturingCostEUR.toLocaleString('de-DE')},00 EUR`
+                            : 'N/A',
+                        residualBookValue: item.assetAccounting?.meta?.amortizedCostEUR
+                            ? `${item.assetAccounting.meta.amortizedCostEUR.toLocaleString('de-DE')},00 EUR`
+                            : 'N/A',
+                        lastInventory: item.assetAccounting?.meta?.lastInventory || null
+                    },
+                    // Zusätzliche Felder
+                    project: item.meta?.project || '',
+                    derivat: item.meta?.derivat || '',
+                    department: item.meta?.department || '',
+                    typeKey: item.meta?.typeKey || '',
+                    partNumberText: item.meta?.partNumberText || '',
+                    infoText: item.meta?.infoText || '',
+                    infoText2: item.meta?.infoText2 || '',
+                    // Maße
+                    dimensions: {
+                        length: item.meta?.length || 0,
+                        width: item.meta?.width || 0,
+                        height: item.meta?.height || 0,
+                        weight: item.meta?.weight || 0
+                    },
+                    originalData: item
+                };
+
                 return {
                     success: true,
-                    data: response.data || response
+                    data: transformedData
                 };
             },
             // Mock fallback
             () => this.getMockFMDetail(id)
         );
+    }
+
+    // Mappe Lifecycle-Status zu lesbarem Text
+    mapLifecycleStatus(status) {
+        const statusMap = {
+            'AL0': 'Angelegt',
+            'AL1': 'Aktiv',
+            'AL2': 'Inaktiv',
+            'AL3': 'Verschrottet'
+        };
+        return statusMap[status] || status || 'Unbekannt';
+    }
+
+    // Mappe Prozess-Status zu lesbarem Text
+    mapProcessStatus(status) {
+        const statusMap = {
+            'A1': 'Unbestätigt',
+            'A2': 'In Bearbeitung',
+            'A3': 'Feinplanung',
+            'A4': 'Bestätigt',
+            'A6': 'In Inventur',
+            'A8': 'Abgeschlossen',
+            'A9': 'Archiviert'
+        };
+        return statusMap[status] || status || 'Unbekannt';
     }
 
     // Update FM item
