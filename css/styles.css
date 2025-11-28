@@ -1489,8 +1489,7 @@ tr.missing {
 
 /* New Card Row Layout - Full Width */
 .tool-card-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 200px;
+    display: flex;
     width: 100%;
     background: white;
     border: 1px solid #e5e7eb;
@@ -1517,13 +1516,18 @@ tr.missing {
 
 .card-block {
     padding: 1rem;
+    box-sizing: border-box;
 }
 
 .block-info {
+    flex: 1 1 0;
+    min-width: 0;
     border-right: 1px solid #e5e7eb;
 }
 
 .block-status {
+    flex: 1 1 0;
+    min-width: 0;
     border-right: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;
@@ -1531,6 +1535,8 @@ tr.missing {
 }
 
 .block-actions {
+    flex: 0 0 200px;
+    width: 200px;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
@@ -1579,13 +1585,14 @@ tr.missing {
 
 .comment-input-card {
     width: 100%;
-    max-width: 250px;
+    max-width: 100%;
     padding: 0.5rem;
     border: 1px solid #d1d5db;
     border-radius: 4px;
     font-size: 0.85rem;
     font-family: inherit;
     margin-top: 0.25rem;
+    box-sizing: border-box;
 }
 
 .comment-input-card:focus {
