@@ -3,16 +3,51 @@
 
 class APIService {
     constructor() {
-        // API Mode: wird aus API_CONFIG geladen
-        this.mode = typeof API_CONFIG !== 'undefined' ? API_CONFIG.mode : 'mock';
-        this.baseURL = typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : 'http://localhost:8000/api';
-        this.isConnected = false;
+        // Lade Konfiguration aus localStorage oder nutze Defaults
+        this.loadConfigFromStorage();
 
         // CACHE für Mock-Daten - wird EINMAL beim Start generiert
         this.mockToolsCache = null;
         this.initializeMockData();
 
         console.log(`API Service initialized in ${this.mode.toUpperCase()} mode`);
+    }
+
+    // Lade Konfiguration aus localStorage
+    loadConfigFromStorage() {
+        const saved = localStorage.getItem('orca_api_config');
+        if (saved) {
+            try {
+                const config = JSON.parse(saved);
+                this.mode = config.mode || 'mock';
+                this.baseURL = config.baseURL || 'https://int.bmw.organizingcompanyassets.com/api/orca';
+                this.bearerToken = config.bearerToken || '';
+                this.supplierNumber = config.supplierNumber || '9999999';
+            } catch (e) {
+                console.error('Error loading config:', e);
+                this.setDefaults();
+            }
+        } else {
+            this.setDefaults();
+        }
+        this.isConnected = false;
+    }
+
+    setDefaults() {
+        this.mode = 'mock';
+        this.baseURL = 'https://int.bmw.organizingcompanyassets.com/api/orca';
+        this.bearerToken = '';
+        this.supplierNumber = '9999999';
+    }
+
+    // Update config from settings page
+    updateConfig(config) {
+        this.mode = config.mode || 'mock';
+        this.baseURL = config.baseURL || this.baseURL;
+        this.bearerToken = config.bearerToken || '';
+        this.supplierNumber = config.supplierNumber || '9999999';
+        this.isConnected = false;
+        console.log(`API config updated: ${this.mode.toUpperCase()} mode`);
     }
 
     // Initialisiere Mock-Daten EINMAL beim Start
@@ -24,7 +59,7 @@ class APIService {
     }
 
     // Generic API call method with authentication
-    async call(endpoint, method = 'GET', data = null, useAuth = true) {
+    async call(endpoint, method = 'GET', data = null) {
         // In Mock-Modus: Fallback auf Mock-Daten
         if (this.mode === 'mock') {
             console.warn('API call in MOCK mode:', endpoint);
@@ -39,10 +74,13 @@ class APIService {
             }
         };
 
-        // Add authentication header if needed
-        if (useAuth && typeof authService !== 'undefined') {
-            const authHeader = authService.getAuthHeader();
-            Object.assign(options.headers, authHeader);
+        // Add Bearer Token if available
+        if (this.bearerToken) {
+            // Handle both "Bearer xxx" and just "xxx" formats
+            const token = this.bearerToken.startsWith('Bearer ')
+                ? this.bearerToken.substring(7)
+                : this.bearerToken;
+            options.headers['Authorization'] = `Bearer ${token}`;
         }
 
         if (data) {
@@ -51,9 +89,12 @@ class APIService {
 
         try {
             const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
+            console.log(`API Call: ${method} ${url}`);
             const response = await fetch(url, options);
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API Error Response:', errorText);
                 throw new Error(`API Error: ${response.status} ${response.statusText}`);
             }
 
@@ -76,6 +117,256 @@ class APIService {
         } catch (error) {
             console.warn('Live API call failed, falling back to mock data:', error);
             return mockFallback();
+        }
+    }
+
+    // === Profile & User Endpoints ===
+
+    // Get current user profile
+    async getProfile() {
+        if (this.mode === 'mock') {
+            return {
+                success: true,
+                data: {
+                    name: 'Max Mustermann (Mock)',
+                    email: 'max.mustermann@example.com',
+                    company: 'Test GmbH'
+                }
+            };
+        }
+
+        try {
+            const response = await this.call('/profile', 'GET');
+            return {
+                success: true,
+                data: response
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // === Tasks/Notifications Endpoints ===
+
+    // Get tasks for current user
+    async getTasks(filters = {}) {
+        if (this.mode === 'mock') {
+            return {
+                success: true,
+                data: [],
+                total: 0
+            };
+        }
+
+        try {
+            const params = new URLSearchParams();
+            if (filters.status) params.append('status', filters.status);
+            if (filters.type) params.append('type', filters.type);
+            params.append('limit', filters.limit || 100);
+            params.append('offset', filters.offset || 0);
+
+            const endpoint = `/tasks?${params.toString()}`;
+            const response = await this.call(endpoint, 'GET');
+
+            return {
+                success: true,
+                data: response.data || response,
+                total: response.total || (response.data ? response.data.length : 0)
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                data: []
+            };
+        }
+    }
+
+    // === Process Endpoints ===
+
+    // Get processes (can be used to find inventories)
+    async getProcesses(filters = {}) {
+        if (this.mode === 'mock') {
+            return {
+                success: true,
+                data: [],
+                total: 0
+            };
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('skip', filters.skip || 0);
+            params.append('limit', filters.limit || 50);
+            if (filters.query) params.append('query', filters.query);
+
+            const endpoint = `/process?${params.toString()}`;
+            const response = await this.call(endpoint, 'GET');
+
+            return {
+                success: true,
+                data: response.data || response,
+                total: response.total || (response.data ? response.data.length : 0)
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                data: []
+            };
+        }
+    }
+
+    // === Live Inventory Endpoints ===
+
+    // Get inventory details
+    async getInventoryDetails(inventoryKey) {
+        if (this.mode === 'mock') {
+            return { success: false, error: 'Mock mode' };
+        }
+
+        try {
+            const response = await this.call(`/inventory/${inventoryKey}`, 'GET');
+            return {
+                success: true,
+                data: response
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Get inventory partitions (positions)
+    async getInventoryPartitions(inventoryKey, filters = {}) {
+        if (this.mode === 'mock') {
+            return { success: false, error: 'Mock mode' };
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('limit', filters.limit || 100);
+            params.append('offset', filters.offset || 0);
+            if (filters.supplier) params.append('supplier', filters.supplier);
+            if (filters.status) params.append('status', filters.status);
+
+            const endpoint = `/inventory/${inventoryKey}/partitions?${params.toString()}`;
+            const response = await this.call(endpoint, 'GET');
+
+            return {
+                success: true,
+                data: response.data || response,
+                total: response.total || (response.data ? response.data.length : 0)
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                data: []
+            };
+        }
+    }
+
+    // Update position comment
+    async updatePositionComment(inventoryKey, positionKey, revision, comment) {
+        if (this.mode === 'mock') {
+            return { success: true };
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('comment', comment);
+
+            const endpoint = `/inventory/${inventoryKey}/${positionKey}/${revision}/comment?${params.toString()}`;
+            await this.call(endpoint, 'PATCH');
+
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Update position location
+    async updatePositionLocation(inventoryKey, positionKey, locationData) {
+        if (this.mode === 'mock') {
+            return { success: true };
+        }
+
+        try {
+            const endpoint = `/inventory/${inventoryKey}/${positionKey}/location`;
+            await this.call(endpoint, 'PATCH', locationData);
+
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Report inventory position
+    async reportPosition(inventoryKey, positionKey, revision) {
+        if (this.mode === 'mock') {
+            return { success: true };
+        }
+
+        try {
+            const endpoint = `/inventory/${inventoryKey}/${positionKey}/${revision}/report`;
+            await this.call(endpoint, 'PATCH');
+
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Accept inventory position
+    async acceptPosition(inventoryKey, positionKey, revision) {
+        if (this.mode === 'mock') {
+            return { success: true };
+        }
+
+        try {
+            const endpoint = `/inventory/${inventoryKey}/${positionKey}/${revision}/accept`;
+            await this.call(endpoint, 'PATCH');
+
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Report full inventory
+    async reportInventory(inventoryKey) {
+        if (this.mode === 'mock') {
+            return { success: true };
+        }
+
+        try {
+            const endpoint = `/inventory/${inventoryKey}/actions/report`;
+            await this.call(endpoint, 'POST');
+
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 

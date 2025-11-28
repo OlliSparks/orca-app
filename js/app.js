@@ -67,6 +67,11 @@ class OrcaApp {
         router.addRoute('/verschrottung', () => {
             verschrottungPage.render();
         });
+
+        // Einstellungen
+        router.addRoute('/settings', () => {
+            settingsPage.render();
+        });
     }
 
     async checkAPIStatus() {
