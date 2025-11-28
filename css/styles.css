@@ -1519,7 +1519,7 @@ tr.missing {
 }
 
 .block-info {
-    flex: 0 0 280px;
+    flex: 1;
     border-right: 1px solid #e5e7eb;
     min-width: 0;
 }
