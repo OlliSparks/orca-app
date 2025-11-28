@@ -438,12 +438,23 @@ class APIService {
             // Live API call
             async () => {
                 const params = new URLSearchParams();
-                // Lieferantennummer ist erforderlich
+                // Status ist erforderlich - alle Status abfragen wenn nicht spezifiziert
+                const statuses = filters.status || ['I0', 'I1', 'I2', 'I3', 'I4'];
+                statuses.forEach(s => params.append('status', s));
+
+                // Lieferantennummer
                 params.append('supplier', this.supplierNumber);
-                if (filters.status) params.append('status', filters.status);
-                if (filters.location) params.append('location', filters.location);
+
+                // Pagination
                 params.append('limit', filters.limit || 100);
-                params.append('offset', filters.offset || 0);
+                params.append('skip', filters.skip || 0);
+
+                // Optionale Filter
+                if (filters.city) params.append('city', filters.city);
+                if (filters.type) params.append('type', filters.type);
+
+                // Partitionen anzeigen für Details
+                params.append('showPartitions', 'true');
 
                 const endpoint = `/inventory-list?${params.toString()}`;
                 console.log('Calling inventory-list:', endpoint);
