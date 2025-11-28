@@ -1327,6 +1327,24 @@ td {
     background: #4b5563;
 }
 
+.action-btn-small.photo {
+    background: #8b5cf6;
+    color: white;
+}
+
+.action-btn-small.photo:hover {
+    background: #7c3aed;
+}
+
+.action-btn-small.missing {
+    background: #ef4444;
+    color: white;
+}
+
+.action-btn-small.missing:hover {
+    background: #dc2626;
+}
+
 /* Success Message */
 .success-message {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -1364,6 +1382,11 @@ td {
     color: #1e40af;
 }
 
+.status-badge.status-missing {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
 /* Table Row Status */
 tr.confirmed {
     background: #f0fdf4;
@@ -1371,6 +1394,50 @@ tr.confirmed {
 
 tr.relocated {
     background: #eff6ff;
+}
+
+tr.missing {
+    background: #fef2f2;
+}
+
+/* Photo Upload Area */
+.photo-upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin: 1rem 0;
+    background: #f9fafb;
+}
+
+.photo-upload-area:hover {
+    border-color: #8b5cf6;
+    background: #faf5ff;
+}
+
+.photo-placeholder {
+    color: #6b7280;
+}
+
+.photo-preview {
+    text-align: center;
+}
+
+/* Missing confirm button */
+.modal-btn.missing-confirm {
+    background: #ef4444;
+}
+
+.modal-btn.missing-confirm:hover {
+    background: #dc2626;
+}
+
+/* Card view missing status */
+.tool-card-compact.missing {
+    border-left: 4px solid #ef4444;
+    background: #fef2f2;
 }
 
 /* Responsive for Planung Page */

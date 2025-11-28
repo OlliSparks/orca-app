@@ -217,6 +217,58 @@ class InventurPage {
                     </div>
                 </div>
             </div>
+
+            <!-- Photo Upload Modal -->
+            <div class="modal" id="photoModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>📷 Foto hinzufügen</h2>
+                        <div class="modal-subtitle">Werkzeugfoto hochladen</div>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong id="photoModalToolName"></strong><br>
+                        <span id="photoModalToolNumber" style="color: #6b7280; font-size: 0.85rem;"></span>
+                    </div>
+                    <div class="photo-upload-area" id="photoUploadArea">
+                        <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                        <div class="photo-preview" id="photoPreview" style="display: none;">
+                            <img id="previewImage" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                        </div>
+                        <div class="photo-placeholder" id="photoPlaceholder">
+                            <span style="font-size: 3rem;">📷</span>
+                            <p style="margin: 0.5rem 0 0; color: #6b7280;">Klicken oder Datei hierher ziehen</p>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn secondary" id="cancelPhoto">Abbrechen</button>
+                        <button class="modal-btn primary" id="confirmPhoto" disabled>Foto speichern</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Missing Tool Modal -->
+            <div class="modal" id="missingModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>❌ Werkzeug nicht vorhanden</h2>
+                        <div class="modal-subtitle">Werkzeug als fehlend melden</div>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong id="missingModalToolName"></strong><br>
+                        <span id="missingModalToolNumber" style="color: #6b7280; font-size: 0.85rem;"></span>
+                    </div>
+                    <div style="margin: 1rem 0;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Grund / Bemerkung:</label>
+                        <textarea id="missingReason" class="comment-input" rows="3"
+                                  style="width: 100%; resize: vertical; padding: 0.5rem;"
+                                  placeholder="z.B. Nicht am Standort gefunden, möglicherweise verliehen..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn secondary" id="cancelMissing">Abbrechen</button>
+                        <button class="modal-btn primary missing-confirm" id="confirmMissing">Als fehlend melden</button>
+                    </div>
+                </div>
+            </div>
         `;
 
         // Update footer
@@ -302,6 +354,16 @@ class InventurPage {
         document.getElementById('confirmBulkLocation').addEventListener('click', () => this.confirmLocationFilter());
         document.getElementById('cancelSubmit').addEventListener('click', () => this.closeSubmitModal());
         document.getElementById('confirmSubmit').addEventListener('click', () => this.confirmSubmit());
+
+        // Photo modal events
+        document.getElementById('cancelPhoto').addEventListener('click', () => this.closePhotoModal());
+        document.getElementById('confirmPhoto').addEventListener('click', () => this.confirmPhoto());
+        document.getElementById('photoUploadArea').addEventListener('click', () => document.getElementById('photoInput').click());
+        document.getElementById('photoInput').addEventListener('change', (e) => this.handlePhotoSelect(e));
+
+        // Missing tool modal events
+        document.getElementById('cancelMissing').addEventListener('click', () => this.closeMissingModal());
+        document.getElementById('confirmMissing').addEventListener('click', () => this.confirmMissing());
 
         // Populate location selects
         this.populateLocationSelects();
@@ -404,6 +466,8 @@ class InventurPage {
                     actionsHtml = `
                         <button class="action-btn-small confirm" onclick="inventurPage.confirmTool(${tool.id})">✓</button>
                         <button class="action-btn-small relocate" onclick="inventurPage.relocateTool(${tool.id})">📌</button>
+                        <button class="action-btn-small photo" onclick="inventurPage.addPhoto(${tool.id})">📷</button>
+                        <button class="action-btn-small missing" onclick="inventurPage.markMissing(${tool.id})">❌</button>
                     `;
                 } else {
                     actionsHtml = `
@@ -455,6 +519,8 @@ class InventurPage {
                     actionsHtml = `
                         <button class="action-btn-small confirm" onclick="inventurPage.confirmTool(${tool.id})">✓ Bestätigen</button>
                         <button class="action-btn-small relocate" onclick="inventurPage.relocateTool(${tool.id})">📌 Verschoben</button>
+                        <button class="action-btn-small photo" onclick="inventurPage.addPhoto(${tool.id})">📷 Foto</button>
+                        <button class="action-btn-small missing" onclick="inventurPage.markMissing(${tool.id})">❌ Fehlt</button>
                     `;
                 } else {
                     actionsHtml = `
@@ -516,6 +582,7 @@ class InventurPage {
         const pending = this.tools.filter(t => t.status === 'pending').length;
         const confirmed = this.tools.filter(t => t.status === 'confirmed').length;
         const relocated = this.tools.filter(t => t.status === 'relocated').length;
+        const missing = this.tools.filter(t => t.status === 'missing').length;
         const overdue = this.tools.filter(t => this.isOverdue(t.dueDate)).length;
 
         document.getElementById('count-all').textContent = total;
@@ -525,16 +592,16 @@ class InventurPage {
         document.getElementById('count-overdue').textContent = overdue;
 
         // Update submit button
-        const totalConfirmed = confirmed + relocated;
+        const totalProcessed = confirmed + relocated + missing;
         const submitBtn = document.getElementById('submitBtn');
         const submitInfo = document.getElementById('submitInfo');
 
-        if (totalConfirmed > 0) {
+        if (totalProcessed > 0) {
             submitBtn.disabled = false;
-            if (totalConfirmed === total) {
-                submitInfo.textContent = '✓ Alle Werkzeuge bestätigt - Bereit zum Einreichen';
+            if (totalProcessed === total) {
+                submitInfo.textContent = '✓ Alle Werkzeuge bearbeitet - Bereit zum Einreichen';
             } else {
-                submitInfo.textContent = `${totalConfirmed} Werkzeug(e) bearbeitet - ${pending} noch offen`;
+                submitInfo.textContent = `${totalProcessed} Werkzeug(e) bearbeitet - ${pending} noch offen`;
             }
         } else {
             submitBtn.disabled = true;
@@ -776,7 +843,8 @@ class InventurPage {
     submitInventory() {
         const confirmed = this.tools.filter(t => t.status === 'confirmed').length;
         const relocated = this.tools.filter(t => t.status === 'relocated').length;
-        const total = confirmed + relocated;
+        const missing = this.tools.filter(t => t.status === 'missing').length;
+        const total = confirmed + relocated + missing;
 
         if (total === 0) {
             alert('Keine Werkzeuge zum Einreichen vorhanden.\nBitte bearbeiten Sie mindestens ein Werkzeug.');
@@ -784,7 +852,10 @@ class InventurPage {
         }
 
         // Show confirmation modal
-        const summary = `${total} Werkzeug(e) werden eingereicht:\n• ${confirmed} bestätigt\n• ${relocated} verschoben`;
+        let summary = `${total} Werkzeug(e) werden eingereicht:\n• ${confirmed} bestätigt\n• ${relocated} verschoben`;
+        if (missing > 0) {
+            summary += `\n• ${missing} als fehlend gemeldet`;
+        }
         document.getElementById('submitModalSummary').textContent = summary;
         document.getElementById('submitModal').classList.add('active');
     }
@@ -796,7 +867,8 @@ class InventurPage {
     confirmSubmit() {
         const confirmed = this.tools.filter(t => t.status === 'confirmed').length;
         const relocated = this.tools.filter(t => t.status === 'relocated').length;
-        const total = confirmed + relocated;
+        const missing = this.tools.filter(t => t.status === 'missing').length;
+        const total = confirmed + relocated + missing;
 
         // Remove submitted tools from the list
         this.tools = this.tools.filter(t => t.status === 'pending');
@@ -805,7 +877,12 @@ class InventurPage {
         this.closeSubmitModal();
 
         // Show success message
-        alert(`✅ Erfolgreich eingereicht!\n\n${total} Werkzeug(e) wurden an die API gesendet:\n• ${confirmed} bestätigt\n• ${relocated} verschoben\n\nDie Werkzeuge wurden aus der Liste entfernt.`);
+        let successMsg = `✅ Erfolgreich eingereicht!\n\n${total} Werkzeug(e) wurden an die API gesendet:\n• ${confirmed} bestätigt\n• ${relocated} verschoben`;
+        if (missing > 0) {
+            successMsg += `\n• ${missing} als fehlend gemeldet`;
+        }
+        successMsg += '\n\nDie Werkzeuge wurden aus der Liste entfernt.';
+        alert(successMsg);
 
         // Reset to first page and re-render
         this.currentPage = 1;
@@ -825,7 +902,8 @@ class InventurPage {
         const statusMap = {
             'pending': { class: 'status-pending', icon: '⏳', text: 'Offen' },
             'confirmed': { class: 'status-confirmed', icon: '✓', text: 'Bestätigt' },
-            'relocated': { class: 'status-relocated', icon: '📌', text: 'Verschoben' }
+            'relocated': { class: 'status-relocated', icon: '📌', text: 'Verschoben' },
+            'missing': { class: 'status-missing', icon: '❌', text: 'Fehlt' }
         };
         return statusMap[status] || statusMap['pending'];
     }
@@ -853,6 +931,82 @@ class InventurPage {
         threeWeeksFromNow.setDate(today.getDate() + 21);
         const dueDate = new Date(dateString);
         return dueDate >= today && dueDate <= threeWeeksFromNow;
+    }
+
+    // Photo upload methods
+    addPhoto(toolId) {
+        this.currentTool = this.tools.find(t => t.id === toolId);
+        if (this.currentTool) {
+            document.getElementById('photoModalToolName').textContent = this.currentTool.name;
+            document.getElementById('photoModalToolNumber').textContent = this.currentTool.number;
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('photoPlaceholder').style.display = 'block';
+            document.getElementById('photoInput').value = '';
+            document.getElementById('confirmPhoto').disabled = true;
+            document.getElementById('photoModal').classList.add('active');
+        }
+    }
+
+    handlePhotoSelect(event) {
+        const file = event.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('photoPreview').style.display = 'block';
+                document.getElementById('photoPlaceholder').style.display = 'none';
+                document.getElementById('confirmPhoto').disabled = false;
+                this.selectedPhoto = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    closePhotoModal() {
+        document.getElementById('photoModal').classList.remove('active');
+        this.currentTool = null;
+        this.selectedPhoto = null;
+    }
+
+    confirmPhoto() {
+        if (this.currentTool && this.selectedPhoto) {
+            this.currentTool.photo = this.selectedPhoto;
+            alert(`✅ Foto wurde für "${this.currentTool.name}" gespeichert.`);
+        }
+        this.closePhotoModal();
+    }
+
+    // Missing tool methods
+    markMissing(toolId) {
+        this.currentTool = this.tools.find(t => t.id === toolId);
+        if (this.currentTool) {
+            document.getElementById('missingModalToolName').textContent = this.currentTool.name;
+            document.getElementById('missingModalToolNumber').textContent = this.currentTool.number;
+            document.getElementById('missingReason').value = '';
+            document.getElementById('missingModal').classList.add('active');
+        }
+    }
+
+    closeMissingModal() {
+        document.getElementById('missingModal').classList.remove('active');
+        this.currentTool = null;
+    }
+
+    confirmMissing() {
+        if (this.currentTool) {
+            const reason = document.getElementById('missingReason').value;
+            this.currentTool.status = 'missing';
+            this.currentTool.missingReason = reason;
+            this.currentTool.selected = false;
+
+            this.closeMissingModal();
+
+            if (this.currentView === 'table') {
+                this.renderTable();
+            } else {
+                this.renderCards();
+            }
+        }
     }
 }
 
