@@ -364,6 +364,33 @@ class InventurPage {
         document.getElementById('prevPageCards').addEventListener('click', () => this.prevPage());
         document.getElementById('nextPageCards').addEventListener('click', () => this.nextPage());
 
+        // Event delegation for action buttons (handles dynamic content)
+        document.getElementById('app').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (btn) {
+                const action = btn.dataset.action;
+                const id = btn.dataset.id;
+                switch (action) {
+                    case 'confirm': this.confirmTool(id); break;
+                    case 'relocate': this.relocateTool(id); break;
+                    case 'photo': this.addPhoto(id); break;
+                    case 'missing': this.markMissing(id); break;
+                    case 'reset': this.resetTool(id); break;
+                }
+            }
+        });
+
+        // Event delegation for comment inputs
+        document.getElementById('app').addEventListener('change', (e) => {
+            if (e.target.classList.contains('comment-input') || e.target.classList.contains('comment-input-card')) {
+                const id = e.target.dataset.id;
+                const value = e.target.value;
+                if (id) {
+                    this.updateComment(id, value);
+                }
+            }
+        });
+
         // Sorting
         document.querySelectorAll('th.sortable').forEach(th => {
             th.addEventListener('click', () => {
@@ -487,16 +514,17 @@ class InventurPage {
                 const rowClass = tool.status !== 'pending' ? tool.status : '';
 
                 let actionsHtml = '';
+                const safeId = tool.id.replace(/'/g, "\\'");
                 if (tool.status === 'pending') {
                     actionsHtml = `
-                        <button class="action-btn-small confirm" onclick="inventurPage.confirmTool('${tool.id}')">✓</button>
-                        <button class="action-btn-small relocate" onclick="inventurPage.relocateTool('${tool.id}')">📍</button>
-                        <button class="action-btn-small photo" onclick="inventurPage.addPhoto('${tool.id}')">📷</button>
-                        <button class="action-btn-small missing" onclick="inventurPage.markMissing('${tool.id}')">🚫</button>
+                        <button class="action-btn-small confirm" data-action="confirm" data-id="${tool.id}">✓</button>
+                        <button class="action-btn-small relocate" data-action="relocate" data-id="${tool.id}">📍</button>
+                        <button class="action-btn-small photo" data-action="photo" data-id="${tool.id}">📷</button>
+                        <button class="action-btn-small missing" data-action="missing" data-id="${tool.id}">🚫</button>
                     `;
                 } else {
                     actionsHtml = `
-                        <button class="action-btn-small undo" onclick="inventurPage.resetTool('${tool.id}')">↶</button>
+                        <button class="action-btn-small undo" data-action="reset" data-id="${tool.id}">↶</button>
                     `;
                 }
 
@@ -509,9 +537,8 @@ class InventurPage {
                         <td><span class="due-date ${dueDateClass}">${this.formatDate(tool.dueDate)}</span></td>
                         <td>${tool.lastChange ? this.formatDate(tool.lastChange) : 'N/A'}</td>
                         <td><span class="status-badge ${statusInfo.class}">${statusInfo.icon} ${statusInfo.text}</span></td>
-                        <td><input type="text" class="comment-input" value="${tool.comment || ''}"
-                                   onchange="inventurPage.updateComment('${tool.id}', this.value)"
-                                   placeholder="Kommentar hinzufügen..."></td>
+                        <td><input type="text" class="comment-input" data-id="${tool.id}"
+                                   placeholder="Kommentar hinzufügen..." value="${tool.comment || ''}"></td>
                         <td><div class="action-cell">${actionsHtml}</div></td>
                     </tr>
                 `;
@@ -542,14 +569,14 @@ class InventurPage {
                 let actionsHtml = '';
                 if (tool.status === 'pending') {
                     actionsHtml = `
-                        <button class="action-btn-card confirm" onclick="inventurPage.confirmTool('${tool.id}')">✓ Bestätigen</button>
-                        <button class="action-btn-card relocate" onclick="inventurPage.relocateTool('${tool.id}')">📍 Verschoben</button>
-                        <button class="action-btn-card photo" onclick="inventurPage.addPhoto('${tool.id}')">📷 Foto hinzufügen</button>
-                        <button class="action-btn-card missing" onclick="inventurPage.markMissing('${tool.id}')">🚫 Nicht vorhanden</button>
+                        <button class="action-btn-card confirm" data-action="confirm" data-id="${tool.id}">✓ Bestätigen</button>
+                        <button class="action-btn-card relocate" data-action="relocate" data-id="${tool.id}">📍 Verschoben</button>
+                        <button class="action-btn-card photo" data-action="photo" data-id="${tool.id}">📷 Foto hinzufügen</button>
+                        <button class="action-btn-card missing" data-action="missing" data-id="${tool.id}">🚫 Nicht vorhanden</button>
                     `;
                 } else {
                     actionsHtml = `
-                        <button class="action-btn-card undo" onclick="inventurPage.resetTool('${tool.id}')">↶ Rückgängig</button>
+                        <button class="action-btn-card undo" data-action="reset" data-id="${tool.id}">↶ Rückgängig</button>
                     `;
                 }
 
@@ -567,9 +594,8 @@ class InventurPage {
                         <div class="card-block block-status">
                             <div class="card-detail"><span class="label">Verantwortlich:</span> ${tool.responsible || 'N/A'}</div>
                             <div class="card-detail"><span class="status-badge ${statusInfo.class}">${statusInfo.icon} ${statusInfo.text}</span></div>
-                            <input type="text" class="comment-input-card" value="${tool.comment || ''}"
-                                   onchange="inventurPage.updateComment('${tool.id}', this.value)"
-                                   placeholder="Kommentar...">
+                            <input type="text" class="comment-input-card" data-id="${tool.id}"
+                                   placeholder="Kommentar..." value="${tool.comment || ''}">
                         </div>
                         <div class="card-block block-actions">
                             ${actionsHtml}
