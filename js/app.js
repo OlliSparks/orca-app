@@ -32,6 +32,11 @@ class OrcaApp {
             fmListPage.render();
         });
 
+        // FM-Akte Suche
+        router.addRoute('/fm-akte', () => {
+            fmSearchPage.render();
+        });
+
         // Werkzeugakte Detail (mit dynamischer ID)
         router.addRoute('/detail/:id', (params) => {
             const id = params.id || 1;
