@@ -16,7 +16,7 @@ class SettingsPage {
         return {
             mode: 'mock',
             bearerToken: '',
-            supplierNumber: '9999999',
+            supplierNumber: '133188',
             baseURL: 'https://int.bmw.organizingcompanyassets.com/api/orca'
         };
     }
@@ -196,7 +196,7 @@ class SettingsPage {
         const defaultConfig = {
             mode: 'mock',
             bearerToken: '',
-            supplierNumber: '9999999',
+            supplierNumber: '133188',
             baseURL: 'https://int.bmw.organizingcompanyassets.com/api/orca'
         };
 

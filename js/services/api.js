@@ -37,7 +37,7 @@ class APIService {
         this.mode = 'mock';
         this.baseURL = 'https://int.bmw.organizingcompanyassets.com/api/orca';
         this.bearerToken = '';
-        this.supplierNumber = '9999999';
+        this.supplierNumber = '133188';
     }
 
     // Update config from settings page
