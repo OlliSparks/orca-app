@@ -34,6 +34,10 @@ class SettingsPage {
     async render() {
         const app = document.getElementById('app');
 
+        // Update Header
+        document.getElementById('headerTitle').textContent = 'orca 2.0 - Werkzeug Management';
+        document.getElementById('headerSubtitle').textContent = 'Einstellungen';
+
         // Hide header stats
         const headerStats = document.querySelector('.header-stats');
         if (headerStats) {

@@ -9,8 +9,8 @@ class FMSearchPage {
         const app = document.getElementById('app');
 
         // Update Header
-        document.getElementById('headerTitle').textContent = 'ORCA 2.0 - Inventory Service';
-        document.getElementById('headerSubtitle').textContent = 'FM-Akte Suche';
+        document.getElementById('headerTitle').textContent = 'orca 2.0 - Werkzeug Management';
+        document.getElementById('headerSubtitle').textContent = 'FM-Akte';
 
         // Update Dropdown
         const dropdown = document.getElementById('navDropdown');

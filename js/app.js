@@ -80,15 +80,18 @@ class OrcaApp {
     }
 
     async checkAPIStatus() {
-        const isConnected = await api.checkConnection();
+        const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+        const isLiveMode = config.mode === 'live';
         const statusElement = document.getElementById('apiStatus');
 
         if (statusElement) {
-            if (isConnected) {
-                statusElement.innerHTML = '✅ API verbunden';
-                statusElement.style.color = '#10b981';
+            if (isLiveMode) {
+                // Im Live-Modus: Status ausblenden
+                statusElement.style.display = 'none';
             } else {
-                statusElement.innerHTML = '⚠️ API nicht verbunden (Mock-Daten)';
+                // Im Mock-Modus: Hinweis anzeigen
+                statusElement.style.display = '';
+                statusElement.innerHTML = '⚠️ Mock-Daten aktiv';
                 statusElement.style.color = '#f97316';
             }
         }

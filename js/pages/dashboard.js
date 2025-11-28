@@ -8,8 +8,8 @@ class Dashboard {
         const app = document.getElementById('app');
 
         // Header anpassen
-        document.getElementById('headerTitle').textContent = 'ORCA 2.0 - Dashboard';
-        document.getElementById('headerSubtitle').textContent = 'Ihre Übersicht';
+        document.getElementById('headerTitle').textContent = 'orca 2.0 - Werkzeug Management';
+        document.getElementById('headerSubtitle').textContent = 'Dashboard';
         document.getElementById('headerStats').style.display = 'none';
 
         // Footer Actions leeren

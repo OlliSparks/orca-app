@@ -32,8 +32,8 @@ class InventurPage {
         }
 
         // Update Header
-        document.getElementById('headerTitle').textContent = 'Orca 2.0 - Inventory Service';
-        document.getElementById('headerSubtitle').textContent = 'Werkzeug-Inventur Management';
+        document.getElementById('headerTitle').textContent = 'orca 2.0 - Werkzeug Management';
+        document.getElementById('headerSubtitle').textContent = 'Inventur';
 
         // Hide header stats
         const headerStats = document.getElementById('headerStats');

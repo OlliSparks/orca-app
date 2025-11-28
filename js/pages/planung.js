@@ -24,8 +24,8 @@ class PlanungPage {
         const app = document.getElementById('app');
 
         // Update Header
-        document.getElementById('headerTitle').textContent = 'Orca 2.0 - Inventory Service';
-        document.getElementById('headerSubtitle').textContent = 'Werkzeug-Inventur Management';
+        document.getElementById('headerTitle').textContent = 'orca 2.0 - Werkzeug Management';
+        document.getElementById('headerSubtitle').textContent = 'Planung';
 
         // Hide header stats (will use custom header stats for this page)
         const headerStats = document.getElementById('headerStats');
