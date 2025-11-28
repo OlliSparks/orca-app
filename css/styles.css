@@ -1579,6 +1579,7 @@ tr.missing {
 
 .comment-input-card {
     width: 100%;
+    max-width: 250px;
     padding: 0.5rem;
     border: 1px solid #d1d5db;
     border-radius: 4px;
