@@ -43,6 +43,12 @@ class InventurPage {
 
         app.innerHTML = `
             <div class="container">
+                <!-- Info Box -->
+                <div class="info-widget">
+                    <h2>Ihre Inventuraufträge</h2>
+                    <p>Hier finden Sie alle Ihre offenen Inventuraufträge, die von BMW bereitgestellt wurden. Bitte bearbeiten Sie die Informationen zu den Werkzeugen gemäß der angebotenen Rückmelde-Buttons auf der rechten Seite. Im Anschluss bestätigen Sie die Inventuren über "Inventur einreichen" an BMW. Vielen Dank für Ihre Mitarbeit.</p>
+                </div>
+
                 <!-- Success Message (wird bei 100% angezeigt) -->
                 <div id="successMessage" style="display: none;" class="success-message">
                     <h3>🎉 Herzlichen Glückwunsch!</h3>
