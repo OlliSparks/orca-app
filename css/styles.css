@@ -1489,7 +1489,8 @@ tr.missing {
 
 /* New Card Row Layout - Full Width */
 .tool-card-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr 200px;
     width: 100%;
     background: white;
     border: 1px solid #e5e7eb;
@@ -1519,29 +1520,23 @@ tr.missing {
 }
 
 .block-info {
-    flex: 1 1 50%;
     border-right: 1px solid #e5e7eb;
-    min-width: 0;
 }
 
 .block-status {
-    flex: 1 1 50%;
     border-right: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    min-width: 0;
 }
 
 .block-actions {
-    flex: 0 0 200px;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
     justify-content: center;
     background: #f9fafb;
     padding: 0.75rem;
-    margin-left: auto;
 }
 
 .card-tool-name {
@@ -1646,18 +1641,16 @@ tr.missing {
 /* Responsive for Card Row Layout */
 @media (max-width: 900px) {
     .tool-card-row {
-        flex-direction: column;
+        grid-template-columns: 1fr;
     }
 
     .block-info,
     .block-status {
         border-right: none;
         border-bottom: 1px solid #e5e7eb;
-        flex: none;
     }
 
     .block-actions {
-        flex: none;
         flex-direction: row;
         flex-wrap: wrap;
         gap: 0.5rem;
