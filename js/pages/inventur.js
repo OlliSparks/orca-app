@@ -306,7 +306,11 @@ class InventurPage {
                 chip.classList.add('active');
                 this.currentFilter = chip.dataset.filter;
                 this.currentPage = 1;
-                this.renderTable();
+                if (this.currentView === 'table') {
+                    this.renderTable();
+                } else {
+                    this.renderCards();
+                }
             });
         });
 
@@ -829,21 +833,40 @@ class InventurPage {
         this.closeRelocationModal();
     }
 
-    loadFromAPI() {
+    async loadFromAPI() {
         const btn = document.getElementById('apiLoadBtn');
         btn.disabled = true;
         btn.innerHTML = '⏳ Lade Daten...';
 
-        setTimeout(() => {
+        try {
+            await this.loadData();
+
             btn.innerHTML = '✓ Daten geladen';
             btn.style.background = '#10b981';
+
+            // Update display
+            this.updateCounts();
+            this.updateSpeedometer();
+            if (this.currentView === 'table') {
+                this.renderTable();
+            } else {
+                this.renderCards();
+            }
 
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
                 btn.style.background = '#f97316';
             }, 2000);
-        }, 1500);
+        } catch (error) {
+            btn.innerHTML = '❌ Fehler beim Laden';
+            btn.style.background = '#ef4444';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
+                btn.style.background = '#f97316';
+            }, 2000);
+        }
     }
 
     submitInventory() {
