@@ -1497,13 +1497,13 @@ tr.missing {
 }
 
 .block-info {
-    flex: 1;
+    flex: 0 0 280px;
     border-right: 1px solid #e5e7eb;
     min-width: 0;
 }
 
 .block-status {
-    flex: 0 0 280px;
+    flex: 1;
     border-right: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;

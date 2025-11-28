@@ -177,7 +177,7 @@ class VerlagerungPage {
             this.filteredTools = [...this.allTools];
         } else if (this.currentFilter === 'overdue') {
             // Filter für überfällige Aufgaben
-            const today = new Date('2025-01-27');
+            const today = new Date(); today.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0);
             this.filteredTools = this.allTools.filter(tool => {
                 if (tool.dueDate) {

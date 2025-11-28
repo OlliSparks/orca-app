@@ -440,13 +440,14 @@ class APIService {
         const parts = ['Motorhaube', 'Türblech vorn links', 'Kotflügel', 'Dachholm', 'A-Säule links'];
         const locations = ['Halle A - Regal 1', 'Halle B - Lager 1', 'Außenlager Nord'];
 
-        const today = new Date('2025-01-27');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const items = [];
         for (let i = 1; i <= 10; i++) {
             const toolType = toolTypes[(i - 1) % toolTypes.length];
             const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 1000).padStart(4, '0');
-            const year = 2025;
+            const year = new Date().getFullYear();
 
             // Berechne Fälligkeitsdatum - erste 4 sind überfällig
             const dueDate = new Date(today);
@@ -458,6 +459,10 @@ class APIService {
                 dueDate.setDate(today.getDate() + (5 * (i - 4)));
             }
 
+            // Letzte Inventur: zufällig in den letzten 30 Tagen
+            const lastInv = new Date(today);
+            lastInv.setDate(today.getDate() - ((i - 1) % 28 + 1));
+
             items.push({
                 id: 1000 + i,
                 number: `ABL-${paddedNum}`,
@@ -466,7 +471,7 @@ class APIService {
                 supplier: 'Bosch Rexroth AG',
                 location: locations[(i - 1) % locations.length],
                 status: i <= 4 ? 'offen' : (i <= 7 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: `2025-01-${String((i - 1) % 28 + 1).padStart(2, '0')}`,
+                lastInventory: lastInv.toISOString().split('T')[0],
                 dueDate: dueDate.toISOString().split('T')[0]
             });
         }
@@ -505,13 +510,14 @@ class APIService {
         const parts = ['Seitenteil links', 'Querträger vorn', 'Schweller links', 'Radhaus hinten', 'Bodenblech'];
         const locations = ['Halle A - Regal 2', 'Halle C - Werkstatt', 'Außenlager Süd'];
 
-        const today = new Date('2025-01-27');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const items = [];
         for (let i = 1; i <= 10; i++) {
             const toolType = toolTypes[(i - 1) % toolTypes.length];
             const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 2000).padStart(4, '0');
-            const year = 2025;
+            const year = new Date().getFullYear();
 
             // Berechne Fälligkeitsdatum - erste 3 sind überfällig
             const dueDate = new Date(today);
@@ -523,6 +529,10 @@ class APIService {
                 dueDate.setDate(today.getDate() + (5 * (i - 3)));
             }
 
+            // Letzte Inventur: zufällig in den letzten 30 Tagen
+            const lastInv = new Date(today);
+            lastInv.setDate(today.getDate() - ((i - 1) % 28 + 1));
+
             items.push({
                 id: 2000 + i,
                 number: `VRL-${paddedNum}`,
@@ -531,7 +541,7 @@ class APIService {
                 supplier: 'Bosch Rexroth AG',
                 location: locations[(i - 1) % locations.length],
                 status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: `2025-01-${String((i - 1) % 28 + 1).padStart(2, '0')}`,
+                lastInventory: lastInv.toISOString().split('T')[0],
                 dueDate: dueDate.toISOString().split('T')[0]
             });
         }
@@ -570,13 +580,14 @@ class APIService {
         const parts = ['B-Säule rechts', 'C-Säule links', 'Dachblech', 'Heckklappe', 'Stoßfänger vorn'];
         const locations = ['Halle A - Regal 3', 'Halle B - Lager 2', 'Montage Bereich 1'];
 
-        const today = new Date('2025-01-27');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const items = [];
         for (let i = 1; i <= 10; i++) {
             const toolType = toolTypes[(i - 1) % toolTypes.length];
             const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 3000).padStart(4, '0');
-            const year = 2025;
+            const year = new Date().getFullYear();
 
             // Berechne Fälligkeitsdatum - erste 5 sind überfällig
             const dueDate = new Date(today);
@@ -588,6 +599,10 @@ class APIService {
                 dueDate.setDate(today.getDate() + (7 * (i - 5)));
             }
 
+            // Letzte Inventur: zufällig in den letzten 30 Tagen
+            const lastInv = new Date(today);
+            lastInv.setDate(today.getDate() - ((i - 1) % 28 + 1));
+
             items.push({
                 id: 3000 + i,
                 number: `VPW-${paddedNum}`,
@@ -596,7 +611,7 @@ class APIService {
                 supplier: 'Bosch Rexroth AG',
                 location: locations[(i - 1) % locations.length],
                 status: i <= 5 ? 'offen' : (i <= 7 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: `2025-01-${String((i - 1) % 28 + 1).padStart(2, '0')}`,
+                lastInventory: lastInv.toISOString().split('T')[0],
                 dueDate: dueDate.toISOString().split('T')[0]
             });
         }
@@ -635,13 +650,14 @@ class APIService {
         const parts = ['Türblech hinten links', 'Kofferraumdeckel', 'Fensterrahmen', 'Verstrebung', 'Halterung'];
         const locations = ['Halle C - Montage', 'Außenlager Nord', 'Halle A - Regal 1'];
 
-        const today = new Date('2025-01-27');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const items = [];
         for (let i = 1; i <= 10; i++) {
             const toolType = toolTypes[(i - 1) % toolTypes.length];
             const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 4000).padStart(4, '0');
-            const year = 2025;
+            const year = new Date().getFullYear();
 
             // Berechne Fälligkeitsdatum - erste 3 sind überfällig
             const dueDate = new Date(today);
@@ -653,6 +669,10 @@ class APIService {
                 dueDate.setDate(today.getDate() + (5 * (i - 3)));
             }
 
+            // Letzte Inventur: zufällig in den letzten 30 Tagen
+            const lastInv = new Date(today);
+            lastInv.setDate(today.getDate() - ((i - 1) % 28 + 1));
+
             items.push({
                 id: 4000 + i,
                 number: `SCH-${paddedNum}`,
@@ -661,7 +681,7 @@ class APIService {
                 supplier: 'Bosch Rexroth AG',
                 location: locations[(i - 1) % locations.length],
                 status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: `2025-01-${String((i - 1) % 28 + 1).padStart(2, '0')}`,
+                lastInventory: lastInv.toISOString().split('T')[0],
                 dueDate: dueDate.toISOString().split('T')[0]
             });
         }
