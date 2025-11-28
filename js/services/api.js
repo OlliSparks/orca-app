@@ -474,8 +474,8 @@ class APIService {
             // Live API call
             async () => {
                 const params = new URLSearchParams();
-                // Status ist erforderlich - alle Status abfragen wenn nicht spezifiziert
-                const statuses = filters.status || ['I0', 'I1', 'I2', 'I3', 'I4'];
+                // Status ist erforderlich - I1 = offene Inventuren
+                const statuses = filters.status || ['I1'];
                 statuses.forEach(s => params.append('status', s));
 
                 // Lieferantennummer
@@ -498,10 +498,30 @@ class APIService {
                 console.log('Inventory-list response:', response);
 
                 // Transform API response to our format
+                const items = Array.isArray(response) ? response : (response.data || []);
+                const transformedData = items.map((item, index) => ({
+                    id: item.context?.key || index,
+                    inventoryKey: item.context?.key || '',
+                    number: item.meta?.partNumbers?.split(' ')[0] || item.context?.key || '',
+                    name: item.meta?.description || 'Inventur',
+                    location: item.meta?.supplier || '',
+                    locationId: 'loc1',
+                    dueDate: item.meta?.dueDate ? item.meta.dueDate.split('T')[0] : null,
+                    responsible: item.meta?.assignedUsername || item.meta?.responsibleUser || 'N/A',
+                    lastChange: null,
+                    comment: '',
+                    inventoryType: item.meta?.type || '',
+                    status: item.meta?.status || 'I1',
+                    assetCount: item.meta?.assetCount || 0,
+                    assetsAccepted: item.meta?.acceptedAssets || 0,
+                    partNumbers: item.meta?.partNumbers || '',
+                    originalData: item
+                }));
+
                 return {
                     success: true,
-                    data: response.data || response,
-                    total: response.total || (response.data ? response.data.length : 0)
+                    data: transformedData,
+                    total: transformedData.length
                 };
             },
             // Mock fallback
