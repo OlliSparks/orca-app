@@ -43,10 +43,14 @@ class InventurPage {
 
         app.innerHTML = `
             <div class="container">
-                <!-- Info Box -->
-                <div class="info-widget">
-                    <h2>Ihre Inventuraufträge</h2>
-                    <p>Hier finden Sie alle Ihre offenen Inventuraufträge, die von BMW bereitgestellt wurden. Bitte bearbeiten Sie die Informationen zu den Werkzeugen gemäß der angebotenen Rückmelde-Buttons auf der rechten Seite. Im Anschluss bestätigen Sie die Inventuren über "Inventur einreichen" an BMW. Vielen Dank für Ihre Mitarbeit.</p>
+                <!-- Info Box mit Hilfe-Icon -->
+                <div class="info-widget-compact">
+                    <h2>Ihre Inventuraufträge 
+                        <span class="help-icon" id="helpIcon">?</span>
+                    </h2>
+                    <div class="help-tooltip" id="helpTooltip">
+                        Hier finden Sie alle Ihre offenen Inventuraufträge, die von BMW bereitgestellt wurden. Bitte bearbeiten Sie die Informationen zu den Werkzeugen gemäß der angebotenen Rückmelde-Buttons auf der rechten Seite. Im Anschluss bestätigen Sie die Inventuren über "Inventur einreichen" an BMW.
+                    </div>
                 </div>
 
                 <!-- Success Message (wird bei 100% angezeigt) -->
@@ -81,12 +85,15 @@ class InventurPage {
                 </div>
 
                 <div class="view-controls">
-                    <button class="bulk-btn api-load" id="apiLoadBtn">
-                        📄 Lade lokale Werkzeuginformationen
-                    </button>
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
                         <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
                     </div>
+                </div>
+
+                <div class="api-load-section">
+                    <button class="bulk-btn primary api-load-prominent" id="apiLoadBtn">
+                        📄 Lade lokale Werkzeuginformationen
+                    </button>
                 </div>
 
                 <div class="toolbar">
@@ -416,6 +423,12 @@ class InventurPage {
         // Missing tool modal events
         document.getElementById('cancelMissing').addEventListener('click', () => this.closeMissingModal());
         document.getElementById('confirmMissing').addEventListener('click', () => this.confirmMissing());
+
+        // Help icon toggle
+        document.getElementById('helpIcon').addEventListener('click', () => {
+            const tooltip = document.getElementById('helpTooltip');
+            tooltip.classList.toggle('visible');
+        });
 
         // Populate location selects
         this.populateLocationSelects();
@@ -906,7 +919,7 @@ class InventurPage {
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
-                btn.style.background = '#f97316';
+                btn.style.background = '#2c4a8c';
             }, 2000);
         } catch (error) {
             btn.innerHTML = '❌ Fehler beim Laden';
@@ -914,7 +927,7 @@ class InventurPage {
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
-                btn.style.background = '#f97316';
+                btn.style.background = '#2c4a8c';
             }, 2000);
         }
     }

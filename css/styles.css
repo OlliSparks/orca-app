@@ -851,6 +851,60 @@ td {
     font-size: 0.95rem;
 }
 
+/* Info Widget Compact mit Hilfe-Icon */
+.info-widget-compact {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.info-widget-compact h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #e5e7eb;
+    color: #6b7280;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.help-icon:hover {
+    background: #2c4a8c;
+    color: white;
+}
+
+.help-tooltip {
+    display: none;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #4b5563;
+    line-height: 1.5;
+    border-left: 3px solid #2c4a8c;
+}
+
+.help-tooltip.visible {
+    display: block;
+}
+
 /* Speedometer Widget */
 .speedometer-widget {
     background: white;
@@ -994,6 +1048,34 @@ td {
 .bulk-btn.api-load:disabled {
     background: #9ca3af;
     cursor: not-allowed;
+}
+
+/* API Load Section - prominenter Button */
+.api-load-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.bulk-btn.api-load-prominent {
+    background: #2c4a8c;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(44, 74, 140, 0.3);
+}
+
+.bulk-btn.api-load-prominent:hover {
+    background: #1e3a6d;
+    box-shadow: 0 4px 8px rgba(44, 74, 140, 0.4);
+}
+
+.bulk-btn.api-load-prominent:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 /* Toolbar */
