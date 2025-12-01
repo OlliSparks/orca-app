@@ -63,8 +63,8 @@ class InventurPage {
                 <div class="speedometer-widget">
                     <div class="speedometer-header">
                         <div class="speedometer-text">
-                            <h2>Fortschritt: Fälligkeiten (3 Wochen)</h2>
-                            <p>Bestätigte Werkzeuge mit Fälligkeit in den nächsten 3 Wochen</p>
+                            <h2>Fortschritt: Inventur</h2>
+                            <p>Bearbeitete Werkzeuge (bestätigt, verschoben oder als fehlend gemeldet)</p>
                         </div>
                         <div class="speedometer-container">
                             <div class="speedometer">
@@ -156,10 +156,6 @@ class InventurPage {
                 </div>
 
                 <div class="card-view-header" id="cardViewHeader" style="display: none;">
-                    <label class="confirm-all-label">
-                        <input type="checkbox" class="checkbox-custom" id="confirmAllCheckboxCards" title="Alle gefilterten Werkzeuge bestätigen">
-                        <span>Alle gefilterten Werkzeuge bestätigen</span>
-                    </label>
                 </div>
 
                 <div class="card-view" id="cardView">
@@ -355,13 +351,7 @@ class InventurPage {
             }
         });
 
-        // Confirm all checkbox (card view)
-        document.getElementById('confirmAllCheckboxCards').addEventListener('change', (e) => {
-            if (e.target.checked) {
-                this.confirmAllFiltered();
-                e.target.checked = false; // Reset checkbox
-            }
-        });
+
 
         // Bulk actions
         document.getElementById('filterLocationBtn').addEventListener('click', () => this.openLocationFilterModal());
@@ -684,12 +674,9 @@ class InventurPage {
     }
 
     updateSpeedometer() {
-        const toolsDueInNext3Weeks = this.tools.filter(t => this.isDueInNext3Weeks(t.dueDate));
-        const confirmedDueInNext3Weeks = toolsDueInNext3Weeks.filter(t => t.status !== 'pending');
-
-        const total = toolsDueInNext3Weeks.length;
-        const confirmed = confirmedDueInNext3Weeks.length;
-        const percentage = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+        const total = this.tools.length;
+        const processed = this.tools.filter(t => t.status !== 'pending').length;
+        const percentage = total > 0 ? Math.round((processed / total) * 100) : 0;
 
         document.getElementById('speedometerPercentage').textContent = percentage + '%';
 
@@ -703,6 +690,13 @@ class InventurPage {
             successMessage.style.display = 'block';
         } else {
             successMessage.style.display = 'none';
+        }
+
+        // Disable/enable confirm all button based on pending count
+        const confirmAllBtn = document.getElementById('confirmAllBtn');
+        const pendingCount = this.tools.filter(t => t.status === 'pending').length;
+        if (confirmAllBtn) {
+            confirmAllBtn.disabled = pendingCount === 0;
         }
     }
 
