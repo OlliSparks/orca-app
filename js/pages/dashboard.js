@@ -2,6 +2,8 @@
 class Dashboard {
     constructor() {
         this.inventurData = [];
+        this.companyName = '';
+        this.totalTasks = 0;
     }
 
     async render() {
@@ -18,7 +20,7 @@ class Dashboard {
         // Dashboard HTML
         app.innerHTML = `
             <div class="container dashboard-container">
-                <h2 class="page-title">Willkommen bei ORCA 2.0</h2>
+                <h2 class="page-title" id="dashboardGreeting">Lade...</h2>
 
                 <!-- Abschnitt 1: Was MUSS ich tun? (Überfällige Aufgaben) -->
                 <section class="dashboard-section">
@@ -127,21 +129,27 @@ class Dashboard {
         `;
 
         // Lade Inventurdaten
-        await this.loadInventurTasks();
+        await this.loadDashboardData();
     }
 
-    async loadInventurTasks() {
-        const tasksContainer = document.getElementById('currentTasksCards');
-
+    async loadDashboardData() {
         try {
-            // Lade Daten von allen Services parallel
-            const [inventurResponse, ablResponse, verlagerungResponse, partnerwechselResponse, verschrottungResponse] = await Promise.all([
+            // Lade Profil und Tasks parallel
+            const [profileResponse, inventurResponse, ablResponse, verlagerungResponse, partnerwechselResponse, verschrottungResponse] = await Promise.all([
+                api.getProfile(),
                 api.getInventoryList(),
                 api.getABLList(),
                 api.getVerlagerungList(),
                 api.getPartnerwechselList(),
                 api.getVerschrottungList()
             ]);
+
+            // Firmenname aus Profil extrahieren
+            if (profileResponse.success && profileResponse.data) {
+                this.companyName = profileResponse.data.company || 'Unbekannt';
+            } else {
+                this.companyName = 'Unbekannt';
+            }
 
             // Heute als Referenz
             const today = new Date();
@@ -169,11 +177,26 @@ class Dashboard {
                 verschrottung: countTasks(verschrottungResponse)
             };
 
+            // Berechne Gesamtanzahl offener Aufgaben
+            this.totalTasks = taskCounts.inventur.open +
+                              taskCounts.abl.open +
+                              taskCounts.verlagerung.open +
+                              taskCounts.partnerwechsel.open +
+                              taskCounts.verschrottung.open;
+
+            // Aktualisiere Begrüßung
+            this.updateGreeting();
+
             // Zeige Task-Karten in den richtigen Abschnitten
             this.renderTaskCards(taskCounts);
 
         } catch (error) {
-            console.error('Fehler beim Laden der Task-Daten:', error);
+            console.error('Fehler beim Laden der Dashboard-Daten:', error);
+            // Bei Fehler: Fallback-Begrüßung
+            this.companyName = 'Unbekannt';
+            this.totalTasks = 0;
+            this.updateGreeting();
+
             // Bei Fehler: alle Zähler auf 0
             const taskCounts = {
                 inventur: { open: 0, overdue: 0 },
@@ -186,11 +209,24 @@ class Dashboard {
         }
     }
 
+    updateGreeting() {
+        const greetingElement = document.getElementById('dashboardGreeting');
+        if (greetingElement) {
+            if (this.totalTasks > 0) {
+                const taskWord = this.totalTasks === 1 ? 'Aufgabe benötigt' : 'Aufgaben benötigen';
+                greetingElement.textContent = 'Hallo ' + this.companyName + ' – ' + this.totalTasks + ' ' + taskWord + ' Ihre Aufmerksamkeit';
+            } else {
+                greetingElement.textContent = 'Hallo ' + this.companyName + ' – Keine offenen Aufgaben';
+            }
+        }
+    }
+
     renderTaskCards(taskCounts) {
         const processes = [
             {
                 key: 'inventur',
                 name: 'Inventuren',
+                nameShort: 'Inventuren',
                 nameSingular: 'Inventur',
                 icon: '📋',
                 route: '/inventur',
@@ -199,6 +235,7 @@ class Dashboard {
             {
                 key: 'abl',
                 name: 'ABL-Aufträge',
+                nameShort: 'ABL-Aufträge',
                 nameSingular: 'ABL-Auftrag',
                 icon: '📦',
                 route: '/abl',
@@ -207,6 +244,7 @@ class Dashboard {
             {
                 key: 'verlagerung',
                 name: 'Verlagerungen',
+                nameShort: 'Verlagerungen',
                 nameSingular: 'Verlagerung',
                 icon: '🚚',
                 route: '/verlagerung',
@@ -215,6 +253,7 @@ class Dashboard {
             {
                 key: 'partnerwechsel',
                 name: 'Vertragspartnerwechsel',
+                nameShort: 'VPW',
                 nameSingular: 'Vertragspartnerwechsel',
                 icon: '🔄',
                 route: '/partnerwechsel',
@@ -223,6 +262,7 @@ class Dashboard {
             {
                 key: 'verschrottung',
                 name: 'Verschrottungen',
+                nameShort: 'Verschrottungen',
                 nameSingular: 'Verschrottung',
                 icon: '♻️',
                 route: '/verschrottung',
@@ -244,7 +284,7 @@ class Dashboard {
                         <div class="card-badge badge-danger">${counts.overdue}</div>
                         <div class="card-icon">⚠️</div>
                         <div class="card-content">
-                            <h4>Überfällige ${process.name}</h4>
+                            <h4>Überfällige ${process.nameShort}</h4>
                             <p>${counts.overdue} ${counts.overdue === 1 ? process.nameSingular + ' ist' : process.name + ' sind'} überfällig</p>
                             <div class="card-footer">
                                 <span class="task-label urgent">Dringend bearbeiten →</span>
@@ -281,7 +321,7 @@ class Dashboard {
                         <div class="card-badge badge-info">${counts.open}</div>
                         <div class="card-icon">${process.icon}</div>
                         <div class="card-content">
-                            <h4>Offene ${process.name}</h4>
+                            <h4>Offene ${process.nameShort}</h4>
                             <p>${counts.open} ${counts.open === 1 ? process.nameSingular : process.name} im Status "Offen"</p>
                             <div class="card-footer">
                                 <span class="task-label">Bearbeiten →</span>
