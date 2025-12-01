@@ -1051,13 +1051,13 @@ td {
 }
 
 /* API Load Section - prominenter Button */
-.api-load-section {
+.confirm-all-section {
     display: flex;
     justify-content: center;
     margin-bottom: 1rem;
 }
 
-.bulk-btn.api-load-prominent {
+.bulk-btn.confirm-all-prominent {
     background: #2c4a8c;
     color: white;
     padding: 0.75rem 1.5rem;
@@ -1067,12 +1067,12 @@ td {
     box-shadow: 0 2px 4px rgba(44, 74, 140, 0.3);
 }
 
-.bulk-btn.api-load-prominent:hover {
+.bulk-btn.confirm-all-prominent:hover {
     background: #1e3a6d;
     box-shadow: 0 4px 8px rgba(44, 74, 140, 0.4);
 }
 
-.bulk-btn.api-load-prominent:disabled {
+.bulk-btn.confirm-all-prominent:disabled {
     background: #9ca3af;
     cursor: not-allowed;
     box-shadow: none;

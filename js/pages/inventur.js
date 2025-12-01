@@ -85,14 +85,17 @@ class InventurPage {
                 </div>
 
                 <div class="view-controls">
+                    <button class="bulk-btn api-load" id="apiLoadBtn">
+                        📄 Lade lokale Werkzeuginformationen
+                    </button>
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
                         <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
                     </div>
                 </div>
 
-                <div class="api-load-section">
-                    <button class="bulk-btn primary api-load-prominent" id="apiLoadBtn">
-                        📄 Lade lokale Werkzeuginformationen
+                <div class="confirm-all-section">
+                    <button class="bulk-btn primary confirm-all-prominent" id="confirmAllBtn">
+                        ✓ Alle gefilterten Werkzeuge bestätigen
                     </button>
                 </div>
 
@@ -363,6 +366,7 @@ class InventurPage {
         // Bulk actions
         document.getElementById('filterLocationBtn').addEventListener('click', () => this.openLocationFilterModal());
         document.getElementById('apiLoadBtn').addEventListener('click', () => this.loadFromAPI());
+        document.getElementById('confirmAllBtn').addEventListener('click', () => this.confirmAllFiltered());
         document.getElementById('submitBtn').addEventListener('click', () => this.submitInventory());
 
         // Pagination
@@ -919,7 +923,7 @@ class InventurPage {
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
-                btn.style.background = '#2c4a8c';
+                btn.style.background = '#f97316';
             }, 2000);
         } catch (error) {
             btn.innerHTML = '❌ Fehler beim Laden';
@@ -927,7 +931,7 @@ class InventurPage {
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
-                btn.style.background = '#2c4a8c';
+                btn.style.background = '#f97316';
             }, 2000);
         }
     }
