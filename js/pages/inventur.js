@@ -1,4 +1,4 @@
-// ORCA 2.0 - Inventur Page
+// ORCA 2.0 - Inventur Page (v2)
 class InventurPage {
     constructor() {
         this.locations = [
