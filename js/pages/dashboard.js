@@ -146,9 +146,9 @@ class Dashboard {
 
             // Firmenname aus Profil extrahieren
             if (profileResponse.success && profileResponse.data) {
-                this.companyName = profileResponse.data.company || 'Unbekannt';
+                this.companyName = profileResponse.data.company || '';
             } else {
-                this.companyName = 'Unbekannt';
+                this.companyName = '';
             }
 
             // Heute als Referenz
@@ -193,7 +193,7 @@ class Dashboard {
         } catch (error) {
             console.error('Fehler beim Laden der Dashboard-Daten:', error);
             // Bei Fehler: Fallback-Begrüßung
-            this.companyName = 'Unbekannt';
+            this.companyName = '';
             this.totalTasks = 0;
             this.updateGreeting();
 
@@ -212,11 +212,12 @@ class Dashboard {
     updateGreeting() {
         const greetingElement = document.getElementById('dashboardGreeting');
         if (greetingElement) {
+            const greeting = this.companyName ? 'Hallo ' + this.companyName : 'Hallo';
             if (this.totalTasks > 0) {
                 const taskWord = this.totalTasks === 1 ? 'Aufgabe benötigt' : 'Aufgaben benötigen';
-                greetingElement.textContent = 'Hallo ' + this.companyName + ' – ' + this.totalTasks + ' ' + taskWord + ' Ihre Aufmerksamkeit';
+                greetingElement.textContent = greeting + ' – ' + this.totalTasks + ' ' + taskWord + ' Ihre Aufmerksamkeit';
             } else {
-                greetingElement.textContent = 'Hallo ' + this.companyName + ' – Keine offenen Aufgaben';
+                greetingElement.textContent = greeting + ' – Keine offenen Aufgaben';
             }
         }
     }
