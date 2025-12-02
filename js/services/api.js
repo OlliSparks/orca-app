@@ -825,7 +825,7 @@ class APIService {
             id: tool.id,
             name: tool.name,
             number: tool.toolNumber,
-            location: tool.locationId,
+            location: tool.location,
             dueDate: tool.dueDate,
             responsible: responsiblePersons[index % responsiblePersons.length],
             lastChange: tool.lastInventory,
@@ -835,7 +835,11 @@ class APIService {
         return Promise.resolve({
             success: true,
             data: items,
-            total: items.length
+            total: items.length,
+            supplier: {
+                name: 'Bosch Rexroth AG',
+                number: this.supplierNumber
+            }
         });
     }
 
