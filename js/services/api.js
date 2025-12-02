@@ -582,7 +582,7 @@ class APIService {
                     inventoryKey: item.context?.key || '',
                     number: item.meta?.partNumbers?.split(' ')[0] || item.context?.key || '',
                     name: item.meta?.description || 'Inventur',
-                    location: item.meta?.supplier || '',
+                    location: item.meta?.assetCity ? `${item.meta.assetCity}, ${item.meta.assetCountry || ''}`.replace(/, $/, '') : (item.meta?.locationText || 'Standort nicht verfügbar'),
                     locationId: 'loc1',
                     dueDate: item.meta?.dueDate ? item.meta.dueDate.split('T')[0] : null,
                     responsible: item.meta?.assignedUsername || item.meta?.responsibleUser || 'N/A',
@@ -596,10 +596,20 @@ class APIService {
                     originalData: item
                 }));
 
+                // Extrahiere Lieferanten-Info aus erstem Item
+                let supplierInfo = null;
+                if (items.length > 0 && items[0].meta?.supplier) {
+                    supplierInfo = {
+                        name: items[0].meta.supplier,
+                        number: this.supplierNumber
+                    };
+                }
+
                 return {
                     success: true,
                     data: transformedData,
-                    total: transformedData.length
+                    total: transformedData.length,
+                    supplier: supplierInfo
                 };
             },
             // Mock fallback
