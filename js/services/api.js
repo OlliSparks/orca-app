@@ -392,6 +392,10 @@ class APIService {
 
                 // Transform API response to our format
                 const items = Array.isArray(response) ? response : (response.data || []);
+                // Debug: Log first item to see all available fields
+                if (items.length > 0) {
+                    console.log('First inventory item structure:', JSON.stringify(items[0], null, 2));
+                }
                 const transformedData = items.map((item, index) => ({
                     id: item.context?.key || index,
                     number: item.meta?.inventoryNumber || item.context?.key || '',
