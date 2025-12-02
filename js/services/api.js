@@ -598,11 +598,22 @@ class APIService {
 
                 // Extrahiere Lieferanten-Info aus erstem Item
                 let supplierInfo = null;
-                if (items.length > 0 && items[0].meta?.supplier) {
-                    supplierInfo = {
-                        name: items[0].meta.supplier,
-                        number: this.supplierNumber
-                    };
+                if (items.length > 0) {
+                    // supplier kann "DAS DRAEXLMAIER (133188)" Format haben
+                    const supplierRaw = items[0].meta?.supplier || '';
+                    const match = supplierRaw.match(/^(.+?)\s*\((\d+)\)$/);
+                    if (match) {
+                        supplierInfo = {
+                            name: match[1].trim(),
+                            number: match[2]
+                        };
+                    } else if (supplierRaw) {
+                        supplierInfo = {
+                            name: supplierRaw,
+                            number: this.supplierNumber
+                        };
+                    }
+                    console.log('Extracted supplier info:', supplierInfo, 'from:', supplierRaw);
                 }
 
                 return {
