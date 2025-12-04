@@ -82,7 +82,7 @@ class InventurPage {
 
                 <div class="view-controls">
                     <button class="bulk-btn api-load" id="apiLoadBtn">
-                        🔄 Daten aktualisieren
+                        📥 Daten aus Lieferantensystem importieren
                     </button>
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
                         <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
@@ -1186,7 +1186,7 @@ class InventurPage {
 
             setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = '🔄 Daten aktualisieren';
+                btn.innerHTML = '📥 Daten aus Lieferantensystem importieren';
                 btn.style.background = '#f97316';
             }, 2000);
         } catch (error) {
@@ -1194,7 +1194,7 @@ class InventurPage {
             btn.style.background = '#ef4444';
             setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = '🔄 Daten aktualisieren';
+                btn.innerHTML = '📥 Daten aus Lieferantensystem importieren';
                 btn.style.background = '#f97316';
             }, 2000);
         }
