@@ -1,13 +1,7 @@
 // ORCA 2.0 - Inventur Page (v2)
 class InventurPage {
     constructor() {
-        this.locations = [
-            { id: 'loc1', name: 'Werk München - Halle A' },
-            { id: 'loc2', name: 'Werk München - Halle B' },
-            { id: 'loc3', name: 'Werk Stuttgart - Presswerk' },
-            { id: 'loc4', name: 'Werk Leipzig - Montage' },
-            { id: 'loc5', name: 'Lager Augsburg' }
-        ];
+        this.locations = []; // Wird dynamisch aus den geladenen Inventur-Positionen befuellt
 
         this.tools = [];
         this.currentFilter = 'all';
@@ -360,6 +354,36 @@ class InventurPage {
             selected: false,
             newLocation: null
         }));
+
+        // Schritt 4: Standorte aus den geladenen Positionen extrahieren
+        this.extractLocationsFromTools();
+    }
+
+    // Extrahiert einzigartige Standorte aus den geladenen Tools
+    extractLocationsFromTools() {
+        const locationSet = new Map();
+
+        this.tools.forEach(tool => {
+            if (tool.location && tool.location.trim()) {
+                // Verwende den Standort-String als Key und Value
+                const locationKey = tool.location.trim();
+                if (!locationSet.has(locationKey)) {
+                    locationSet.set(locationKey, {
+                        id: locationKey,
+                        name: locationKey
+                    });
+                }
+            }
+        });
+
+        // Konvertiere Map zu Array und sortiere alphabetisch
+        this.locations = Array.from(locationSet.values())
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        console.log('Extracted locations:', this.locations.length, this.locations);
+
+        // Aktualisiere die Standort-Dropdowns
+        this.populateLocationSelects();
     }
 
     updateSupplierHeader() {
@@ -489,6 +513,14 @@ class InventurPage {
     populateLocationSelects() {
         const newLocationSelect = document.getElementById('newLocationSelect');
         const bulkLocationSelect = document.getElementById('bulkLocationSelect');
+
+        // Vorherige Optionen loeschen (ausser der ersten "-- Standort waehlen --" Option)
+        while (newLocationSelect.options.length > 1) {
+            newLocationSelect.remove(1);
+        }
+        while (bulkLocationSelect.options.length > 1) {
+            bulkLocationSelect.remove(1);
+        }
 
         this.locations.forEach(loc => {
             const option1 = document.createElement('option');
