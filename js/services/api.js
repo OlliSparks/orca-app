@@ -1243,26 +1243,36 @@ class APIService {
     async getCompanyBySupplier() {
         return this.callWithFallback(
             async () => {
-                // Erst das Profil laden um den companyKey zu bekommen
-                const profile = await this.call('/profile', 'GET');
-                console.log('Profile response:', profile);
+                // Nutze /companies/list um eigene Firmen zu laden
+                const companiesList = await this.call('/companies/list', 'GET');
+                console.log('Companies list response:', companiesList);
 
-                // CompanyKey aus Profil extrahieren
-                const companyKey = profile.company?.context?.key || profile.companyKey;
-                if (!companyKey) {
-                    throw new Error('No company key found in profile');
+                // Erste Company aus der Liste nehmen (oder nach supplierNumber filtern)
+                const companies = Array.isArray(companiesList) ? companiesList : (companiesList.data || []);
+
+                if (companies.length === 0) {
+                    throw new Error('No companies found');
                 }
 
-                // Company-Details laden
-                const company = await this.call(`/companies/${companyKey}`, 'GET');
-                console.log('Company response:', company);
+                // Finde die Company mit passender supplierNumber oder nimm die erste
+                let company = companies.find(c =>
+                    c.meta?.supplierNumber === this.supplierNumber ||
+                    c.meta?.number === this.supplierNumber
+                ) || companies[0];
+
+                const companyKey = company.context?.key;
+                console.log('Selected company:', company, 'Key:', companyKey);
+
+                if (!companyKey) {
+                    throw new Error('No company key found');
+                }
 
                 return {
                     success: true,
                     data: {
-                        key: company.context?.key || companyKey,
+                        key: companyKey,
                         name: company.meta?.name || 'Unbekannt',
-                        number: company.meta?.supplierNumber || this.supplierNumber,
+                        number: company.meta?.supplierNumber || company.meta?.number || this.supplierNumber,
                         country: company.meta?.country || '',
                         city: company.meta?.city || '',
                         street: company.meta?.street || '',
