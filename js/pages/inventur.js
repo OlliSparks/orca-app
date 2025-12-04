@@ -6,6 +6,8 @@ class InventurPage {
         this.tools = [];
         this.currentFilter = 'all';
         this.currentLocationFilter = null;
+        this.currentResponsibleFilter = null;
+        this.responsibles = []; // Wird dynamisch aus den geladenen Inventur-Positionen befuellt
         this.currentView = 'card';
         this.currentTool = null;
         this.currentPage = 1;
@@ -84,6 +86,7 @@ class InventurPage {
                     </button>
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
                         <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
+                        <button class="bulk-btn secondary" id="filterResponsibleBtn">👤 Nach Verantwortlichem filtern</button>
                     </div>
                 </div>
 
@@ -207,6 +210,23 @@ class InventurPage {
                     <div class="modal-actions">
                         <button class="modal-btn secondary" id="cancelBulkLocation">Abbrechen</button>
                         <button class="modal-btn primary" id="confirmBulkLocation">Filtern</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responsible Filter Modal -->
+            <div class="modal" id="responsibleFilterModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Nach Verantwortlichem filtern</h2>
+                        <div class="modal-subtitle">Nur Werkzeuge dieses Verantwortlichen anzeigen</div>
+                    </div>
+                    <select class="location-select" id="responsibleFilterSelect">
+                        <option value="">-- Verantwortlichen wählen --</option>
+                    </select>
+                    <div class="modal-actions">
+                        <button class="modal-btn secondary" id="cancelResponsibleFilter">Abbrechen</button>
+                        <button class="modal-btn primary" id="confirmResponsibleFilter">Filtern</button>
                     </div>
                 </div>
             </div>
@@ -384,6 +404,53 @@ class InventurPage {
 
         // Aktualisiere die Standort-Dropdowns
         this.populateLocationSelects();
+
+        // Extrahiere auch Verantwortliche
+        this.extractResponsiblesFromTools();
+    }
+
+    // Extrahiert einzigartige Verantwortliche aus den geladenen Tools
+    extractResponsiblesFromTools() {
+        const responsibleSet = new Map();
+
+        this.tools.forEach(tool => {
+            if (tool.responsible && tool.responsible.trim() && tool.responsible !== 'N/A') {
+                const responsibleKey = tool.responsible.trim();
+                if (!responsibleSet.has(responsibleKey)) {
+                    responsibleSet.set(responsibleKey, {
+                        id: responsibleKey,
+                        name: responsibleKey
+                    });
+                }
+            }
+        });
+
+        // Konvertiere Map zu Array und sortiere alphabetisch
+        this.responsibles = Array.from(responsibleSet.values())
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        console.log('Extracted responsibles:', this.responsibles.length, this.responsibles);
+
+        // Aktualisiere die Verantwortlichen-Dropdown
+        this.populateResponsibleSelect();
+    }
+
+    // Befuellt die Verantwortlichen-Dropdown
+    populateResponsibleSelect() {
+        const select = document.getElementById('responsibleFilterSelect');
+        if (!select) return;
+
+        // Vorherige Optionen loeschen (ausser der ersten)
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+
+        this.responsibles.forEach(resp => {
+            const option = document.createElement('option');
+            option.value = resp.id;
+            option.textContent = resp.name;
+            select.appendChild(option);
+        });
     }
 
     updateSupplierHeader() {
@@ -437,6 +504,7 @@ class InventurPage {
 
         // Bulk actions
         document.getElementById('filterLocationBtn').addEventListener('click', () => this.openLocationFilterModal());
+        document.getElementById('filterResponsibleBtn').addEventListener('click', () => this.openResponsibleFilterModal());
         document.getElementById('apiLoadBtn').addEventListener('click', () => this.loadFromAPI());
         document.getElementById('confirmAllBtn').addEventListener('click', () => this.confirmAllFiltered());
         document.getElementById('submitBtn').addEventListener('click', () => this.submitInventory());
@@ -487,6 +555,8 @@ class InventurPage {
         document.getElementById('confirmRelocation').addEventListener('click', () => this.confirmRelocation());
         document.getElementById('cancelBulkLocation').addEventListener('click', () => this.closeLocationFilterModal());
         document.getElementById('confirmBulkLocation').addEventListener('click', () => this.confirmLocationFilter());
+        document.getElementById('cancelResponsibleFilter').addEventListener('click', () => this.closeResponsibleFilterModal());
+        document.getElementById('confirmResponsibleFilter').addEventListener('click', () => this.confirmResponsibleFilter());
         document.getElementById('cancelSubmit').addEventListener('click', () => this.closeSubmitModal());
         document.getElementById('confirmSubmit').addEventListener('click', () => this.confirmSubmit());
 
@@ -539,6 +609,11 @@ class InventurPage {
         let filtered = this.tools.filter(tool => {
             // Standort-Filter
             if (this.currentLocationFilter && tool.location !== this.currentLocationFilter) {
+                return false;
+            }
+
+            // Verantwortlichen-Filter
+            if (this.currentResponsibleFilter && tool.responsible !== this.currentResponsibleFilter) {
                 return false;
             }
 
@@ -949,6 +1024,35 @@ class InventurPage {
         this.currentPage = 1; // Reset to first page
 
         this.closeLocationFilterModal();
+        if (this.currentView === 'table') {
+            this.renderTable();
+        } else {
+            this.renderCards();
+        }
+    }
+
+    // === Verantwortlichen-Filter Funktionen ===
+    openResponsibleFilterModal() {
+        document.getElementById('responsibleFilterModal').classList.add('active');
+    }
+
+    closeResponsibleFilterModal() {
+        document.getElementById('responsibleFilterModal').classList.remove('active');
+    }
+
+    confirmResponsibleFilter() {
+        const select = document.getElementById('responsibleFilterSelect');
+        const responsibleId = select.value;
+
+        if (!responsibleId) {
+            alert('Bitte wählen Sie einen Verantwortlichen aus.');
+            return;
+        }
+
+        this.currentResponsibleFilter = responsibleId;
+        this.currentPage = 1; // Reset to first page
+
+        this.closeResponsibleFilterModal();
         if (this.currentView === 'table') {
             this.renderTable();
         } else {
