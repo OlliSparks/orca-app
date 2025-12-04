@@ -304,48 +304,48 @@ class UnternehmenPage {
         const validSuppliers = this.suppliers.filter(s => s.isValid);
         const invalidSuppliers = this.suppliers.filter(s => !s.isValid);
 
-        return \`
+        return `
             <div class="suppliers-section">
                 <div class="subsection-title">
                     <span>✅</span>
-                    <span>Aktive Lieferanten (\${validSuppliers.length})</span>
+                    <span>Aktive Lieferanten (${validSuppliers.length})</span>
                 </div>
-                \${validSuppliers.length > 0 ? \`
+                ${validSuppliers.length > 0 ? `
                     <div class="suppliers-grid">
-                        \${validSuppliers.map(sup => this.renderSupplierCard(sup)).join('')}
+                        ${validSuppliers.map(sup => this.renderSupplierCard(sup)).join('')}
                     </div>
-                \` : '<div class="empty-state">Keine aktiven Lieferanten</div>'}
+                ` : '<div class="empty-state">Keine aktiven Lieferanten</div>'}
             </div>
 
-            \${invalidSuppliers.length > 0 ? \`
+            ${invalidSuppliers.length > 0 ? `
                 <div class="suppliers-section" style="margin-top: 1.5rem;">
                     <div class="subsection-title">
                         <span>⚠️</span>
-                        <span>Unvollstaendige Lieferanten (\${invalidSuppliers.length})</span>
+                        <span>Unvollstaendige Lieferanten (${invalidSuppliers.length})</span>
                     </div>
                     <div class="suppliers-grid inactive">
-                        \${invalidSuppliers.map(sup => this.renderSupplierCard(sup, true)).join('')}
+                        ${invalidSuppliers.map(sup => this.renderSupplierCard(sup, true)).join('')}
                     </div>
                 </div>
-            \` : ''}
-        \`;
+            ` : ''}
+        `;
     }
 
     renderSupplierCard(supplier, isInvalid = false) {
-        return \`
-            <div class="supplier-card \${isInvalid ? 'invalid' : ''}">
+        return `
+            <div class="supplier-card ${isInvalid ? 'invalid' : ''}">
                 <div class="supplier-header">
-                    <span class="supplier-flag">\${this.getCountryFlag(supplier.country)}</span>
-                    <span class="supplier-name">\${supplier.name}</span>
-                    \${supplier.number ? \`<span class="supplier-number">#\${supplier.number}</span>\` : ''}
+                    <span class="supplier-flag">${this.getCountryFlag(supplier.country)}</span>
+                    <span class="supplier-name">${supplier.name}</span>
+                    ${supplier.number ? `<span class="supplier-number">#${supplier.number}</span>` : ''}
                 </div>
                 <div class="supplier-details">
-                    \${supplier.street ? \`<div class="supplier-row">\${supplier.street}</div>\` : ''}
-                    \${supplier.city ? \`<div class="supplier-row">\${supplier.postcode ? supplier.postcode + ' ' : ''}\${supplier.city}</div>\` : ''}
-                    \${!supplier.street && !supplier.city ? '<div class="supplier-row empty">Adressdaten nicht verfuegbar</div>' : ''}
+                    ${supplier.street ? `<div class="supplier-row">${supplier.street}</div>` : ''}
+                    ${supplier.city ? `<div class="supplier-row">${supplier.postcode ? supplier.postcode + ' ' : ''}${supplier.city}</div>` : ''}
+                    ${!supplier.street && !supplier.city ? '<div class="supplier-row empty">Adressdaten nicht verfuegbar</div>' : ''}
                 </div>
             </div>
-        \`;
+        `;
     }
 
     getCountryFlag(countryCode) {
