@@ -420,12 +420,15 @@ class InventurPage {
 
         this.tools.forEach(tool => {
             if (tool.location && tool.location.trim()) {
-                // Verwende den Standort-String als Key und Value
-                const locationKey = tool.location.trim();
-                if (!locationSet.has(locationKey)) {
-                    locationSet.set(locationKey, {
-                        id: locationKey,
-                        name: locationKey
+                const locationName = tool.location.trim();
+                // Verwende locationKey falls vorhanden, sonst den Namen als Fallback
+                const apiKey = tool.locationKey || locationName;
+
+                if (!locationSet.has(locationName)) {
+                    locationSet.set(locationName, {
+                        id: locationName,           // Fuer internen Filter (Name)
+                        key: apiKey,                // Fuer API-Rueckmeldung (UUID)
+                        name: locationName
                     });
                 }
             }
@@ -1153,6 +1156,9 @@ class InventurPage {
         if (this.currentTool) {
             this.currentTool.status = 'relocated';
             this.currentTool.newLocation = newLocationId;
+            // Speichere auch den locationKey fuer die API-Rueckmeldung
+            const selectedLocation = this.locations.find(loc => loc.id === newLocationId);
+            this.currentTool.newLocationKey = selectedLocation?.key || newLocationId;
             this.currentTool.selected = false;
             if (this.currentView === 'table') {
                 this.renderTable();

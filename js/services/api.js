@@ -666,6 +666,7 @@ class APIService {
             location: pos.location?.meta ?
                 `${pos.location.meta.city || ''}, ${pos.location.meta.country || ''}`.replace(/^, |, $/g, '') :
                 pos.asset?.meta?.supplier || '',
+            locationKey: pos.location?.context?.key || '',  // Fuer API-Rueckmeldung benoetigt
             locationDetails: pos.location?.meta || null,
 
             // Inventory context
