@@ -1254,13 +1254,15 @@ class APIService {
                     throw new Error('No companies found');
                 }
 
-                // Finde die Company mit passender supplierNumber oder nimm die erste
+                // Finde die Company mit passender LNR/supplierNumber oder nimm die erste
                 let company = companies.find(c =>
+                    c.meta?.LNR === this.supplierNumber ||
                     c.meta?.supplierNumber === this.supplierNumber ||
-                    c.meta?.number === this.supplierNumber
+                    c.key === this.supplierNumber
                 ) || companies[0];
 
-                const companyKey = company.context?.key;
+                // Key ist direkt auf dem Objekt, nicht unter context
+                const companyKey = company.key || company.context?.key;
                 console.log('Selected company:', company, 'Key:', companyKey);
 
                 if (!companyKey) {
@@ -1272,7 +1274,7 @@ class APIService {
                     data: {
                         key: companyKey,
                         name: company.meta?.name || 'Unbekannt',
-                        number: company.meta?.supplierNumber || company.meta?.number || this.supplierNumber,
+                        number: company.meta?.LNR || company.meta?.supplierNumber || company.key || this.supplierNumber,
                         country: company.meta?.country || '',
                         city: company.meta?.city || '',
                         street: company.meta?.street || '',
