@@ -1310,7 +1310,7 @@ class APIService {
     async getCompanyUsers(companyKey) {
         return this.callWithFallback(
             async () => {
-                const response = await this.call(`/access/companies/${companyKey}/users?showInactive=true`, 'GET');
+                const response = await this.call(`/access/companies/${companyKey}/users?limit=100&showInactive=true`, 'GET');
                 console.log('Users response:', response);
 
                 const users = Array.isArray(response) ? response : (response.data || []);
