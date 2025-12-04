@@ -1374,6 +1374,200 @@ class APIService {
         );
     }
 
+    // === CRUD Operations for Locations ===
+    async createLocation(companyKey, data) {
+        try {
+            const response = await this.call(`/companies/${companyKey}/locations?locationMode=MANUAL_CREATION`, 'POST', {
+                meta: {
+                    title: data.name,
+                    name: data.name,
+                    street: data.street,
+                    postcode: data.postcode,
+                    city: data.city,
+                    country: data.country
+                }
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Create location error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async updateLocation(companyKey, locationKey, data) {
+        try {
+            // Erst aktuellen Stand laden fuer revision
+            const current = await this.call(`/companies/${companyKey}/locations/${locationKey}`, 'GET');
+            const revision = current._rev || current.revision;
+
+            const response = await this.call(`/companies/${companyKey}/locations/${locationKey}?revision=${revision}`, 'PATCH', {
+                meta: {
+                    title: data.name,
+                    name: data.name,
+                    street: data.street,
+                    postcode: data.postcode,
+                    city: data.city,
+                    country: data.country
+                }
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Update location error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async updateLocationStatus(companyKey, locationKey, isActive) {
+        try {
+            const current = await this.call(`/companies/${companyKey}/locations/${locationKey}`, 'GET');
+            const revision = current._rev || current.revision;
+
+            const response = await this.call(`/companies/${companyKey}/locations/${locationKey}?revision=${revision}`, 'PATCH', {
+                meta: {
+                    active: isActive
+                }
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Update location status error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // === CRUD Operations for Users ===
+    async createUser(companyKey, data) {
+        try {
+            const group = data.groups && data.groups.length > 0 ? data.groups[0] : 'IVL';
+            const response = await this.call(`/access/companies/${companyKey}/users?group=${group}`, 'POST', {
+                meta: {
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    mail: data.email,
+                    phone: data.phone
+                },
+                groups: data.groups || ['IVL']
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Create user error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async updateUser(companyKey, userKey, data) {
+        try {
+            const response = await this.call(`/access/companies/${companyKey}/users/${userKey}`, 'PATCH', {
+                meta: {
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    mail: data.email,
+                    phone: data.phone
+                },
+                groups: data.groups
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Update user error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async updateUserStatus(companyKey, userKey, isActive) {
+        try {
+            const response = await this.call(`/access/companies/${companyKey}/users/${userKey}`, 'PATCH', {
+                meta: {
+                    active: isActive
+                }
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Update user status error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async resetUserPassword(companyKey, userKey) {
+        try {
+            const response = await this.call(`/access/companies/${companyKey}/users/${userKey}/reset-password`, 'POST');
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Reset password error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async resendUserRegistration(companyKey, userKey) {
+        try {
+            const response = await this.call(`/access/companies/${companyKey}/users/${userKey}/resend-registration`, 'POST');
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Resend registration error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // === CRUD Operations for Suppliers ===
+    async createSupplier(companyKey, data) {
+        try {
+            const response = await this.call(`/companies/${companyKey}/suppliers`, 'POST', {
+                supplier: {
+                    meta: {
+                        name: data.name,
+                        supplierNumber: data.number,
+                        street: data.street,
+                        postcode: data.postcode,
+                        city: data.city,
+                        country: data.country
+                    }
+                },
+                roles: ['SUP']
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Create supplier error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async updateSupplier(companyKey, supplierKey, data) {
+        try {
+            const current = await this.call(`/companies/${companyKey}/suppliers/${supplierKey}`, 'GET');
+            const revision = current._rev || current.revision;
+
+            const response = await this.call(`/companies/${companyKey}/suppliers/${supplierKey}?revision=${revision}`, 'PATCH', {
+                meta: {
+                    name: data.name,
+                    supplierNumber: data.number,
+                    street: data.street,
+                    postcode: data.postcode,
+                    city: data.city,
+                    country: data.country
+                }
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Update supplier error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async updateSupplierStatus(companyKey, supplierKey, isValid) {
+        try {
+            const current = await this.call(`/companies/${companyKey}/suppliers/${supplierKey}`, 'GET');
+            const revision = current._rev || current.revision;
+
+            const response = await this.call(`/companies/${companyKey}/suppliers/${supplierKey}?revision=${revision}`, 'PATCH', {
+                meta: {
+                    isValid: isValid
+                }
+            });
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Update supplier status error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
     // Mock-Daten fuer Lieferanten
     getMockSuppliersData() {
         return {
