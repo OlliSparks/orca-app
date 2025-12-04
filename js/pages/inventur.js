@@ -1417,8 +1417,18 @@ class InventurPage {
             return;
         }
 
-        const oldResponsible = this.currentTool.responsible;
-        this.currentTool.responsible = newResponsible;
+        // Finde das Tool im Array und aktualisiere es direkt
+        const toolIndex = this.tools.findIndex(t => t.id === this.currentTool.id);
+        if (toolIndex === -1) {
+            alert('Fehler: Werkzeug nicht gefunden.');
+            return;
+        }
+
+        const oldResponsible = this.tools[toolIndex].responsible;
+        const toolName = this.tools[toolIndex].name;
+
+        // Direkt im Array aktualisieren
+        this.tools[toolIndex].responsible = newResponsible;
 
         // Falls neuer Verantwortlicher noch nicht in der Liste ist, hinzufuegen
         if (inputValue && !this.responsibles.find(r => r.id === inputValue)) {
@@ -1427,11 +1437,14 @@ class InventurPage {
             this.populateResponsibleSelect();
         }
 
-        this.closeDelegateModal();
+        // Modal schliessen (setzt this.currentTool auf null)
+        document.getElementById('delegateModal').classList.remove('active');
+        this.currentTool = null;
 
         // Erfolgsmeldung
-        alert(`✅ Verantwortlicher geändert!\n\nWerkzeug: ${this.currentTool.name}\nVon: ${oldResponsible || 'Nicht zugewiesen'}\nAn: ${newResponsible}`);
+        alert(`Verantwortlicher geaendert!\n\nWerkzeug: ${toolName}\nVon: ${oldResponsible || 'Nicht zugewiesen'}\nAn: ${newResponsible}`);
 
+        // Ansicht neu rendern
         if (this.currentView === 'table') {
             this.renderTable();
         } else {
