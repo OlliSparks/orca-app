@@ -98,10 +98,19 @@ class Dashboard {
                         </div>
 
                         <div class="dashboard-card clickable" onclick="router.navigate('/verlagerung')">
+                            <div class="card-icon">📋</div>
+                            <div class="card-content">
+                                <h4>Verlagerung beantragen</h4>
+                                <p>Neue Verlagerung beim OEM beantragen</p>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+
+                        <div class="dashboard-card clickable" onclick="router.navigate('/verlagerung')">
                             <div class="card-icon">🚚</div>
                             <div class="card-content">
-                                <h4>Verlagerung</h4>
-                                <p>Meine Verlagerungen verwalten und durchführen</p>
+                                <h4>Verlagerung durchführen</h4>
+                                <p>Genehmigte Verlagerungen durchführen</p>
                             </div>
                             <div class="card-arrow">→</div>
                         </div>
