@@ -2809,3 +2809,29 @@ table td input[type="text"] {
 .base-info-column .base-info-value a:hover {
     text-decoration: underline;
 }
+
+/* === INLINE ROW LAYOUT FOR UNTERNEHMENSPROFIL === */
+.base-info-row-inline {
+    display: flex;
+    gap: 3rem;
+    padding: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.base-info-row-inline .base-info-item {
+    flex: 1;
+    min-width: 200px;
+}
+
+.base-info-row-inline .base-info-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.base-info-row-inline .base-info-value {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    font-weight: 500;
+}

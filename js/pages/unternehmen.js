@@ -102,46 +102,24 @@ class UnternehmenPage {
                     <button class="back-btn" onclick="router.navigate('/')">← Zurueck zur Uebersicht</button>
                 </div>
 
-                <!-- Basis-Informationen mit Kontaktdaten -->
+                <!-- Basis-Informationen -->
                 <div class="base-info-card">
                     <div class="base-info-header">
                         <span class="base-info-icon">🏢</span>
                         <span class="base-info-title">Unternehmensprofil</span>
                     </div>
-                    <div class="base-info-two-column">
-                        <!-- Linke Spalte: Firmendaten -->
-                        <div class="base-info-column">
-                            <div class="base-info-row">
-                                <div class="base-info-label">Firmenname</div>
-                                <div class="base-info-value">${data.name}</div>
-                            </div>
-                            <div class="base-info-row">
-                                <div class="base-info-label">Lieferantennummer</div>
-                                <div class="base-info-value">${data.number}</div>
-                            </div>
-                            <div class="base-info-row">
-                                <div class="base-info-label">USt-IdNr.</div>
-                                <div class="base-info-value">${data.vatId || 'Nicht hinterlegt'}</div>
-                            </div>
+                    <div class="base-info-row-inline">
+                        <div class="base-info-item">
+                            <div class="base-info-label">Firmenname</div>
+                            <div class="base-info-value">${data.name}</div>
                         </div>
-                        <!-- Rechte Spalte: Kontaktdaten -->
-                        <div class="base-info-column">
-                            <div class="base-info-row">
-                                <div class="base-info-label">Adresse</div>
-                                <div class="base-info-value">${data.street || '-'}, ${data.postcode ? data.postcode + ' ' : ''}${data.city || '-'}</div>
-                            </div>
-                            <div class="base-info-row">
-                                <div class="base-info-label">Land</div>
-                                <div class="base-info-value">${this.getCountryFlag(data.country)} ${data.country || '-'}</div>
-                            </div>
-                            <div class="base-info-row">
-                                <div class="base-info-label">E-Mail</div>
-                                <div class="base-info-value">${data.email ? '<a href="mailto:' + data.email + '">' + data.email + '</a>' : '-'}</div>
-                            </div>
-                            <div class="base-info-row">
-                                <div class="base-info-label">Telefon</div>
-                                <div class="base-info-value">${data.phone || '-'}</div>
-                            </div>
+                        <div class="base-info-item">
+                            <div class="base-info-label">Lieferantennummer</div>
+                            <div class="base-info-value">${data.number}</div>
+                        </div>
+                        <div class="base-info-item">
+                            <div class="base-info-label">USt-IdNr.</div>
+                            <div class="base-info-value">${data.vatId || 'Nicht hinterlegt'}</div>
                         </div>
                     </div>
                 </div>
