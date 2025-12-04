@@ -2761,3 +2761,51 @@ table td input[type="text"] {
 .suppliers-section {
     margin-bottom: 1rem;
 }
+
+/* === TWO-COLUMN LAYOUT FOR UNTERNEHMENSPROFIL === */
+.base-info-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .base-info-two-column {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+.base-info-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.base-info-column .base-info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.base-info-column .base-info-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.base-info-column .base-info-value {
+    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 400;
+}
+
+.base-info-column .base-info-value a {
+    color: #2c4a8c;
+    text-decoration: none;
+}
+
+.base-info-column .base-info-value a:hover {
+    text-decoration: underline;
+}
