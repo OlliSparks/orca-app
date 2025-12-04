@@ -1283,7 +1283,7 @@ class APIService {
     async getCompanyLocations(companyKey) {
         return this.callWithFallback(
             async () => {
-                const response = await this.call(`/companies/${companyKey}/locations`, 'GET');
+                const response = await this.call(`/companies/${companyKey}/locations?limit=100&showInactive=true`, 'GET');
                 console.log('Locations response:', response);
 
                 const locations = Array.isArray(response) ? response : (response.data || []);
@@ -1310,7 +1310,7 @@ class APIService {
     async getCompanyUsers(companyKey) {
         return this.callWithFallback(
             async () => {
-                const response = await this.call(`/access/companies/${companyKey}/users`, 'GET');
+                const response = await this.call(`/access/companies/${companyKey}/users?showInactive=true`, 'GET');
                 console.log('Users response:', response);
 
                 const users = Array.isArray(response) ? response : (response.data || []);
@@ -1332,6 +1332,47 @@ class APIService {
             },
             () => this.getMockUsersData()
         );
+    }
+
+    // Get suppliers (sub-suppliers) for a company
+    async getCompanySuppliers(companyKey) {
+        return this.callWithFallback(
+            async () => {
+                const response = await this.call(`/companies/${companyKey}/suppliers?limit=100`, 'GET');
+                console.log('Suppliers response:', response);
+
+                const suppliers = Array.isArray(response) ? response : (response.data || []);
+                return {
+                    success: true,
+                    data: suppliers.map(sup => ({
+                        key: sup.context?.key || '',
+                        name: sup.meta?.name || 'Unbekannt',
+                        number: sup.meta?.supplierNumber || sup.meta?.number || '',
+                        country: sup.meta?.country || '',
+                        city: sup.meta?.city || '',
+                        street: sup.meta?.street || '',
+                        postcode: sup.meta?.postcode || '',
+                        isValid: sup.meta?.isValid !== false,
+                        originalData: sup
+                    })),
+                    total: suppliers.length
+                };
+            },
+            () => this.getMockSuppliersData()
+        );
+    }
+
+    // Mock-Daten fuer Lieferanten
+    getMockSuppliersData() {
+        return {
+            success: true,
+            data: [
+                { key: 'sup-1', name: 'Test Incident', number: '102273', country: 'DE', city: 'Ingolstadt', street: 'Muenchener Strasse 244', postcode: '85051', isValid: true },
+                { key: 'sup-2', name: 'BAOSTEEL TAILORED BLANKS GMBH', number: '102273', country: 'N/A', city: '', street: '', postcode: '', isValid: false },
+                { key: 'sup-3', name: 'Mein-neuer Sub', number: '', country: 'DE', city: 'Dornstetten', street: 'Alte Poststrasse 12', postcode: '72280', isValid: true }
+            ],
+            total: 3
+        };
     }
 
     // Mock-Daten fuer Unternehmen

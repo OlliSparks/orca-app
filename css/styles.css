@@ -2686,3 +2686,78 @@ table td input[type="text"] {
 .users-section {
     margin-bottom: 1rem;
 }
+
+/* === SUPPLIER STYLES === */
+.suppliers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.suppliers-grid.inactive {
+    opacity: 0.7;
+}
+
+.supplier-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.supplier-card:hover {
+    border-color: #2c4a8c;
+    box-shadow: 0 2px 8px rgba(44, 74, 140, 0.1);
+}
+
+.supplier-card.invalid {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    border-style: dashed;
+}
+
+.supplier-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.supplier-flag {
+    font-size: 1.3rem;
+}
+
+.supplier-name {
+    font-weight: 600;
+    color: #2c3e50;
+    flex: 1;
+}
+
+.supplier-number {
+    background: #e5e7eb;
+    color: #6b7280;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.supplier-details {
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+.supplier-row {
+    margin-bottom: 0.25rem;
+}
+
+.supplier-row.empty {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.suppliers-section {
+    margin-bottom: 1rem;
+}

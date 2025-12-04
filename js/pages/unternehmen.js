@@ -4,6 +4,7 @@ class UnternehmenPage {
         this.companyData = null;
         this.locations = [];
         this.users = [];
+        this.suppliers = [];
         this.companyKey = null;
     }
 
@@ -48,11 +49,12 @@ class UnternehmenPage {
                 console.log('Loaded company:', this.companyData);
             }
 
-            // Dann Locations und Users parallel laden
+            // Dann Locations, Users und Suppliers parallel laden
             if (this.companyKey) {
-                const [locationsResponse, usersResponse] = await Promise.all([
+                const [locationsResponse, usersResponse, suppliersResponse] = await Promise.all([
                     api.getCompanyLocations(this.companyKey),
-                    api.getCompanyUsers(this.companyKey)
+                    api.getCompanyUsers(this.companyKey),
+                    api.getCompanySuppliers(this.companyKey)
                 ]);
 
                 if (locationsResponse.success) {
@@ -63,6 +65,11 @@ class UnternehmenPage {
                 if (usersResponse.success) {
                     this.users = usersResponse.data;
                     console.log('Loaded users:', this.users.length);
+                }
+
+                if (suppliersResponse.success) {
+                    this.suppliers = suppliersResponse.data;
+                    console.log('Loaded suppliers:', this.suppliers.length);
                 }
             }
         } catch (error) {
@@ -288,11 +295,66 @@ class UnternehmenPage {
         `;
     }
 
+    renderSuppliers() {
+        if (this.suppliers.length === 0) {
+            return '<div class="empty-state">Keine Lieferanten hinterlegt</div>';
+        }
+
+        // Gruppiere nach gueltig/ungueltig
+        const validSuppliers = this.suppliers.filter(s => s.isValid);
+        const invalidSuppliers = this.suppliers.filter(s => !s.isValid);
+
+        return \`
+            <div class="suppliers-section">
+                <div class="subsection-title">
+                    <span>✅</span>
+                    <span>Aktive Lieferanten (\${validSuppliers.length})</span>
+                </div>
+                \${validSuppliers.length > 0 ? \`
+                    <div class="suppliers-grid">
+                        \${validSuppliers.map(sup => this.renderSupplierCard(sup)).join('')}
+                    </div>
+                \` : '<div class="empty-state">Keine aktiven Lieferanten</div>'}
+            </div>
+
+            \${invalidSuppliers.length > 0 ? \`
+                <div class="suppliers-section" style="margin-top: 1.5rem;">
+                    <div class="subsection-title">
+                        <span>⚠️</span>
+                        <span>Unvollstaendige Lieferanten (\${invalidSuppliers.length})</span>
+                    </div>
+                    <div class="suppliers-grid inactive">
+                        \${invalidSuppliers.map(sup => this.renderSupplierCard(sup, true)).join('')}
+                    </div>
+                </div>
+            \` : ''}
+        \`;
+    }
+
+    renderSupplierCard(supplier, isInvalid = false) {
+        return \`
+            <div class="supplier-card \${isInvalid ? 'invalid' : ''}">
+                <div class="supplier-header">
+                    <span class="supplier-flag">\${this.getCountryFlag(supplier.country)}</span>
+                    <span class="supplier-name">\${supplier.name}</span>
+                    \${supplier.number ? \`<span class="supplier-number">#\${supplier.number}</span>\` : ''}
+                </div>
+                <div class="supplier-details">
+                    \${supplier.street ? \`<div class="supplier-row">\${supplier.street}</div>\` : ''}
+                    \${supplier.city ? \`<div class="supplier-row">\${supplier.postcode ? supplier.postcode + ' ' : ''}\${supplier.city}</div>\` : ''}
+                    \${!supplier.street && !supplier.city ? '<div class="supplier-row empty">Adressdaten nicht verfuegbar</div>' : ''}
+                </div>
+            </div>
+        \`;
+    }
+
     getCountryFlag(countryCode) {
         const flags = {
             'DE': '🇩🇪', 'AT': '🇦🇹', 'CH': '🇨🇭', 'CZ': '🇨🇿', 'PL': '🇵🇱',
             'HU': '🇭🇺', 'RO': '🇷🇴', 'SK': '🇸🇰', 'SI': '🇸🇮', 'HR': '🇭🇷',
-            'RS': '🇷🇸', 'MX': '🇲🇽', 'US': '🇺🇸', 'CN': '🇨🇳', 'IN': '🇮🇳'
+            'RS': '🇷🇸', 'MX': '🇲🇽', 'US': '🇺🇸', 'CN': '🇨🇳', 'IN': '🇮🇳',
+            'TN': '🇹🇳', 'EG': '🇪🇬', 'MY': '🇲🇾', 'IT': '🇮🇹', 'MD': '🇲🇩',
+            'AF': '🇦🇫', 'SL': '🇸🇱', 'N/A': '🏳️'
         };
         return flags[countryCode] || '🏳️';
     }
