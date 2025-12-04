@@ -734,12 +734,10 @@ class InventurPage {
                         <button class="action-btn-small relocate" data-action="relocate" data-id="${tool.id}">📍</button>
                         <button class="action-btn-small photo" data-action="photo" data-id="${tool.id}">📷</button>
                         <button class="action-btn-small missing" data-action="missing" data-id="${tool.id}">🚫</button>
-                        <button class="action-btn-small delegate" data-action="delegate" data-id="${tool.id}" title="An Kollegen delegieren">👤</button>
                     `;
                 } else {
                     actionsHtml = `
                         <button class="action-btn-small undo" data-action="reset" data-id="${tool.id}">↶</button>
-                        <button class="action-btn-small delegate" data-action="delegate" data-id="${tool.id}" title="An Kollegen delegieren">👤</button>
                     `;
                 }
 
@@ -748,7 +746,7 @@ class InventurPage {
                         <td class="tool-number"><a href="#/detail/${tool.id}" style="color: #2c4a8c; text-decoration: none; font-weight: 600;">${tool.number}</a></td>
                         <td class="tool-name">${tool.name}</td>
                         <td>${locationText}</td>
-                        <td>${tool.responsible || 'N/A'}</td>
+                        <td><span class="clickable-responsible" data-action="delegate" data-id="${tool.id}" title="Klicken zum Ändern">${tool.responsible || 'Nicht zugewiesen'}</span></td>
                         <td><span class="due-date ${dueDateClass}">${this.formatDate(tool.dueDate)}</span></td>
                         <td>${tool.lastChange ? this.formatDate(tool.lastChange) : 'N/A'}</td>
                         <td><span class="status-badge ${statusInfo.class}">${statusInfo.icon} ${statusInfo.text}</span></td>
@@ -788,12 +786,10 @@ class InventurPage {
                         <button class="action-btn-card relocate" data-action="relocate" data-id="${tool.id}">📍 Verschoben</button>
                         <button class="action-btn-card photo" data-action="photo" data-id="${tool.id}">📷 Foto hinzufügen</button>
                         <button class="action-btn-card missing" data-action="missing" data-id="${tool.id}">🚫 Nicht vorhanden</button>
-                        <button class="action-btn-card delegate" data-action="delegate" data-id="${tool.id}">👤 Delegieren</button>
                     `;
                 } else {
                     actionsHtml = `
                         <button class="action-btn-card undo" data-action="reset" data-id="${tool.id}">↶ Rückgängig</button>
-                        <button class="action-btn-card delegate" data-action="delegate" data-id="${tool.id}">👤 Delegieren</button>
                     `;
                 }
 
@@ -809,7 +805,7 @@ class InventurPage {
                             </div>
                         </div>
                         <div class="card-block block-status">
-                            <div class="card-detail"><span class="label">Verantwortlich:</span> ${tool.responsible || 'N/A'}</div>
+                            <div class="card-detail"><span class="label">Verantwortlich:</span> <span class="clickable-responsible" data-action="delegate" data-id="${tool.id}" title="Klicken zum Ändern">${tool.responsible || 'Nicht zugewiesen'}</span></div>
                             <div class="card-detail"><span class="status-badge ${statusInfo.class}">${statusInfo.icon} ${statusInfo.text}</span></div>
                             <input type="text" class="comment-input-card" data-id="${tool.id}"
                                    placeholder="Kommentar..." value="${tool.comment || ''}">

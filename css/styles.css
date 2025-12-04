@@ -2501,3 +2501,31 @@ table td input[type="text"] {
         width: 100%;
     }
 }
+
+/* === CLICKABLE RESPONSIBLE FIELD === */
+.clickable-responsible {
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: #f0f4ff;
+    border: 1px dashed #2c4a8c;
+    color: #2c4a8c;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.clickable-responsible:hover {
+    background: #2c4a8c;
+    color: white;
+    border-style: solid;
+}
+
+.clickable-responsible::after {
+    content: " ✏️";
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+
+.clickable-responsible:hover::after {
+    opacity: 1;
+}
