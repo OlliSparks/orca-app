@@ -628,6 +628,77 @@ class APIService {
         );
     }
 
+
+    // Get positions for a specific inventory
+    async getInventoryPositions(inventoryKey, filters = {}) {
+        const params = new URLSearchParams();
+
+        // Optional status filter (P0-P6)
+        if (filters.status) {
+            const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
+            statuses.forEach(s => params.append('status', s));
+        }
+
+        // Pagination
+        params.append('limit', filters.limit || 100);
+        params.append('offset', filters.offset || 0);
+
+        const endpoint = `/inventory/${inventoryKey}/positions?${params.toString()}`;
+        console.log('Calling inventory positions:', endpoint);
+        const response = await this.call(endpoint, 'GET');
+        console.log('Inventory positions response:', response);
+
+        // Transform API response - each position becomes one entry
+        const positions = Array.isArray(response) ? response : (response.data || []);
+        const transformedData = positions.map((pos, index) => ({
+            // Position identifiers
+            id: pos.context?.key || index,
+            positionKey: pos.context?.key || '',
+            revision: pos.revision || '',
+
+            // Asset data - INVENTARNUMMER hier!
+            inventoryNumber: pos.asset?.meta?.inventoryNumber || '',
+            number: pos.asset?.meta?.inventoryNumber || '',  // Fuer Kompatibilitaet
+            name: pos.asset?.meta?.description || pos.asset?.meta?.assetName || 'Unbekannt',
+            assetKey: pos.asset?.context?.key || '',
+
+            // Location from position or asset
+            location: pos.location?.meta ?
+                `${pos.location.meta.city || ''}, ${pos.location.meta.country || ''}`.replace(/^, |, $/g, '') :
+                pos.asset?.meta?.supplier || '',
+            locationDetails: pos.location?.meta || null,
+
+            // Inventory context
+            inventoryKey: pos.inventory?.context?.key || '',
+            inventoryStatus: pos.inventory?.meta?.status || '',
+            inventoryType: pos.inventory?.meta?.type || '',
+
+            // Position status and metadata
+            status: pos.meta?.status || 'P0',
+            comment: pos.meta?.comment || '',
+            dueDate: pos.meta?.dueDate || pos.inventory?.meta?.dueDate || null,
+
+            // Assignment
+            responsible: pos.assignedUser?.meta ?
+                `${pos.assignedUser.meta.firstName || ''} ${pos.assignedUser.meta.lastName || ''}`.trim() :
+                'N/A',
+
+            // Additional asset info
+            partNumber: pos.asset?.meta?.factNumberAI || '',
+            project: pos.asset?.meta?.project || '',
+            supplier: pos.asset?.meta?.supplier || '',
+
+            // Original data for reference
+            originalData: pos
+        }));
+
+        return {
+            success: true,
+            data: transformedData,
+            total: transformedData.length
+        };
+    }
+
     // Update inventory item
     async updateInventoryItem(id, data) {
         // TODO: Replace with real API call

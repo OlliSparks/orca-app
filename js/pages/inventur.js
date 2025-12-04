@@ -306,20 +306,60 @@ class InventurPage {
     }
 
     async loadData() {
-        const response = await api.getInventoryList();
-        if (response.success) {
-            this.tools = response.data.map(tool => ({
-                ...tool,
-                status: 'pending',
-                selected: false,
-                newLocation: null
-            }));
-            // Speichere Lieferanteninformationen
-            if (response.supplier) {
-                this.supplier = response.supplier;
-                this.updateSupplierHeader();
+        // Schritt 1: Inventur-Liste holen (Kopfdaten)
+        const inventoryResponse = await api.getInventoryList();
+        if (!inventoryResponse.success) {
+            console.error('Failed to load inventory list');
+            return;
+        }
+
+        // Speichere Lieferanteninformationen (aus urspruenglicher Funktion beibehalten)
+        if (inventoryResponse.supplier) {
+            this.supplier = inventoryResponse.supplier;
+            this.updateSupplierHeader();
+        }
+
+        console.log('Loaded inventories:', inventoryResponse.data.length);
+
+        // Schritt 2: Fuer jede Inventur die Positionen laden
+        const allPositions = [];
+
+        for (const inventory of inventoryResponse.data) {
+            const inventoryKey = inventory.inventoryKey || inventory.id;
+            console.log('Loading positions for inventory:', inventoryKey);
+
+            try {
+                const positionsResponse = await api.getInventoryPositions(inventoryKey);
+                if (positionsResponse.success && positionsResponse.data.length > 0) {
+                    // Jede Position mit Inventur-Kontext anreichern
+                    const enrichedPositions = positionsResponse.data.map(pos => ({
+                        ...pos,
+                        // Falls dueDate nicht in Position, aus Inventur uebernehmen
+                        dueDate: pos.dueDate || inventory.dueDate,
+                        // Inventur-Referenz behalten
+                        parentInventory: {
+                            key: inventoryKey,
+                            type: inventory.inventoryType,
+                            status: inventory.status
+                        }
+                    }));
+                    allPositions.push(...enrichedPositions);
+                    console.log(`Inventory ${inventoryKey}: ${positionsResponse.data.length} positions`);
+                }
+            } catch (error) {
+                console.error(`Error loading positions for ${inventoryKey}:`, error);
             }
         }
+
+        console.log('Total positions loaded:', allPositions.length);
+
+        // Schritt 3: Positionen als tools speichern
+        this.tools = allPositions.map(tool => ({
+            ...tool,
+            status: 'pending',
+            selected: false,
+            newLocation: null
+        }));
     }
 
     updateSupplierHeader() {
