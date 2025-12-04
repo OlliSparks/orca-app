@@ -87,6 +87,7 @@ class InventurPage {
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
                         <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
                         <button class="bulk-btn secondary" id="filterResponsibleBtn">👤 Nach Verantwortlichem filtern</button>
+                        <button class="bulk-btn secondary" id="resetFiltersBtn" style="display: none;">✕ Filter zurücksetzen</button>
                     </div>
                 </div>
 
@@ -505,6 +506,7 @@ class InventurPage {
         // Bulk actions
         document.getElementById('filterLocationBtn').addEventListener('click', () => this.openLocationFilterModal());
         document.getElementById('filterResponsibleBtn').addEventListener('click', () => this.openResponsibleFilterModal());
+        document.getElementById('resetFiltersBtn').addEventListener('click', () => this.resetAllFilters());
         document.getElementById('apiLoadBtn').addEventListener('click', () => this.loadFromAPI());
         document.getElementById('confirmAllBtn').addEventListener('click', () => this.confirmAllFiltered());
         document.getElementById('submitBtn').addEventListener('click', () => this.submitInventory());
@@ -1024,6 +1026,7 @@ class InventurPage {
         this.currentPage = 1; // Reset to first page
 
         this.closeLocationFilterModal();
+        this.updateResetButtonVisibility();
         if (this.currentView === 'table') {
             this.renderTable();
         } else {
@@ -1053,6 +1056,40 @@ class InventurPage {
         this.currentPage = 1; // Reset to first page
 
         this.closeResponsibleFilterModal();
+        this.updateResetButtonVisibility();
+        if (this.currentView === 'table') {
+            this.renderTable();
+        } else {
+            this.renderCards();
+        }
+    }
+
+    // Zeigt/versteckt den Reset-Button je nach aktiven Filtern
+    updateResetButtonVisibility() {
+        const resetBtn = document.getElementById('resetFiltersBtn');
+        if (this.currentLocationFilter || this.currentResponsibleFilter) {
+            resetBtn.style.display = 'inline-flex';
+            // Zeige aktive Filter im Button-Text
+            const activeFilters = [];
+            if (this.currentLocationFilter) activeFilters.push('Standort');
+            if (this.currentResponsibleFilter) activeFilters.push('Verantwortlicher');
+            resetBtn.textContent = '✕ Filter zurücksetzen (' + activeFilters.join(', ') + ')';
+        } else {
+            resetBtn.style.display = 'none';
+        }
+    }
+
+    // Setzt alle Filter zurueck
+    resetAllFilters() {
+        this.currentLocationFilter = null;
+        this.currentResponsibleFilter = null;
+        this.currentPage = 1;
+
+        // Dropdowns zuruecksetzen
+        document.getElementById('bulkLocationSelect').value = '';
+        document.getElementById('responsibleFilterSelect').value = '';
+
+        this.updateResetButtonVisibility();
         if (this.currentView === 'table') {
             this.renderTable();
         } else {
