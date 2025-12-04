@@ -82,7 +82,7 @@ class InventurPage {
 
                 <div class="view-controls">
                     <button class="bulk-btn api-load" id="apiLoadBtn">
-                        📄 Lade lokale Werkzeuginformationen
+                        🔄 Daten aktualisieren
                     </button>
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
                         <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
@@ -300,6 +300,40 @@ class InventurPage {
                     <div class="modal-actions">
                         <button class="modal-btn secondary" id="cancelMissing">Abbrechen</button>
                         <button class="modal-btn primary missing-confirm" id="confirmMissing">Als fehlend melden</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delegate/Change Responsible Modal -->
+            <div class="modal" id="delegateModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>👤 Verantwortlichen ändern</h2>
+                        <div class="modal-subtitle">Aufgabe an Kollegen delegieren</div>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong id="delegateModalToolName"></strong><br>
+                        <span id="delegateModalToolNumber" style="color: #6b7280; font-size: 0.85rem;"></span>
+                    </div>
+                    <div style="margin: 1rem 0;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Aktuell zugewiesen:</label>
+                        <span id="delegateCurrentResponsible" style="color: #6b7280;">-</span>
+                    </div>
+                    <div style="margin: 1rem 0;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Neuer Verantwortlicher:</label>
+                        <select class="location-select" id="delegateResponsibleSelect">
+                            <option value="">-- Verantwortlichen wählen --</option>
+                        </select>
+                    </div>
+                    <div style="margin: 1rem 0;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Oder neuen Kollegen eingeben:</label>
+                        <input type="text" id="delegateNewResponsible" class="comment-input"
+                               style="width: 100%; padding: 0.5rem;"
+                               placeholder="z.B. Max Mustermann">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn secondary" id="cancelDelegate">Abbrechen</button>
+                        <button class="modal-btn primary" id="confirmDelegate">Zuweisen</button>
                     </div>
                 </div>
             </div>
@@ -528,6 +562,7 @@ class InventurPage {
                     case 'relocate': this.relocateTool(id); break;
                     case 'photo': this.addPhoto(id); break;
                     case 'missing': this.markMissing(id); break;
+                    case 'delegate': this.delegateTool(id); break;
                     case 'reset': this.resetTool(id); break;
                 }
             }
@@ -571,6 +606,10 @@ class InventurPage {
         // Missing tool modal events
         document.getElementById('cancelMissing').addEventListener('click', () => this.closeMissingModal());
         document.getElementById('confirmMissing').addEventListener('click', () => this.confirmMissing());
+
+        // Delegate modal events
+        document.getElementById('cancelDelegate').addEventListener('click', () => this.closeDelegateModal());
+        document.getElementById('confirmDelegate').addEventListener('click', () => this.confirmDelegate());
 
         // Help icon toggle
         document.getElementById('helpIcon').addEventListener('click', () => {
@@ -695,10 +734,12 @@ class InventurPage {
                         <button class="action-btn-small relocate" data-action="relocate" data-id="${tool.id}">📍</button>
                         <button class="action-btn-small photo" data-action="photo" data-id="${tool.id}">📷</button>
                         <button class="action-btn-small missing" data-action="missing" data-id="${tool.id}">🚫</button>
+                        <button class="action-btn-small delegate" data-action="delegate" data-id="${tool.id}" title="An Kollegen delegieren">👤</button>
                     `;
                 } else {
                     actionsHtml = `
                         <button class="action-btn-small undo" data-action="reset" data-id="${tool.id}">↶</button>
+                        <button class="action-btn-small delegate" data-action="delegate" data-id="${tool.id}" title="An Kollegen delegieren">👤</button>
                     `;
                 }
 
@@ -747,10 +788,12 @@ class InventurPage {
                         <button class="action-btn-card relocate" data-action="relocate" data-id="${tool.id}">📍 Verschoben</button>
                         <button class="action-btn-card photo" data-action="photo" data-id="${tool.id}">📷 Foto hinzufügen</button>
                         <button class="action-btn-card missing" data-action="missing" data-id="${tool.id}">🚫 Nicht vorhanden</button>
+                        <button class="action-btn-card delegate" data-action="delegate" data-id="${tool.id}">👤 Delegieren</button>
                     `;
                 } else {
                     actionsHtml = `
                         <button class="action-btn-card undo" data-action="reset" data-id="${tool.id}">↶ Rückgängig</button>
+                        <button class="action-btn-card delegate" data-action="delegate" data-id="${tool.id}">👤 Delegieren</button>
                     `;
                 }
 
@@ -1147,7 +1190,7 @@ class InventurPage {
 
             setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
+                btn.innerHTML = '🔄 Daten aktualisieren';
                 btn.style.background = '#f97316';
             }, 2000);
         } catch (error) {
@@ -1155,7 +1198,7 @@ class InventurPage {
             btn.style.background = '#ef4444';
             setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = '📄 Lade lokale Werkzeuginformationen';
+                btn.innerHTML = '🔄 Daten aktualisieren';
                 btn.style.background = '#f97316';
             }, 2000);
         }
@@ -1328,6 +1371,75 @@ class InventurPage {
             } else {
                 this.renderCards();
             }
+        }
+    }
+
+    // Delegate/Change Responsible methods
+    delegateTool(toolId) {
+        this.currentTool = this.tools.find(t => t.id === toolId);
+        if (this.currentTool) {
+            document.getElementById('delegateModalToolName').textContent = this.currentTool.name;
+            document.getElementById('delegateModalToolNumber').textContent = this.currentTool.number;
+            document.getElementById('delegateCurrentResponsible').textContent = this.currentTool.responsible || 'Nicht zugewiesen';
+
+            // Dropdown mit vorhandenen Verantwortlichen fuellen
+            const select = document.getElementById('delegateResponsibleSelect');
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            this.responsibles.forEach(resp => {
+                const option = document.createElement('option');
+                option.value = resp.id;
+                option.textContent = resp.name;
+                select.appendChild(option);
+            });
+
+            // Felder zuruecksetzen
+            select.value = '';
+            document.getElementById('delegateNewResponsible').value = '';
+
+            document.getElementById('delegateModal').classList.add('active');
+        }
+    }
+
+    closeDelegateModal() {
+        document.getElementById('delegateModal').classList.remove('active');
+        this.currentTool = null;
+    }
+
+    confirmDelegate() {
+        if (!this.currentTool) return;
+
+        const selectValue = document.getElementById('delegateResponsibleSelect').value;
+        const inputValue = document.getElementById('delegateNewResponsible').value.trim();
+
+        // Prioritaet: Eingabefeld > Dropdown
+        const newResponsible = inputValue || selectValue;
+
+        if (!newResponsible) {
+            alert('Bitte wählen Sie einen Verantwortlichen aus oder geben Sie einen neuen Namen ein.');
+            return;
+        }
+
+        const oldResponsible = this.currentTool.responsible;
+        this.currentTool.responsible = newResponsible;
+
+        // Falls neuer Verantwortlicher noch nicht in der Liste ist, hinzufuegen
+        if (inputValue && !this.responsibles.find(r => r.id === inputValue)) {
+            this.responsibles.push({ id: inputValue, name: inputValue });
+            this.responsibles.sort((a, b) => a.name.localeCompare(b.name));
+            this.populateResponsibleSelect();
+        }
+
+        this.closeDelegateModal();
+
+        // Erfolgsmeldung
+        alert(`✅ Verantwortlicher geändert!\n\nWerkzeug: ${this.currentTool.name}\nVon: ${oldResponsible || 'Nicht zugewiesen'}\nAn: ${newResponsible}`);
+
+        if (this.currentView === 'table') {
+            this.renderTable();
+        } else {
+            this.renderCards();
         }
     }
 }
