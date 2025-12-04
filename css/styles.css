@@ -2529,3 +2529,160 @@ table td input[type="text"] {
 .clickable-responsible:hover::after {
     opacity: 1;
 }
+
+/* === UNTERNEHMEN PAGE STYLES === */
+.locations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.location-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.location-card:hover {
+    border-color: #2c4a8c;
+    box-shadow: 0 2px 8px rgba(44, 74, 140, 0.1);
+}
+
+.location-card.default {
+    border-color: #f97316;
+    background: #fff7ed;
+}
+
+.location-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.location-icon {
+    font-size: 1.5rem;
+}
+
+.location-name {
+    font-weight: 600;
+    color: #2c3e50;
+    flex: 1;
+}
+
+.default-badge {
+    background: #f97316;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.location-details {
+    font-size: 0.85rem;
+}
+
+.location-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.location-label {
+    color: #6b7280;
+    min-width: 60px;
+}
+
+/* Users Grid */
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.users-grid.inactive {
+    opacity: 0.7;
+}
+
+.user-card {
+    display: flex;
+    gap: 1rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.user-card:hover {
+    border-color: #2c4a8c;
+}
+
+.user-card.inactive {
+    background: #f3f4f6;
+    border-style: dashed;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    background: #2c4a8c;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.user-card.inactive .user-avatar {
+    background: #9ca3af;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.user-email {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+}
+
+.user-phone {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.user-roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.role-badge {
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.users-section {
+    margin-bottom: 1rem;
+}

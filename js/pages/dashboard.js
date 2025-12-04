@@ -132,6 +132,15 @@ class Dashboard {
                             </div>
                             <div class="card-arrow">→</div>
                         </div>
+
+                        <div class="dashboard-card clickable" onclick="router.navigate('/unternehmen')">
+                            <div class="card-icon">🏢</div>
+                            <div class="card-content">
+                                <h4>Unternehmen</h4>
+                                <p>Firmenprofil, Standorte und Benutzer verwalten</p>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
                     </div>
                 </section>
             </div>

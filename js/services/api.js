@@ -1237,6 +1237,147 @@ class APIService {
         });
     }
 
+    // === Company / Unternehmen Endpoints ===
+
+    // Get company details by supplierNumber
+    async getCompanyBySupplier() {
+        return this.callWithFallback(
+            async () => {
+                // Erst das Profil laden um den companyKey zu bekommen
+                const profile = await this.call('/profile', 'GET');
+                console.log('Profile response:', profile);
+
+                // CompanyKey aus Profil extrahieren
+                const companyKey = profile.company?.context?.key || profile.companyKey;
+                if (!companyKey) {
+                    throw new Error('No company key found in profile');
+                }
+
+                // Company-Details laden
+                const company = await this.call(`/companies/${companyKey}`, 'GET');
+                console.log('Company response:', company);
+
+                return {
+                    success: true,
+                    data: {
+                        key: company.context?.key || companyKey,
+                        name: company.meta?.name || 'Unbekannt',
+                        number: company.meta?.supplierNumber || this.supplierNumber,
+                        country: company.meta?.country || '',
+                        city: company.meta?.city || '',
+                        street: company.meta?.street || '',
+                        postcode: company.meta?.postcode || '',
+                        vatId: company.meta?.vatId || '',
+                        email: company.meta?.email || '',
+                        phone: company.meta?.phone || '',
+                        originalData: company
+                    },
+                    companyKey: companyKey
+                };
+            },
+            () => this.getMockCompanyData()
+        );
+    }
+
+    // Get locations for a company
+    async getCompanyLocations(companyKey) {
+        return this.callWithFallback(
+            async () => {
+                const response = await this.call(`/companies/${companyKey}/locations`, 'GET');
+                console.log('Locations response:', response);
+
+                const locations = Array.isArray(response) ? response : (response.data || []);
+                return {
+                    success: true,
+                    data: locations.map(loc => ({
+                        key: loc.context?.key || '',
+                        name: loc.meta?.title || loc.meta?.name || 'Unbenannt',
+                        country: loc.meta?.country || '',
+                        city: loc.meta?.city || '',
+                        street: loc.meta?.street || '',
+                        postcode: loc.meta?.postcode || '',
+                        isDefault: loc.meta?.isDefault || false,
+                        originalData: loc
+                    })),
+                    total: locations.length
+                };
+            },
+            () => this.getMockLocationsData()
+        );
+    }
+
+    // Get users for a company
+    async getCompanyUsers(companyKey) {
+        return this.callWithFallback(
+            async () => {
+                const response = await this.call(`/access/companies/${companyKey}/users`, 'GET');
+                console.log('Users response:', response);
+
+                const users = Array.isArray(response) ? response : (response.data || []);
+                return {
+                    success: true,
+                    data: users.map(user => ({
+                        key: user.context?.key || user.userKey || '',
+                        firstName: user.meta?.firstName || '',
+                        lastName: user.meta?.lastName || '',
+                        fullName: `${user.meta?.firstName || ''} ${user.meta?.lastName || ''}`.trim() || 'Unbekannt',
+                        email: user.meta?.mail || user.meta?.email || '',
+                        phone: user.meta?.phone || '',
+                        groups: user.groups || [],
+                        isActive: user.meta?.active !== false,
+                        originalData: user
+                    })),
+                    total: users.length
+                };
+            },
+            () => this.getMockUsersData()
+        );
+    }
+
+    // Mock-Daten fuer Unternehmen
+    getMockCompanyData() {
+        return {
+            success: true,
+            data: {
+                key: 'mock-company-123',
+                name: 'DRAEXLMAIER Group',
+                number: '133188',
+                country: 'DE',
+                city: 'Vilsbiburg',
+                street: 'Landshuter Str. 100',
+                postcode: '84137',
+                vatId: 'DE123456789',
+                email: 'info@draexlmaier.com',
+                phone: '+49 8741 47-0'
+            },
+            companyKey: 'mock-company-123'
+        };
+    }
+
+    getMockLocationsData() {
+        return {
+            success: true,
+            data: [
+                { key: 'loc-1', name: 'Hauptwerk Vilsbiburg', country: 'DE', city: 'Vilsbiburg', street: 'Landshuter Str. 100', postcode: '84137', isDefault: true },
+                { key: 'loc-2', name: 'Werk Braunau', country: 'AT', city: 'Braunau', street: 'Industriestr. 50', postcode: '5280', isDefault: false },
+                { key: 'loc-3', name: 'Werk Timisoara', country: 'RO', city: 'Timisoara', street: 'Calea Lugojului 1', postcode: '300112', isDefault: false }
+            ],
+            total: 3
+        };
+    }
+
+    getMockUsersData() {
+        return {
+            success: true,
+            data: [
+                { key: 'user-1', firstName: 'Max', lastName: 'Mustermann', fullName: 'Max Mustermann', email: 'max.mustermann@example.com', phone: '+49 123 456789', groups: ['IVL', 'SUP'], isActive: true },
+                { key: 'user-2', firstName: 'Anna', lastName: 'Schmidt', fullName: 'Anna Schmidt', email: 'anna.schmidt@example.com', phone: '+49 123 456790', groups: ['SUP'], isActive: true },
+                { key: 'user-3', firstName: 'Peter', lastName: 'Mueller', fullName: 'Peter Mueller', email: 'peter.mueller@example.com', phone: '+49 123 456791', groups: ['SUP'], isActive: false }
+            ],
+            total: 3
+        };
+    }
+
     // Check if API is connected
     async checkConnection() {
         try {

@@ -77,6 +77,10 @@ class OrcaApp {
         router.addRoute('/settings', () => {
             settingsPage.render();
         });
+
+        router.addRoute('/unternehmen', () => {
+            unternehmenPage.render();
+        });
     }
 
     async checkAPIStatus() {
