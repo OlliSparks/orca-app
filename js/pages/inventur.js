@@ -4,6 +4,7 @@ class InventurPage {
         this.locations = []; // Wird dynamisch aus den geladenen Inventur-Positionen befuellt
 
         this.tools = [];
+        this.companyUsers = []; // Benutzerliste aus API fuer Delegate-Dropdown
         this.currentFilter = 'all';
         this.currentLocationFilter = null;
         this.currentResponsibleFilter = null;
@@ -412,6 +413,27 @@ class InventurPage {
 
         // Schritt 4: Standorte aus den geladenen Positionen extrahieren
         this.extractLocationsFromTools();
+
+        // Schritt 5: Benutzerliste aus API laden (fuer Delegate-Dropdown)
+        await this.loadCompanyUsers();
+    }
+
+    // Laedt die Benutzerliste aus der Company-API
+    async loadCompanyUsers() {
+        try {
+            // Hole zuerst die Company-Daten
+            const companyResponse = await api.getCompanyBySupplier();
+            if (companyResponse.success && companyResponse.companyKey) {
+                const usersResponse = await api.getCompanyUsers(companyResponse.companyKey);
+                if (usersResponse.success) {
+                    this.companyUsers = usersResponse.data || [];
+                    console.log('Loaded company users:', this.companyUsers.length, this.companyUsers);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading company users:', error);
+            this.companyUsers = [];
+        }
     }
 
     // Extrahiert einzigartige Standorte aus den geladenen Tools
@@ -1384,16 +1406,24 @@ class InventurPage {
             document.getElementById('delegateModalToolNumber').textContent = this.currentTool.number;
             document.getElementById('delegateCurrentResponsible').textContent = this.currentTool.responsible || 'Nicht zugewiesen';
 
-            // Dropdown mit vorhandenen Verantwortlichen fuellen
+            // Dropdown mit Benutzern aus der Company-API fuellen
             const select = document.getElementById('delegateResponsibleSelect');
             while (select.options.length > 1) {
                 select.remove(1);
             }
-            this.responsibles.forEach(resp => {
+
+            // Nutze companyUsers aus API (falls geladen), sonst fallback auf responsibles
+            const userList = this.companyUsers.length > 0 ? this.companyUsers : this.responsibles;
+
+            userList.forEach(user => {
                 const option = document.createElement('option');
-                option.value = resp.id;
-                option.textContent = resp.name;
-                select.appendChild(option);
+                // companyUsers haben fullName, responsibles haben name
+                const displayName = user.fullName || user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim();
+                if (displayName && displayName !== 'Unbekannt') {
+                    option.value = displayName;
+                    option.textContent = displayName;
+                    select.appendChild(option);
+                }
             });
 
             // Felder zuruecksetzen
