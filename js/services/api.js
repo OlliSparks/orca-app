@@ -143,9 +143,28 @@ class APIService {
 
             // Extract user info from response - handle different API response formats
             const data = response.data || response;
-            const firstName = data.firstName || data.meta?.firstName || '';
-            const lastName = data.lastName || data.meta?.lastName || '';
-            const name = data.name || data.meta?.name || `${firstName} ${lastName}`.trim();
+            let firstName = data.firstName || data.meta?.firstName || '';
+            let lastName = data.lastName || data.meta?.lastName || '';
+            let name = data.name || data.meta?.name || '';
+
+            // Falls firstName/lastName leer, aber name vorhanden: extrahiere aus name
+            // Entferne bekannte Rollen-Suffixe (Support, Admin, IVL, ITL, WVL, etc.)
+            if (!firstName && !lastName && name) {
+                // Entferne Rollen am Ende des Namens
+                const rolePattern = /\s+(Support|Admin|IVL|ITL|WVL|FEK|CL|SUP|ABL|STL)$/i;
+                name = name.replace(rolePattern, '').trim();
+
+                // Versuche Vor-/Nachname zu extrahieren (erste zwei Woerter)
+                const nameParts = name.split(/\s+/);
+                if (nameParts.length >= 2) {
+                    firstName = nameParts[0];
+                    lastName = nameParts.slice(1).join(' ');
+                } else if (nameParts.length === 1) {
+                    firstName = nameParts[0];
+                }
+            }
+
+            const displayName = `${firstName} ${lastName}`.trim() || name;
             const email = data.email || data.meta?.mail || data.meta?.email || '';
 
             return {
@@ -153,7 +172,7 @@ class APIService {
                 data: {
                     firstName: firstName,
                     lastName: lastName,
-                    name: name,
+                    name: displayName,
                     email: email,
                     company: data.company || data.meta?.company || ''
                 }
