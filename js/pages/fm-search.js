@@ -59,8 +59,8 @@ class FMSearchPage {
 
                 <div id="noResults" class="no-results" style="display: none;">
                     <div class="no-results-icon">🔍</div>
-                    <p>Keine Ergebnisse gefunden</p>
-                    <p class="no-results-hint">Versuchen Sie einen anderen Suchbegriff</p>
+                    <p id="noResultsMessage">Keine Ergebnisse gefunden</p>
+                    <p class="no-results-hint" id="noResultsHint">Versuchen Sie einen anderen Suchbegriff</p>
                 </div>
             </div>
         `;
@@ -103,6 +103,10 @@ class FMSearchPage {
         document.getElementById('noResults').style.display = 'none';
         document.getElementById('searchLoading').style.display = 'block';
 
+        // Meldung auf Standard zurücksetzen
+        document.getElementById('noResultsMessage').textContent = 'Keine Ergebnisse gefunden';
+        document.getElementById('noResultsHint').textContent = 'Versuchen Sie einen anderen Suchbegriff';
+
         try {
             // Prüfen ob es eine reine Nummer ist -> direkt FM-Akte laden
             if (/^\d+$/.test(query)) {
@@ -117,8 +121,8 @@ class FMSearchPage {
                     router.navigate(`/detail/${assetKey}`);
                     return;
                 } else {
-                    // Nicht gefunden - Suche in Liste
-                    await this.searchInList(query);
+                    // Nicht gefunden - Fehlermeldung mit Inventarnummer anzeigen
+                    this.showNotFoundMessage(query);
                 }
             } else {
                 // Textsuche in der Liste
@@ -127,7 +131,14 @@ class FMSearchPage {
         } catch (error) {
             console.error('Search error:', error);
             document.getElementById('searchLoading').style.display = 'none';
-            document.getElementById('noResults').style.display = 'block';
+            // Bei Fehler auch spezifische Meldung anzeigen
+            const searchInput = document.getElementById('fmSearchInput');
+            const query = searchInput.value.trim();
+            if (/^\d+$/.test(query)) {
+                this.showNotFoundMessage(query);
+            } else {
+                document.getElementById('noResults').style.display = 'block';
+            }
         }
     }
 
@@ -149,6 +160,17 @@ class FMSearchPage {
             document.getElementById('searchLoading').style.display = 'none';
             document.getElementById('noResults').style.display = 'block';
         }
+    }
+
+    showNotFoundMessage(inventoryNumber) {
+        const noResults = document.getElementById('noResults');
+        const message = document.getElementById('noResultsMessage');
+        const hint = document.getElementById('noResultsHint');
+
+        message.textContent = `Das Werkzeug mit der Inventarnummer ${inventoryNumber} konnte nicht gefunden werden.`;
+        hint.textContent = 'Bitte überprüfen Sie die Nummer oder wenden Sie sich an Ihren Administrator.';
+
+        noResults.style.display = 'block';
     }
 
     renderResults() {
