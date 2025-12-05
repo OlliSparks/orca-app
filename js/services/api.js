@@ -128,6 +128,8 @@ class APIService {
             return {
                 success: true,
                 data: {
+                    firstName: 'Max',
+                    lastName: 'Mustermann',
                     name: 'Max Mustermann (Mock)',
                     email: 'max.mustermann@example.com',
                     company: 'Test GmbH'
@@ -137,11 +139,27 @@ class APIService {
 
         try {
             const response = await this.call('/profile', 'GET');
+            console.log('Profile API response:', response);
+
+            // Extract user info from response - handle different API response formats
+            const data = response.data || response;
+            const firstName = data.firstName || data.meta?.firstName || '';
+            const lastName = data.lastName || data.meta?.lastName || '';
+            const name = data.name || data.meta?.name || `${firstName} ${lastName}`.trim();
+            const email = data.email || data.meta?.mail || data.meta?.email || '';
+
             return {
                 success: true,
-                data: response
+                data: {
+                    firstName: firstName,
+                    lastName: lastName,
+                    name: name,
+                    email: email,
+                    company: data.company || data.meta?.company || ''
+                }
             };
         } catch (error) {
+            console.error('Profile API error:', error);
             return {
                 success: false,
                 error: error.message

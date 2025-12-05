@@ -2,7 +2,7 @@
 class Dashboard {
     constructor() {
         this.inventurData = [];
-        this.companyName = '';
+        this.userName = '';
         this.totalTasks = 0;
     }
 
@@ -162,11 +162,19 @@ class Dashboard {
                 api.getVerschrottungList()
             ]);
 
-            // Firmenname aus Profil extrahieren
+            // Benutzername aus Profil extrahieren (Vor- und Nachname)
             if (profileResponse.success && profileResponse.data) {
-                this.companyName = profileResponse.data.company || '';
+                const profile = profileResponse.data;
+                // Bevorzuge Vor- und Nachname, falls vorhanden
+                if (profile.firstName || profile.lastName) {
+                    this.userName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+                } else if (profile.name) {
+                    this.userName = profile.name;
+                } else {
+                    this.userName = '';
+                }
             } else {
-                this.companyName = '';
+                this.userName = '';
             }
 
             // Heute als Referenz
@@ -211,7 +219,7 @@ class Dashboard {
         } catch (error) {
             console.error('Fehler beim Laden der Dashboard-Daten:', error);
             // Bei Fehler: Fallback-Begrüßung
-            this.companyName = '';
+            this.userName = '';
             this.totalTasks = 0;
             this.updateGreeting();
 
@@ -230,7 +238,7 @@ class Dashboard {
     updateGreeting() {
         const greetingElement = document.getElementById('dashboardGreeting');
         if (greetingElement) {
-            const greeting = this.companyName ? 'Hallo ' + this.companyName : 'Hallo';
+            const greeting = this.userName ? 'Hallo ' + this.userName : 'Hallo';
             if (this.totalTasks > 0) {
                 const taskWord = this.totalTasks === 1 ? 'Aufgabe benötigt' : 'Aufgaben benötigen';
                 greetingElement.textContent = greeting + ' – ' + this.totalTasks + ' ' + taskWord + ' Ihre Aufmerksamkeit';
