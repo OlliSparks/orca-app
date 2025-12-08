@@ -32,6 +32,24 @@ Bei API-Calls, Datenabruf und Backend-Integration konsultieren.
 
 ---
 
+### 3. Prozess-Skills
+Fuer jeden Geschaeftsprozess existiert ein eigener Skill mit Status-Maschine, API-Mapping und UI-Anforderungen.
+
+**Skill-Pfad:** `.claude/skills/processes/[prozess]/SKILL.md`
+
+| Prozess | Status | Skill-Pfad |
+|---------|--------|------------|
+| Inventur | Referenz (vollstaendig) | `processes/inventur/SKILL.md` |
+| VPW (Vertragspartnerwechsel) | Template | `processes/vpw/SKILL.md` |
+| Verschrottung | Template | `processes/verschrottung/SKILL.md` |
+| Verlagerung | Template | `processes/verlagerung/SKILL.md` |
+| ABL (Abnahmebereitschaft) | Template | `processes/abl/SKILL.md` |
+| Planung | Teilweise | `processes/planung/SKILL.md` |
+
+**Template:** `.claude/skills/processes/_template.md`
+
+---
+
 ## Quick-Checks
 
 ### Bei Features (Supplier-Persona):
