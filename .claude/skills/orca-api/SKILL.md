@@ -85,6 +85,52 @@ Vollständige API-Referenz für das Orca Asset-Management-System.
 | GET | `/tasks/system/{key}` | Task-Details |
 | PATCH | `/tasks/system/{key}` | Task aktualisieren |
 
+### Process (Allgemein)
+
+| Methode | Endpunkt | Beschreibung |
+|---------|----------|--------------|
+| GET | `/process/{processKey}` | Prozess-Details abrufen |
+| POST | `/process` | Neuen Prozess erstellen |
+| PATCH | `/process/{processKey}` | Prozess aktualisieren |
+| DELETE | `/process/{processKey}` | Prozess loeschen |
+| GET | `/process/{processKey}/positions` | Positionen eines Prozesses |
+
+### Relocation (Verlagerung)
+
+| Methode | Endpunkt | Beschreibung |
+|---------|----------|--------------|
+| GET | `/process/relocation` | Verlagerungen auflisten |
+| GET | `/process/relocation/{processId}` | Verlagerungs-Details |
+| POST | `/process/relocation` | Neue Verlagerung erstellen |
+| PATCH | `/process/relocation/{processId}` | Verlagerung aktualisieren |
+| POST | `/process/relocation/{processId}/positions/batch` | Positionen im Batch hinzufuegen |
+| PATCH | `/process/relocation/{processId}/assign` | Benutzer zuweisen |
+| GET | `/process/relocation/{processId}/users/assignable` | Zuweisbare Benutzer |
+| GET | `/process/relocation/{processId}/drafts/entry-certificate/{language}` | Eingangszertifikat (PDF) |
+| POST | `/process/relocation/{processId}/actions/submit` | Verlagerung einreichen |
+| POST | `/process/relocation/{processId}/actions/approve` | Verlagerung genehmigen |
+| POST | `/process/relocation/{processId}/actions/reject` | Verlagerung ablehnen |
+| POST | `/process/relocation/{processId}/actions/complete` | Verlagerung abschliessen |
+
+### Relocation.C (Durchfuehrungsauftrag)
+
+| Methode | Endpunkt | Beschreibung |
+|---------|----------|--------------|
+| GET | `/process/relocation-c/{processId}` | Durchfuehrungsauftrag abrufen |
+| POST | `/process/relocation-c/{processId}/actions/report` | Durchfuehrung melden |
+| POST | `/process/relocation-c/{processId}/actions/accept` | Durchfuehrung akzeptieren |
+
+### Scrapping (Verschrottung)
+
+| Methode | Endpunkt | Beschreibung |
+|---------|----------|--------------|
+| GET | `/process/scrapping` | Verschrottungen auflisten |
+| GET | `/process/scrapping/{processId}` | Verschrottungs-Details |
+| POST | `/process/scrapping` | Neue Verschrottung erstellen |
+| POST | `/process/scrapping/{processId}/actions/approve` | Verschrottung genehmigen |
+| POST | `/process/scrapping/{processId}/actions/reject` | Verschrottung ablehnen |
+| POST | `/process/scrapping/{processId}/actions/complete` | Verschrottung abschliessen |
+
 ## Inventur-Status
 
 | Status | Bedeutung |
