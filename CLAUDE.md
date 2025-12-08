@@ -8,7 +8,7 @@ orca 1.1 - Lieferanten-Applikation mit API-Integration fuer das Asset-Management
 ### 1. Supplier-Persona Skill
 Bei Feature-Design, UX-Entscheidungen und Workflow-Design konsultieren.
 
-**Skill-Pfad:** ~/.claude/skills/supplier-persona/SKILL.md
+**Skill-Pfad:** `.claude/skills/supplier-persona/SKILL.md`
 
 **Trigger:** Feature-Design, UX-Entscheidungen, Workflow-Design, Priorisierung
 
@@ -20,15 +20,15 @@ Bei Feature-Design, UX-Entscheidungen und Workflow-Design konsultieren.
 ### 2. Orca-API Skill
 Bei API-Calls, Datenabruf und Backend-Integration konsultieren.
 
-**Skill-Pfad:** ~/.claude/skills/orca-api/SKILL.md
+**Skill-Pfad:** `.claude/skills/orca-api/SKILL.md`
 
 **Trigger:** API-Calls, Datenabruf, Integration, Backend-Kommunikation
 
 **Base-URL:** `https://int.bmw.organizingcompanyassets.com/api/orca`
 
 **Wichtige Referenzen:**
-- `~/.claude/skills/orca-api/references/endpoints-quick.md` - Kurzreferenz
-- `~/.claude/skills/orca-api/references/openapi.json` - Vollstaendige OpenAPI-Spec
+- `.claude/skills/orca-api/references/endpoints-quick.md` - Kurzreferenz
+- `.claude/skills/orca-api/references/openapi.json` - Vollstaendige OpenAPI-Spec
 
 ---
 
