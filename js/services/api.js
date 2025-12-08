@@ -1320,6 +1320,46 @@ class APIService {
             const item = response.data || response;
             const meta = item.meta || {};
 
+            // Debug: Zeige alle meta-Felder für diese Detail-Ansicht
+            console.log('=== DETAIL DEBUG ===');
+            console.log('All meta fields:', Object.keys(meta).sort());
+            console.log('relo.* fields:', Object.keys(meta).filter(k => k.startsWith('relo.')));
+
+            // Suche Standort-Felder
+            const locationFields = Object.keys(meta).filter(k =>
+                k.includes('from') || k.includes('to') || k.includes('source') ||
+                k.includes('target') || k.includes('location') || k.includes('address')
+            );
+            console.log('Location-related fields:', locationFields);
+            locationFields.forEach(f => console.log(`  ${f}:`, meta[f]));
+            console.log('===================');
+
+            // Standorte mit erweiterten Fallbacks
+            const sourceLocation = meta['relo.from.address'] ||
+                                   meta['relo.from.location'] ||
+                                   meta['relo.from'] ||
+                                   meta['from.address'] ||
+                                   meta['from.location'] ||
+                                   meta['source.address'] ||
+                                   meta.fromAddress ||
+                                   meta.sourceAddress ||
+                                   meta.sourceLocation ||
+                                   '';
+
+            const targetLocation = meta['relo.to.address'] ||
+                                   meta['relo.to.location'] ||
+                                   meta['relo.to'] ||
+                                   meta['to.address'] ||
+                                   meta['to.location'] ||
+                                   meta['target.address'] ||
+                                   meta.toAddress ||
+                                   meta.targetAddress ||
+                                   meta.targetLocation ||
+                                   '';
+
+            console.log('Resolved sourceLocation:', sourceLocation);
+            console.log('Resolved targetLocation:', targetLocation);
+
             return {
                 success: true,
                 data: {
@@ -1331,25 +1371,25 @@ class APIService {
                     status: this.mapRelocationStatus(meta['p.status'] || meta.status),
                     // Vertragspartner
                     supplier: meta.contractPartner || '',
-                    supplierName: meta['relo.contractPartnerName'] || '',
+                    supplierName: meta['relo.contractPartnerName'] || meta.contractPartnerName || '',
                     // Standorte
-                    sourceLocation: meta['relo.from.address'] || meta['relo.from.location'] || '',
-                    targetLocation: meta['relo.to.address'] || meta['relo.to.location'] || '',
-                    targetCompany: meta['relo.to.companyName'] || meta['relo.to.company'] || '',
+                    sourceLocation: sourceLocation,
+                    targetLocation: targetLocation,
+                    targetCompany: meta['relo.to.companyName'] || meta['relo.to.company'] || meta.targetCompany || '',
                     // Termine
-                    departureDate: meta['relo.departure'] || null,
-                    arrivalDate: meta['relo.arrival'] || null,
-                    dueDate: meta['relo.arrival'] || null,
+                    departureDate: meta['relo.departure'] || meta.departure || null,
+                    arrivalDate: meta['relo.arrival'] || meta.arrival || null,
+                    dueDate: meta['relo.arrival'] || meta.arrival || meta.dueDate || null,
                     // Bearbeiter
                     creator: meta['relo.creator'] || meta.creator || '',
-                    creatorName: meta['relo.creatorName'] || '',
+                    creatorName: meta['relo.creatorName'] || meta.creatorName || '',
                     assignedUser: meta.assignedUser || '',
-                    assignedUserName: meta['relo.assignedUserName'] || '',
+                    assignedUserName: meta['relo.assignedUserName'] || meta.assignedUserName || '',
                     // Erstellt am
-                    createdAt: meta.created || null,
+                    createdAt: meta.created || meta.createdAt || null,
                     // Anzahl Positionen
                     assetCount: meta['p.size'] || 0,
-                    // Original-Daten
+                    // Original-Daten für Debugging
                     originalData: item
                 }
             };
