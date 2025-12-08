@@ -1318,79 +1318,83 @@ class APIService {
             console.log('Relocation detail response:', response);
 
             const item = response.data || response;
-            const meta = item.meta || {};
+            let meta = item.meta || {};
 
             // Debug: Zeige alle meta-Felder für diese Detail-Ansicht
             console.log('=== DETAIL DEBUG ===');
+            console.log('Process type:', meta['p.type']);
+            console.log('Parent process (pp.pid):', meta['pp.pid']);
             console.log('All meta fields:', Object.keys(meta).sort());
-            console.log('relo.* fields:', Object.keys(meta).filter(k => k.startsWith('relo.')));
 
-            // Suche Standort-Felder
-            const locationFields = Object.keys(meta).filter(k =>
-                k.includes('from') || k.includes('to') || k.includes('source') ||
-                k.includes('target') || k.includes('location') || k.includes('address')
-            );
-            console.log('Location-related fields:', locationFields);
-            locationFields.forEach(f => console.log(`  ${f}:`, meta[f]));
-            console.log('===================');
+            // Wenn dieser Prozess einen Parent hat, lade auch den Parent für Standort-Daten
+            let parentMeta = {};
+            if (meta['pp.pid']) {
+                try {
+                    console.log('Loading parent process:', meta['pp.pid']);
+                    const parentResponse = await this.call(`/process/${meta['pp.pid']}`, 'GET');
+                    const parentItem = parentResponse.data || parentResponse;
+                    parentMeta = parentItem.meta || {};
+                    console.log('Parent meta fields:', Object.keys(parentMeta).sort());
+                    console.log('Parent relo.* fields:', Object.keys(parentMeta).filter(k => k.startsWith('relo.')));
+                } catch (e) {
+                    console.warn('Could not load parent process:', e);
+                }
+            }
 
-            // Standorte mit erweiterten Fallbacks
-            const sourceLocation = meta['relo.from.address'] ||
-                                   meta['relo.from.location'] ||
-                                   meta['relo.from'] ||
-                                   meta['from.address'] ||
-                                   meta['from.location'] ||
-                                   meta['source.address'] ||
-                                   meta.fromAddress ||
-                                   meta.sourceAddress ||
-                                   meta.sourceLocation ||
+            // Kombiniere: Zuerst aus aktuellem Prozess, dann aus Parent
+            const combinedMeta = { ...parentMeta, ...meta };
+            console.log('Combined relo.* fields:', Object.keys(combinedMeta).filter(k => k.startsWith('relo.')));
+
+            // Standorte - suche in beiden Prozessen
+            const sourceLocation = combinedMeta['relo.from.address'] ||
+                                   combinedMeta['relo.from.location'] ||
+                                   combinedMeta['relo.from'] ||
+                                   parentMeta['relo.from.address'] ||
                                    '';
 
-            const targetLocation = meta['relo.to.address'] ||
-                                   meta['relo.to.location'] ||
-                                   meta['relo.to'] ||
-                                   meta['to.address'] ||
-                                   meta['to.location'] ||
-                                   meta['target.address'] ||
-                                   meta.toAddress ||
-                                   meta.targetAddress ||
-                                   meta.targetLocation ||
+            const targetLocation = combinedMeta['relo.to.address'] ||
+                                   combinedMeta['relo.to.location'] ||
+                                   combinedMeta['relo.to'] ||
+                                   parentMeta['relo.to.address'] ||
                                    '';
 
             console.log('Resolved sourceLocation:', sourceLocation);
             console.log('Resolved targetLocation:', targetLocation);
+            console.log('===================');
 
             return {
                 success: true,
                 data: {
                     id: item.key || processKey,
                     processKey: item.key || processKey,
+                    parentProcessKey: meta['pp.pid'] || '',
                     number: meta.description?.split(' - ')[0] || meta.number || '',
                     name: meta.description || meta.title || 'Verlagerung',
-                    identifier: meta['relo.identifier'] || '',
+                    identifier: combinedMeta['relo.identifier'] || '',
                     status: this.mapRelocationStatus(meta['p.status'] || meta.status),
                     // Vertragspartner
                     supplier: meta.contractPartner || '',
-                    supplierName: meta['relo.contractPartnerName'] || meta.contractPartnerName || '',
-                    // Standorte
+                    supplierName: meta.contractPartnerName || combinedMeta['relo.contractPartnerName'] || '',
+                    // Standorte (aus kombiniertem Meta)
                     sourceLocation: sourceLocation,
                     targetLocation: targetLocation,
-                    targetCompany: meta['relo.to.companyName'] || meta['relo.to.company'] || meta.targetCompany || '',
+                    targetCompany: meta['relo.to.companyName'] || combinedMeta['relo.to.companyName'] || '',
                     // Termine
-                    departureDate: meta['relo.departure'] || meta.departure || null,
-                    arrivalDate: meta['relo.arrival'] || meta.arrival || null,
-                    dueDate: meta['relo.arrival'] || meta.arrival || meta.dueDate || null,
+                    departureDate: meta['relo.departure'] || combinedMeta['relo.departure'] || null,
+                    arrivalDate: meta['relo.arrival'] || combinedMeta['relo.arrival'] || null,
+                    dueDate: meta['relo.arrival'] || combinedMeta['relo.arrival'] || null,
                     // Bearbeiter
-                    creator: meta['relo.creator'] || meta.creator || '',
-                    creatorName: meta['relo.creatorName'] || meta.creatorName || '',
+                    creator: meta['creator.key'] || '',
+                    creatorName: meta['creator.name'] || '',
                     assignedUser: meta.assignedUser || '',
-                    assignedUserName: meta['relo.assignedUserName'] || meta.assignedUserName || '',
+                    assignedUserName: meta['relo.currentUser.name'] || '',
                     // Erstellt am
-                    createdAt: meta.created || meta.createdAt || null,
+                    createdAt: meta.created || null,
                     // Anzahl Positionen
                     assetCount: meta['p.size'] || 0,
                     // Original-Daten für Debugging
-                    originalData: item
+                    originalData: item,
+                    parentData: parentMeta
                 }
             };
         } catch (error) {
