@@ -89,6 +89,24 @@ Prozess-Skill → Implementierung → Tests erstellen → Tests gruen → Fertig
 
 ---
 
+### 6. Status Skill
+Vollstaendige Referenz aller Status-Codes im orca-System.
+
+**Skill-Pfad:** `.claude/skills/status/SKILL.md`
+
+**Trigger:** Status-Logik, Prozess-Design, UI-Texte, Statusuebergaenge
+
+**Enthaelt:**
+- Asset Status (IDLE, LOCKED, A0-A11, AL0-AL3)
+- Inventory Status (I0-I4, IA-ID, FP0-FP5)
+- InventoryPos Status (P0-P6, RR0-RR7, LS0-LS2)
+- Process Status (I, R, Z)
+- Relocation Steps (0-8)
+- Scrapping Steps (0-1)
+- Statusuebergaenge und Abhaengigkeiten
+
+---
+
 ## Quick-Checks
 
 ### Bei Features (Supplier-Persona):
