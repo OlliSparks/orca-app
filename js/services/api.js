@@ -1389,43 +1389,40 @@ class APIService {
     }
 
     getMockVerlagerungData(filters = {}) {
-        const toolTypes = ['Verlagerungs-Tool', 'Transport-Werkzeug', 'Umzugs-Tool'];
-        const parts = ['Seitenteil links', 'Querträger vorn', 'Schweller links', 'Radhaus hinten', 'Bodenblech'];
-        const locations = ['Halle A - Regal 2', 'Halle C - Werkstatt', 'Außenlager Süd'];
+        const sourceLocations = ['Vilsbiburg, DE', 'Braunau, AT', 'Timisoara, RO'];
+        const targetLocations = ['Braunau, AT', 'Timisoara, RO', 'Vilsbiburg, DE'];
+        const descriptions = [
+            'Verlagerung Presswerkzeuge',
+            'Transport Tiefziehwerkzeuge',
+            'Umzug Stanzwerkzeuge',
+            'Verlagerung Biegewerkzeuge',
+            'Transport Schneidwerkzeuge'
+        ];
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const items = [];
         for (let i = 1; i <= 10; i++) {
-            const toolType = toolTypes[(i - 1) % toolTypes.length];
-            const part = parts[(i - 1) % parts.length];
             const paddedNum = String(i + 2000).padStart(4, '0');
-            const year = new Date().getFullYear();
 
             // Berechne Fälligkeitsdatum - erste 3 sind überfällig
             const dueDate = new Date(today);
             if (i <= 3) {
-                // Überfällig: 7-21 Tage in der Vergangenheit
                 dueDate.setDate(today.getDate() - (7 * i));
             } else {
-                // Zukünftig: 3-40 Tage in der Zukunft
                 dueDate.setDate(today.getDate() + (5 * (i - 3)));
             }
 
-            // Letzte Inventur: zufällig in den letzten 30 Tagen
-            const lastInv = new Date(today);
-            lastInv.setDate(today.getDate() - ((i - 1) % 28 + 1));
-
             items.push({
                 id: 2000 + i,
+                processKey: `rel-${paddedNum}`,
                 number: `VRL-${paddedNum}`,
-                toolNumber: `${toolType.substring(0, 3).toUpperCase()}-${year}-${paddedNum}`,
-                name: `${toolType} ${part}`,
-                supplier: 'Bosch Rexroth AG',
-                location: locations[(i - 1) % locations.length],
-                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: lastInv.toISOString().split('T')[0],
-                dueDate: dueDate.toISOString().split('T')[0]
+                name: descriptions[(i - 1) % descriptions.length],
+                sourceLocation: sourceLocations[(i - 1) % sourceLocations.length],
+                targetLocation: targetLocations[(i - 1) % targetLocations.length],
+                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : (i <= 8 ? 'in-inventur' : 'abgeschlossen')),
+                dueDate: dueDate.toISOString().split('T')[0],
+                assetCount: 3 + (i % 5)
             });
         }
 
