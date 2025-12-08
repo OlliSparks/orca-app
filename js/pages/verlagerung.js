@@ -7,6 +7,7 @@ class VerlagerungPage {
         this.itemsPerPage = 50;
         this.currentFilter = 'all';
         this.currentSort = { column: 'number', direction: 'asc' };
+        this.isLoading = false;
     }
 
     async render() {
@@ -25,6 +26,12 @@ class VerlagerungPage {
         // Initial HTML
         app.innerHTML = `
             <div class="container">
+                <!-- API MODE INDICATOR -->
+                <div class="api-mode-indicator" id="apiModeIndicator" style="margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span id="apiModeIcon">●</span>
+                    <span id="apiModeText">Modus wird geladen...</span>
+                </div>
+
                 <!-- CONTROLS -->
                 <div class="controls">
                     <div class="search-bar">
@@ -32,13 +39,13 @@ class VerlagerungPage {
                             type="text"
                             class="search-input"
                             id="searchInput"
-                            placeholder="🔍 Suche nach Verlagerungs-Nr., Name, Lieferant oder Standort..."
+                            placeholder="Suche nach Verlagerungs-Nr., Name, Standort..."
                         >
-                        <button class="btn btn-secondary" onclick="verlagerungPage.loadFromAPI()">
-                            🔄 API Laden
+                        <button class="btn btn-secondary" id="refreshBtn" onclick="verlagerungPage.refreshData()">
+                            Aktualisieren
                         </button>
                         <button class="btn btn-neutral" onclick="verlagerungPage.exportData()">
-                            📥 Export
+                            Export
                         </button>
                     </div>
 
@@ -55,6 +62,9 @@ class VerlagerungPage {
                         <div class="filter-chip" data-filter="in-inventur">
                             in Bearbeitung <span class="count" id="countInInventur">0</span>
                         </div>
+                        <div class="filter-chip" data-filter="abgeschlossen">
+                            Abgeschlossen <span class="count" id="countAbgeschlossen">0</span>
+                        </div>
                     </div>
                 </div>
 
@@ -63,12 +73,12 @@ class VerlagerungPage {
                     <table>
                         <thead>
                             <tr>
-                                <th class="sortable" data-sort="number">Werkzeugnummer</th>
-                                <th class="sortable" data-sort="name">Werkzeug</th>
-                                <th class="sortable" data-sort="supplier">Lieferant</th>
-                                <th class="sortable" data-sort="location">Standort</th>
+                                <th class="sortable" data-sort="number">Verlagerungs-Nr.</th>
+                                <th class="sortable" data-sort="name">Beschreibung</th>
+                                <th class="sortable" data-sort="sourceLocation">Von</th>
+                                <th class="sortable" data-sort="targetLocation">Nach</th>
                                 <th class="sortable" data-sort="status">Status</th>
-                                <th>Letzte Verlagerung</th>
+                                <th class="sortable" data-sort="dueDate">Fällig</th>
                                 <th>Aktionen</th>
                             </tr>
                         </thead>
@@ -86,8 +96,8 @@ class VerlagerungPage {
                             Lade...
                         </div>
                         <div class="pagination-controls">
-                            <button class="page-btn" id="prevPage" onclick="verlagerungPage.prevPage()">◀ Zurück</button>
-                            <button class="page-btn" id="nextPage" onclick="verlagerungPage.nextPage()">Weiter ▶</button>
+                            <button class="page-btn" id="prevPage" onclick="verlagerungPage.prevPage()">Zurück</button>
+                            <button class="page-btn" id="nextPage" onclick="verlagerungPage.nextPage()">Weiter</button>
                         </div>
                     </div>
                 </div>
@@ -96,13 +106,34 @@ class VerlagerungPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="verlagerungPage.showSettings()">⚙️ Einstellungen</button>
-            <button class="btn btn-primary" onclick="verlagerungPage.showAddModal()">➕ Neue Verlagerung</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/settings')">Einstellungen</button>
+            <button class="btn btn-primary" onclick="verlagerungPage.showCreateModal()">+ Neue Verlagerung</button>
         `;
+
+        // Show API mode
+        this.updateApiModeIndicator();
 
         // Load data and setup
         await this.loadData();
         this.attachEventListeners();
+    }
+
+    updateApiModeIndicator() {
+        const indicator = document.getElementById('apiModeIndicator');
+        const icon = document.getElementById('apiModeIcon');
+        const text = document.getElementById('apiModeText');
+
+        if (api.mode === 'live') {
+            indicator.style.background = '#d1fae5';
+            indicator.style.color = '#065f46';
+            icon.style.color = '#10b981';
+            text.textContent = 'Live-API verbunden';
+        } else {
+            indicator.style.background = '#fef3c7';
+            indicator.style.color = '#92400e';
+            icon.style.color = '#f59e0b';
+            text.textContent = 'Mock-Modus (Testdaten)';
+        }
     }
 
     async loadData() {
@@ -230,14 +261,14 @@ class VerlagerungPage {
         const offen = this.allTools.filter(t => t.status === 'offen').length;
         const feinplanung = this.allTools.filter(t => t.status === 'feinplanung').length;
         const inInventur = this.allTools.filter(t => t.status === 'in-inventur').length;
+        const abgeschlossen = this.allTools.filter(t => t.status === 'abgeschlossen').length;
 
         // Update filter counts
         document.getElementById('countAll').textContent = total;
         document.getElementById('countOffen').textContent = offen;
         document.getElementById('countFeinplanung').textContent = feinplanung;
         document.getElementById('countInInventur').textContent = inInventur;
-
-        // Header stats are hidden - no update needed
+        document.getElementById('countAbgeschlossen').textContent = abgeschlossen;
     }
 
     renderTable() {
@@ -252,7 +283,7 @@ class VerlagerungPage {
                 <tr>
                     <td colspan="7">
                         <div class="empty-state">
-                            <div class="empty-state-icon">🔍</div>
+                            <div class="empty-state-icon">📦</div>
                             <div class="empty-state-text">Keine Verlagerungen gefunden</div>
                             <div class="empty-state-hint">Versuche einen anderen Suchbegriff oder Filter</div>
                         </div>
@@ -262,22 +293,27 @@ class VerlagerungPage {
         } else {
             tableBody.innerHTML = pageTools.map(tool => {
                 const statusInfo = {
-                    'offen': { class: 'status-offen', text: '⚪ Offen' },
-                    'feinplanung': { class: 'status-feinplanung', text: '🔵 Feinplanung' },
-                    'in-inventur': { class: 'status-in-inventur', text: '✅ in Bearbeitung' }
-                }[tool.status];
+                    'offen': { class: 'status-offen', text: 'Offen' },
+                    'feinplanung': { class: 'status-feinplanung', text: 'Feinplanung' },
+                    'in-inventur': { class: 'status-in-inventur', text: 'In Bearbeitung' },
+                    'abgeschlossen': { class: 'status-abgeschlossen', text: 'Abgeschlossen' }
+                }[tool.status] || { class: 'status-offen', text: tool.status };
+
+                // Source and target locations
+                const sourceLocation = tool.sourceLocation || tool.location || '-';
+                const targetLocation = tool.targetLocation || '-';
 
                 return `
-                    <tr>
-                        <td class="tool-number">${tool.toolNumber}</td>
+                    <tr class="clickable-row" onclick="verlagerungPage.openDetail('${tool.id || tool.processKey}')">
+                        <td class="tool-number">${tool.number || tool.toolNumber || '-'}</td>
                         <td class="tool-name">${tool.name}</td>
-                        <td>${tool.supplier}</td>
-                        <td>📌 ${tool.location}</td>
+                        <td>${sourceLocation}</td>
+                        <td>${targetLocation}</td>
                         <td><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span></td>
-                        <td style="color: #6b7280;">${this.formatDate(tool.lastInventory)}</td>
+                        <td style="color: #6b7280;">${tool.dueDate ? this.formatDate(tool.dueDate) : '-'}</td>
                         <td>
-                            <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; min-width: 80px; font-size: 0.8rem;" onclick="router.navigate('/detail/${tool.id}')">
-                                👁️ Details
+                            <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; min-width: 80px; font-size: 0.8rem;" onclick="event.stopPropagation(); verlagerungPage.openDetail('${tool.id || tool.processKey}')">
+                                Details
                             </button>
                         </td>
                     </tr>
@@ -286,10 +322,32 @@ class VerlagerungPage {
         }
 
         // Pagination
+        const showing = pageTools.length > 0 ? `${startIdx + 1}-${Math.min(endIdx, this.filteredTools.length)}` : '0';
         document.getElementById('paginationInfo').textContent =
-            `Zeige ${startIdx + 1}-${Math.min(endIdx, this.filteredTools.length)} von ${this.filteredTools.length} Verlagerungen`;
+            `Zeige ${showing} von ${this.filteredTools.length} Verlagerungen`;
         document.getElementById('prevPage').disabled = this.currentPage <= 1;
         document.getElementById('nextPage').disabled = this.currentPage >= totalPages;
+    }
+
+    // Open detail view for a relocation
+    openDetail(id) {
+        router.navigate(`/verlagerung/${id}`);
+    }
+
+    // Refresh data from API
+    async refreshData() {
+        const btn = document.getElementById('refreshBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Laden...';
+        }
+
+        await this.loadData();
+
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Aktualisieren';
+        }
     }
 
     formatDate(dateStr) {
@@ -314,20 +372,189 @@ class VerlagerungPage {
         }
     }
 
-    showAddModal() {
-        alert('➕ Verlagerung Hinzufügen - Diese Funktion wird später implementiert');
+    // Show modal for creating a new relocation
+    showCreateModal() {
+        const modalHtml = `
+            <div class="modal-overlay" id="createModal" onclick="if(event.target === this) verlagerungPage.closeModal()">
+                <div class="modal" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h2>Neue Verlagerung erstellen</h2>
+                        <button class="modal-close" onclick="verlagerungPage.closeModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createRelocationForm">
+                            <div class="form-group">
+                                <label for="description">Beschreibung</label>
+                                <input type="text" id="description" class="form-control" placeholder="z.B. Verlagerung Presswerkzeuge" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="sourceLocation">Von (Quellstandort)</label>
+                                <select id="sourceLocation" class="form-control" required>
+                                    <option value="">Standort auswählen...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="targetLocation">Nach (Zielstandort)</label>
+                                <select id="targetLocation" class="form-control" required>
+                                    <option value="">Standort auswählen...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dueDate">Fälligkeitsdatum</label>
+                                <input type="date" id="dueDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="comment">Kommentar (optional)</label>
+                                <textarea id="comment" class="form-control" rows="3" placeholder="Zusätzliche Informationen..."></textarea>
+                            </div>
+                            <div id="auditResult" style="display: none; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-neutral" onclick="verlagerungPage.closeModal()">Abbrechen</button>
+                        <button class="btn btn-primary" onclick="verlagerungPage.submitCreateForm()">Erstellen</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        this.loadLocationsForModal();
+
+        // Set default due date to 14 days from now
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 14);
+        document.getElementById('dueDate').value = dueDate.toISOString().split('T')[0];
+
+        // Add change listeners for audit check
+        document.getElementById('sourceLocation').addEventListener('change', () => this.checkAudit());
+        document.getElementById('targetLocation').addEventListener('change', () => this.checkAudit());
     }
 
-    loadFromAPI() {
-        alert('🔄 API-Anbindung wird geladen...\n\nEndpoint: /api/verlagerung\nStatus: Wird implementiert');
+    async loadLocationsForModal() {
+        try {
+            const companyResult = await api.getCompanyBySupplier();
+            if (companyResult.success && companyResult.companyKey) {
+                const locationsResult = await api.getCompanyLocations(companyResult.companyKey);
+                if (locationsResult.success) {
+                    const sourceSelect = document.getElementById('sourceLocation');
+                    const targetSelect = document.getElementById('targetLocation');
+
+                    locationsResult.data.forEach(loc => {
+                        const option = `<option value="${loc.key}" data-country="${loc.country}">${loc.name} (${loc.city}, ${loc.country})</option>`;
+                        sourceSelect.insertAdjacentHTML('beforeend', option);
+                        targetSelect.insertAdjacentHTML('beforeend', option);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error loading locations:', error);
+        }
+    }
+
+    async checkAudit() {
+        const sourceSelect = document.getElementById('sourceLocation');
+        const targetSelect = document.getElementById('targetLocation');
+        const auditResult = document.getElementById('auditResult');
+
+        if (!sourceSelect.value || !targetSelect.value) {
+            auditResult.style.display = 'none';
+            return;
+        }
+
+        const sourceCountry = sourceSelect.selectedOptions[0]?.dataset.country;
+        const targetCountry = targetSelect.selectedOptions[0]?.dataset.country;
+
+        if (sourceCountry && targetCountry && sourceCountry !== targetCountry) {
+            const result = await api.checkRelocationAudit(sourceCountry, targetCountry);
+            if (result.success) {
+                auditResult.style.display = 'block';
+                if (result.data.allowed) {
+                    auditResult.style.background = '#d1fae5';
+                    auditResult.style.color = '#065f46';
+                    auditResult.textContent = `Verlagerung von ${sourceCountry} nach ${targetCountry} ist erlaubt.`;
+                } else if (result.data.color === 'red') {
+                    auditResult.style.background = '#fee2e2';
+                    auditResult.style.color = '#991b1b';
+                    auditResult.textContent = `Warnung: Verlagerung von ${sourceCountry} nach ${targetCountry} erfordert Genehmigung.`;
+                } else {
+                    auditResult.style.background = '#1f2937';
+                    auditResult.style.color = '#fff';
+                    auditResult.textContent = `Verlagerung von ${sourceCountry} nach ${targetCountry} ist nicht erlaubt.`;
+                }
+            }
+        } else {
+            auditResult.style.display = 'none';
+        }
+    }
+
+    async submitCreateForm() {
+        const description = document.getElementById('description').value;
+        const sourceLocationKey = document.getElementById('sourceLocation').value;
+        const targetLocationKey = document.getElementById('targetLocation').value;
+        const dueDate = document.getElementById('dueDate').value;
+        const comment = document.getElementById('comment').value;
+
+        if (!description || !sourceLocationKey || !targetLocationKey || !dueDate) {
+            alert('Bitte alle Pflichtfelder ausfüllen.');
+            return;
+        }
+
+        const result = await api.createRelocation({
+            description,
+            sourceLocationKey,
+            targetLocationKey,
+            dueDate,
+            comment
+        });
+
+        if (result.success) {
+            this.closeModal();
+            await this.refreshData();
+            // Navigate to the new relocation detail
+            if (result.data?.key || result.data?.context?.key) {
+                router.navigate(`/verlagerung/${result.data.key || result.data.context.key}`);
+            }
+        } else {
+            alert('Fehler beim Erstellen: ' + (result.error || 'Unbekannter Fehler'));
+        }
+    }
+
+    closeModal() {
+        const modal = document.getElementById('createModal');
+        if (modal) {
+            modal.remove();
+        }
     }
 
     exportData() {
-        alert(`📥 Export wird vorbereitet...\n\nFormat: CSV\nDatensätze: ${this.filteredTools.length}`);
-    }
+        if (this.filteredTools.length === 0) {
+            alert('Keine Daten zum Exportieren vorhanden.');
+            return;
+        }
 
-    showSettings() {
-        alert('⚙️ Einstellungen\n\n- API-Konfiguration\n- Export-Optionen\n- Filter-Präferenzen\n- Ansichts-Einstellungen');
+        // Create CSV content
+        const headers = ['Verlagerungs-Nr.', 'Beschreibung', 'Von', 'Nach', 'Status', 'Fällig'];
+        const rows = this.filteredTools.map(tool => [
+            tool.number || tool.toolNumber || '',
+            tool.name,
+            tool.sourceLocation || tool.location || '',
+            tool.targetLocation || '',
+            tool.status,
+            tool.dueDate || ''
+        ]);
+
+        const csvContent = [
+            headers.join(';'),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
+        ].join('\n');
+
+        // Download
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `verlagerungen_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
     }
 
     showError(message) {
@@ -335,7 +562,7 @@ class VerlagerungPage {
         app.innerHTML = `
             <div class="container">
                 <div class="card" style="text-align: center; padding: 4rem 2rem;">
-                    <div style="font-size: 4rem; margin-bottom: 1rem; color: #f97316;">⚠️</div>
+                    <div style="font-size: 4rem; margin-bottom: 1rem; color: #f97316;">!</div>
                     <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Fehler</h2>
                     <p style="color: #6b7280; margin-bottom: 2rem;">${message}</p>
                     <button class="btn btn-primary" onclick="location.reload()">Neu laden</button>

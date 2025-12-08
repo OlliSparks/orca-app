@@ -1064,26 +1064,328 @@ class APIService {
         });
     }
 
-    // === Verlagerung Endpoints ===
+    // === Verlagerung (Relocation) Endpoints ===
+
+    // Get list of relocation processes
     async getVerlagerungList(filters = {}) {
         return this.callWithFallback(
             // Live API call
             async () => {
                 const params = new URLSearchParams();
-                if (filters.status) params.append('status', filters.status);
+                // Filter for relocation processes
+                params.append('meta.type', 'RELOCATION');
+                if (filters.status) params.append('meta.status', filters.status);
+                if (filters.supplier) params.append('meta.supplier', filters.supplier);
+                params.append('limit', filters.limit || 100);
+                params.append('skip', filters.skip || 0);
 
-                const endpoint = `/verlagerung-list?${params.toString()}`;
+                const endpoint = `/process?${params.toString()}`;
+                console.log('Calling process list for relocations:', endpoint);
                 const response = await this.call(endpoint, 'GET');
+                console.log('Relocation process response:', response);
+
+                // Transform API response to our format
+                const items = Array.isArray(response) ? response : (response.data || []);
+                // Filter only RELOCATION type processes
+                const relocationProcesses = items.filter(p =>
+                    p.meta?.type === 'RELOCATION' ||
+                    p.meta?.processType === 'RELOCATION'
+                );
+
+                const transformedData = relocationProcesses.map((item, index) => ({
+                    id: item.context?.key || index,
+                    processKey: item.context?.key || '',
+                    number: `VRL-${String(index + 1).padStart(4, '0')}`,
+                    toolNumber: item.meta?.assetNumber || item.meta?.inventoryNumber || '',
+                    name: item.meta?.description || item.meta?.title || 'Verlagerung',
+                    supplier: item.meta?.supplier || '',
+                    location: item.meta?.targetLocation || item.meta?.location || '',
+                    sourceLocation: item.meta?.sourceLocation || '',
+                    targetLocation: item.meta?.targetLocation || '',
+                    status: this.mapRelocationStatus(item.meta?.status),
+                    dueDate: item.meta?.dueDate || null,
+                    createdAt: item.meta?.createdAt || null,
+                    lastInventory: item.meta?.lastInventory || null,
+                    assetCount: item.meta?.assetCount || 0,
+                    originalData: item
+                }));
 
                 return {
                     success: true,
-                    data: response.data || response,
-                    total: response.total || (response.data ? response.data.length : 0)
+                    data: transformedData,
+                    total: transformedData.length
                 };
             },
             // Mock fallback
             () => this.getMockVerlagerungData(filters)
         );
+    }
+
+    // Get relocation process details
+    async getRelocationDetail(processKey) {
+        if (this.mode === 'mock') {
+            return this.getMockRelocationDetail(processKey);
+        }
+
+        try {
+            const response = await this.call(`/process/${processKey}`, 'GET');
+            console.log('Relocation detail response:', response);
+
+            const item = response.data || response;
+            return {
+                success: true,
+                data: {
+                    id: item.context?.key || processKey,
+                    processKey: item.context?.key || processKey,
+                    number: item.meta?.number || '',
+                    name: item.meta?.description || item.meta?.title || 'Verlagerung',
+                    status: this.mapRelocationStatus(item.meta?.status),
+                    sourceLocation: {
+                        key: item.meta?.sourceLocationKey || '',
+                        name: item.meta?.sourceLocation || '',
+                        country: item.meta?.sourceCountry || '',
+                        city: item.meta?.sourceCity || ''
+                    },
+                    targetLocation: {
+                        key: item.meta?.targetLocationKey || '',
+                        name: item.meta?.targetLocation || '',
+                        country: item.meta?.targetCountry || '',
+                        city: item.meta?.targetCity || ''
+                    },
+                    dueDate: item.meta?.dueDate || null,
+                    createdAt: item.meta?.createdAt || null,
+                    completedAt: item.meta?.completedAt || null,
+                    comment: item.meta?.comment || '',
+                    assetCount: item.meta?.assetCount || 0,
+                    originalData: item
+                }
+            };
+        } catch (error) {
+            console.error('Get relocation detail error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get positions/assets for a relocation process
+    async getRelocationPositions(processKey, filters = {}) {
+        if (this.mode === 'mock') {
+            return this.getMockRelocationPositions(processKey);
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('limit', filters.limit || 100);
+            params.append('skip', filters.skip || 0);
+
+            const endpoint = `/process/${processKey}/positions?${params.toString()}`;
+            console.log('Calling relocation positions:', endpoint);
+            const response = await this.call(endpoint, 'GET');
+            console.log('Relocation positions response:', response);
+
+            const positions = Array.isArray(response) ? response : (response.data || []);
+            const transformedData = positions.map((pos, index) => ({
+                id: pos.context?.key || index,
+                positionKey: pos.context?.key || '',
+                assetKey: pos.asset?.context?.key || '',
+                inventoryNumber: pos.asset?.meta?.inventoryNumber || '',
+                name: pos.asset?.meta?.description || pos.asset?.meta?.inventoryText || 'Unbekannt',
+                currentLocation: pos.meta?.sourceLocation || pos.asset?.meta?.location || '',
+                targetLocation: pos.meta?.targetLocation || '',
+                status: pos.meta?.status || 'PENDING',
+                comment: pos.meta?.comment || '',
+                originalData: pos
+            }));
+
+            return {
+                success: true,
+                data: transformedData,
+                total: transformedData.length
+            };
+        } catch (error) {
+            console.error('Get relocation positions error:', error);
+            return { success: false, error: error.message, data: [] };
+        }
+    }
+
+    // Create a new relocation process
+    async createRelocation(data) {
+        if (this.mode === 'mock') {
+            console.log('Create relocation (mock):', data);
+            return { success: true, data: { key: 'mock-relocation-' + Date.now() } };
+        }
+
+        try {
+            const response = await this.call('/process/full', 'POST', {
+                meta: {
+                    type: 'RELOCATION',
+                    description: data.description || 'Verlagerung',
+                    sourceLocationKey: data.sourceLocationKey,
+                    targetLocationKey: data.targetLocationKey,
+                    dueDate: data.dueDate,
+                    comment: data.comment || ''
+                },
+                assets: data.assetKeys || []
+            });
+            console.log('Create relocation response:', response);
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Create relocation error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Add positions to relocation process (batch)
+    async addRelocationPositions(processKey, assetKeys) {
+        if (this.mode === 'mock') {
+            console.log('Add relocation positions (mock):', processKey, assetKeys);
+            return { success: true };
+        }
+
+        try {
+            const positions = assetKeys.map(assetKey => ({
+                asset: { context: { key: assetKey } }
+            }));
+
+            const endpoint = `/process/relocation/${processKey}/positions/batch`;
+            const response = await this.call(endpoint, 'POST', positions);
+            console.log('Add relocation positions response:', response);
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('Add relocation positions error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Audit check for relocation between countries
+    async checkRelocationAudit(sourceCountry, targetCountry) {
+        if (this.mode === 'mock') {
+            // Mock: Always allowed within same country, otherwise check
+            if (sourceCountry === targetCountry) {
+                return { success: true, data: { result: 3, allowed: true, color: 'green' } };
+            }
+            // Mock some forbidden countries
+            const forbiddenTargets = ['KP', 'IR', 'SY'];
+            if (forbiddenTargets.includes(targetCountry)) {
+                return { success: true, data: { result: 1, allowed: false, color: 'black' } };
+            }
+            return { success: true, data: { result: 3, allowed: true, color: 'green' } };
+        }
+
+        try {
+            const response = await this.call('/utils/audit', 'POST', {
+                sourceCountry: sourceCountry,
+                targetCountry: targetCountry
+            });
+            console.log('Audit check response:', response);
+
+            // Response: 1 = black (forbidden), 2 = red (not allowed), 3 = green (allowed)
+            const result = response.result || response.data?.result || 3;
+            const colorMap = { 1: 'black', 2: 'red', 3: 'green' };
+
+            return {
+                success: true,
+                data: {
+                    result: result,
+                    allowed: result === 3,
+                    color: colorMap[result] || 'green',
+                    message: response.message || ''
+                }
+            };
+        } catch (error) {
+            console.error('Audit check error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get system tasks for relocation completion
+    async getRelocationTasks(filters = {}) {
+        if (this.mode === 'mock') {
+            return { success: true, data: [], total: 0 };
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('type', 'RELOCATION_COMPLETION');
+            if (filters.status) params.append('status', filters.status);
+            if (filters.supplier) params.append('supplier', filters.supplier);
+            params.append('limit', filters.limit || 100);
+            params.append('offset', filters.offset || 0);
+
+            const endpoint = `/tasks/system?${params.toString()}`;
+            const response = await this.call(endpoint, 'GET');
+            console.log('Relocation tasks response:', response);
+
+            const tasks = Array.isArray(response) ? response : (response.data || []);
+            return {
+                success: true,
+                data: tasks,
+                total: tasks.length
+            };
+        } catch (error) {
+            console.error('Get relocation tasks error:', error);
+            return { success: false, error: error.message, data: [] };
+        }
+    }
+
+    // Map API relocation status to internal status
+    mapRelocationStatus(status) {
+        const statusMap = {
+            'INIT': 'offen',
+            'NEW': 'offen',
+            'OPEN': 'offen',
+            'ACCEPTED': 'feinplanung',
+            'IN_PROGRESS': 'in-inventur',
+            'PENDING': 'feinplanung',
+            'APPROVED': 'in-inventur',
+            'COMPLETED': 'abgeschlossen',
+            'CLOSED': 'abgeschlossen',
+            'DONE': 'abgeschlossen'
+        };
+        return statusMap[status] || 'offen';
+    }
+
+    // Mock data for relocation detail
+    getMockRelocationDetail(processKey) {
+        const id = parseInt(processKey.replace(/\D/g, '')) || 1;
+        return {
+            success: true,
+            data: {
+                id: processKey,
+                processKey: processKey,
+                number: `VRL-${String(id).padStart(4, '0')}`,
+                name: 'Verlagerung Presswerkzeug',
+                status: 'offen',
+                sourceLocation: {
+                    key: 'loc-1',
+                    name: 'Hauptwerk Vilsbiburg',
+                    country: 'DE',
+                    city: 'Vilsbiburg'
+                },
+                targetLocation: {
+                    key: 'loc-2',
+                    name: 'Werk Braunau',
+                    country: 'AT',
+                    city: 'Braunau'
+                },
+                dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                createdAt: new Date().toISOString(),
+                comment: '',
+                assetCount: 3
+            }
+        };
+    }
+
+    // Mock data for relocation positions
+    getMockRelocationPositions(processKey) {
+        return {
+            success: true,
+            data: [
+                { id: 1, positionKey: 'pos-1', assetKey: 'asset-1', inventoryNumber: 'PRE-2023-0001', name: 'Presswerkzeug A-Säule links', currentLocation: 'Halle A - Regal 1', targetLocation: 'Werk Braunau', status: 'PENDING', comment: '' },
+                { id: 2, positionKey: 'pos-2', assetKey: 'asset-2', inventoryNumber: 'TIE-2023-0002', name: 'Tiefziehwerkzeug Motorhaube', currentLocation: 'Halle A - Regal 2', targetLocation: 'Werk Braunau', status: 'PENDING', comment: '' },
+                { id: 3, positionKey: 'pos-3', assetKey: 'asset-3', inventoryNumber: 'STA-2023-0003', name: 'Stanzwerkzeug Türblech', currentLocation: 'Halle B - Lager 1', targetLocation: 'Werk Braunau', status: 'PENDING', comment: '' }
+            ],
+            total: 3
+        };
     }
 
     getMockVerlagerungData(filters = {}) {

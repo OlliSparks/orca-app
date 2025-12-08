@@ -63,6 +63,12 @@ class OrcaApp {
             verlagerungPage.render();
         });
 
+        // Verlagerung Detail (mit dynamischer ID)
+        router.addRoute('/verlagerung/:id', (params) => {
+            const id = params.id;
+            verlagerungDetailPage.render(id);
+        });
+
         // Vertragspartnerwechsel
         router.addRoute('/partnerwechsel', () => {
             partnerwechselPage.render();
