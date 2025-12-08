@@ -1073,43 +1073,55 @@ class APIService {
         }
 
         try {
-            // Versuche zuerst /process mit type Filter
+            // Schritt 1: Prozess-Liste abrufen (nur Keys)
             const params = new URLSearchParams();
             params.append('limit', filters.limit || 100);
             params.append('skip', filters.skip || 0);
 
-            // Versuch 1: Alle Prozesse laden und nach RELOCATION filtern
             let endpoint = `/process?${params.toString()}`;
             console.log('Calling process list:', endpoint);
-            const response = await this.call(endpoint, 'GET');
-            console.log('Process response:', response);
+            const processList = await this.call(endpoint, 'GET');
+            console.log('Process list response:', processList);
 
-            const items = Array.isArray(response) ? response : (response.data || []);
-            console.log('Total processes found:', items.length);
+            const processKeys = Array.isArray(processList) ? processList : (processList.data || []);
+            console.log('Total process keys found:', processKeys.length);
+
+            // Schritt 2: Details für jeden Prozess abrufen
+            const processDetails = [];
+            for (const proc of processKeys) {
+                const key = proc.key || proc.context?.key;
+                if (key) {
+                    try {
+                        const detail = await this.call(`/process/${key}`, 'GET');
+                        processDetails.push(detail);
+                    } catch (e) {
+                        console.warn('Could not load process:', key, e);
+                    }
+                }
+            }
+            console.log('Loaded process details:', processDetails.length);
 
             // Log alle Prozess-Typen zur Analyse
-            const types = [...new Set(items.map(p => p.meta?.type || p.meta?.processType || 'UNKNOWN'))];
+            const types = [...new Set(processDetails.map(p => p.meta?.type || 'UNKNOWN'))];
             console.log('Process types found:', types);
 
             // Filtere nach RELOCATION
-            const relocationProcesses = items.filter(p => {
-                const type = (p.meta?.type || p.meta?.processType || '').toUpperCase();
+            const relocationProcesses = processDetails.filter(p => {
+                const type = (p.meta?.type || '').toUpperCase();
                 return type.includes('RELOCATION') || type.includes('VERLAGERUNG');
             });
             console.log('Relocation processes found:', relocationProcesses.length);
 
             const transformedData = relocationProcesses.map((item, index) => ({
-                id: item.context?.key || index,
-                processKey: item.context?.key || '',
-                number: item.meta?.number || `VRL-${String(index + 1).padStart(4, '0')}`,
-                toolNumber: item.meta?.assetNumber || item.meta?.inventoryNumber || '',
-                name: item.meta?.description || item.meta?.title || 'Verlagerung',
-                supplier: item.meta?.supplier || '',
-                location: item.meta?.targetLocation || item.meta?.location || '',
-                sourceLocation: item.meta?.sourceLocation || item.meta?.fromLocation || '',
-                targetLocation: item.meta?.targetLocation || item.meta?.toLocation || '',
+                id: item.key || item.context?.key || index,
+                processKey: item.key || item.context?.key || '',
+                number: item.meta?.number || item.meta?.processNumber || `VRL-${String(index + 1).padStart(4, '0')}`,
+                name: item.meta?.description || item.meta?.title || item.meta?.name || 'Verlagerung',
+                supplier: item.meta?.supplier || item.meta?.supplierName || '',
+                sourceLocation: item.meta?.sourceLocation || item.meta?.fromLocation || item.meta?.source || '',
+                targetLocation: item.meta?.targetLocation || item.meta?.toLocation || item.meta?.target || '',
                 status: this.mapRelocationStatus(item.meta?.status),
-                dueDate: item.meta?.dueDate || null,
+                dueDate: item.meta?.dueDate || item.meta?.deadline || null,
                 createdAt: item.meta?.createdAt || item.meta?.created || null,
                 assetCount: item.meta?.assetCount || item.meta?.positionCount || 0,
                 originalData: item
@@ -1118,7 +1130,8 @@ class APIService {
             return {
                 success: true,
                 data: transformedData,
-                total: transformedData.length
+                total: transformedData.length,
+                debug: { types, totalProcesses: processDetails.length }
             };
         } catch (error) {
             console.error('Error loading relocations:', error);

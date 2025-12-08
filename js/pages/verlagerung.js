@@ -138,7 +138,18 @@ class VerlagerungPage {
 
     async loadData() {
         try {
+            console.log('Loading Verlagerung data...');
             const response = await api.getVerlagerungList();
+            console.log('Verlagerung response:', response);
+
+            // Debug-Info anzeigen
+            if (response.debug) {
+                const debugInfo = document.getElementById('apiModeText');
+                if (debugInfo) {
+                    debugInfo.textContent = `Live-API: ${response.debug.totalProcesses} Prozesse gefunden, Typen: ${response.debug.types.join(', ')}`;
+                }
+            }
+
             if (response.success) {
                 this.allTools = response.data;
                 this.filteredTools = [...this.allTools];
@@ -153,10 +164,13 @@ class VerlagerungPage {
 
                 this.updateStats();
                 this.renderTable();
+            } else {
+                console.error('API Error:', response.error);
+                this.showError('API Fehler: ' + (response.error || 'Unbekannt'));
             }
         } catch (error) {
             console.error('Error loading Verlagerung data:', error);
-            this.showError('Fehler beim Laden der Daten');
+            this.showError('Fehler beim Laden der Daten: ' + error.message);
         }
     }
 
