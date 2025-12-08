@@ -1108,15 +1108,59 @@ class APIService {
             ))];
             console.log('Process types found:', types);
 
-            // Filtere nach RELOCATION
-            const relocationProcesses = processDetails.filter(p => {
+            // Filtere nach RELOCATION - unterscheide zwischen Haupt- und Unterprozessen
+            const allRelocationProcesses = processDetails.filter(p => {
                 const pType = (p.meta?.['p.type'] || '').toUpperCase();
                 const ppType = (p.meta?.['pp.type'] || '').toUpperCase();
                 const type = (p.meta?.type || '').toUpperCase();
                 return pType.includes('RELOCATION') || ppType.includes('RELOCATION') ||
                        type.includes('RELOCATION') || pType.includes('VERLAGERUNG');
             });
-            console.log('Relocation processes found:', relocationProcesses.length);
+            console.log('All relocation processes found:', allRelocationProcesses.length);
+
+            // Trenne Hauptprozesse (RELOCATION ohne .C/.A) von Unterprozessen (RELOCATION.C, RELOCATION.A)
+            const mainProcesses = allRelocationProcesses.filter(p => {
+                const pType = (p.meta?.['p.type'] || '').toUpperCase();
+                // Hauptprozess = RELOCATION ohne Suffix
+                return pType === 'RELOCATION' || (!pType.includes('.') && pType.includes('RELOCATION'));
+            });
+
+            const subProcesses = allRelocationProcesses.filter(p => {
+                const pType = (p.meta?.['p.type'] || '').toUpperCase();
+                // Unterprozess = RELOCATION.C, RELOCATION.A, etc.
+                return pType.includes('RELOCATION.') || pType === 'RELOCATION.C' || pType === 'RELOCATION.A';
+            });
+
+            console.log('Main processes (RELOCATION):', mainProcesses.length);
+            console.log('Sub processes (RELOCATION.C/A):', subProcesses.length);
+
+            // Erstelle eine Map: Hauptprozess-Key -> zugehörige Unterprozesse
+            // Unterprozesse haben pp.pid der auf den Hauptprozess verweist
+            const subProcessMap = {};
+            for (const sub of subProcesses) {
+                const parentKey = sub.meta?.['pp.pid'] || '';
+                if (parentKey) {
+                    if (!subProcessMap[parentKey]) {
+                        subProcessMap[parentKey] = [];
+                    }
+                    subProcessMap[parentKey].push(sub);
+                }
+            }
+            console.log('SubProcess mapping created for', Object.keys(subProcessMap).length, 'main processes');
+
+            // Verwende die Unterprozesse als Basis (da diese die detaillierten relo.* Felder haben)
+            // Aber zeige nur eindeutige Verlagerungen (basierend auf Hauptprozess)
+            let relocationProcesses = [];
+
+            // Option 1: Wenn Unterprozesse vorhanden, nutze diese (haben mehr Details)
+            if (subProcesses.length > 0) {
+                relocationProcesses = subProcesses;
+                console.log('Using subprocesses as data source (have detailed relo.* fields)');
+            } else {
+                // Option 2: Fallback auf Hauptprozesse
+                relocationProcesses = mainProcesses;
+                console.log('Using main processes as data source');
+            }
 
             // Filtere nach dem eingestellten Lieferanten (supplierNumber)
             const supplierNumber = this.supplierNumber;
@@ -1124,9 +1168,10 @@ class APIService {
 
             const filteredBySupplier = supplierNumber
                 ? relocationProcesses.filter(p => {
-                    const contractPartner = p.meta?.contractPartner || '';
-                    const supplier = p.meta?.supplier || '';
-                    const assignedUser = p.meta?.assignedUser || '';
+                    const meta = p.meta || {};
+                    const contractPartner = meta.contractPartner || meta['relo.contractPartner'] || '';
+                    const supplier = meta.supplier || '';
+                    const assignedUser = meta.assignedUser || '';
                     // Prüfe ob der Lieferant beteiligt ist
                     return contractPartner.includes(supplierNumber) ||
                            supplier.includes(supplierNumber) ||
@@ -1139,46 +1184,112 @@ class APIService {
 
             const transformedData = filteredBySupplier.map((item, index) => {
                 const meta = item.meta || {};
+
+                // Versuche verschiedene Feld-Varianten (Haupt- und Unterprozesse haben unterschiedliche Strukturen)
+                // Identifier: Kann in verschiedenen Feldern sein
+                const identifier = meta['relo.identifier'] ||
+                                   meta.identifier ||
+                                   (meta.description?.includes('→') ? meta.description : '') ||
+                                   '';
+
+                // Standorte: Verschiedene mögliche Feldnamen
+                const sourceLocation = meta['relo.from.address'] ||
+                                       meta['relo.from.location'] ||
+                                       meta['relo.from'] ||
+                                       meta['from.location'] ||
+                                       meta.fromLocation ||
+                                       meta.sourceLocation ||
+                                       meta.source ||
+                                       '';
+
+                const targetLocation = meta['relo.to.address'] ||
+                                       meta['relo.to.location'] ||
+                                       meta['relo.to'] ||
+                                       meta['to.location'] ||
+                                       meta.toLocation ||
+                                       meta.targetLocation ||
+                                       meta.target ||
+                                       '';
+
+                // Datum: Verschiedene mögliche Feldnamen
+                const arrivalDate = meta['relo.arrival'] ||
+                                    meta.arrival ||
+                                    meta.arrivalDate ||
+                                    meta.dueDate ||
+                                    meta.deadline ||
+                                    null;
+
+                const departureDate = meta['relo.departure'] ||
+                                      meta.departure ||
+                                      meta.departureDate ||
+                                      null;
+
                 return {
                     id: item.key || item.context?.key || index,
                     processKey: item.key || item.context?.key || '',
-                    // Identifier aus description extrahieren (z.B. "KPORCATEST 510 - Verelagerung CZ nach DE")
-                    number: meta.description?.split(' - ')[0] || meta.number || `VRL-${String(index + 1).padStart(4, '0')}`,
-                    // Volle Beschreibung
-                    name: meta.description || meta.title || 'Verlagerung',
-                    // Identifier (z.B. "CZ-Modřice → DE-Hardheim-[Eigentum/Property]")
-                    identifier: meta['relo.identifier'] || '',
+                    // Name/Beschreibung
+                    number: meta.description?.split(' - ')[0] || meta.name || meta.number || `VRL-${String(index + 1).padStart(4, '0')}`,
+                    name: meta.description || meta.name || meta.title || 'Verlagerung',
+                    // Identifier
+                    identifier: identifier,
                     // Vertragspartner
-                    supplier: meta.contractPartner || meta['relo.contractPartner'] || '',
-                    supplierName: meta['relo.contractPartnerName'] || '',
-                    // Zielunternehmen
-                    targetCompany: meta['relo.to.companyName'] || meta['relo.to.company'] || '',
-                    // Ausgangsort (Quellstandort)
-                    sourceLocation: meta['relo.from.address'] || meta['relo.from.location'] || meta['relo.from'] || '',
-                    // Zielstandort
-                    targetLocation: meta['relo.to.address'] || meta['relo.to.location'] || meta['relo.to'] || '',
-                    // Geplanter Verladetermin
-                    departureDate: meta['relo.departure'] || null,
-                    // Geplanter Ankunftstermin
-                    arrivalDate: meta['relo.arrival'] || null,
-                    // Fällig = Ankunftstermin
-                    dueDate: meta['relo.arrival'] || meta.dueDate || null,
-                    // Ersteller
+                    supplier: meta.contractPartner || meta.supplier || '',
+                    supplierName: meta['relo.contractPartnerName'] || meta.supplierName || '',
+                    // Standorte
+                    sourceLocation: sourceLocation,
+                    targetLocation: targetLocation,
+                    targetCompany: meta['relo.to.companyName'] || meta['relo.to.company'] || meta.targetCompany || '',
+                    // Termine
+                    departureDate: departureDate,
+                    arrivalDate: arrivalDate,
+                    dueDate: arrivalDate,
+                    // Bearbeiter
                     creator: meta['relo.creator'] || meta.creator || '',
-                    creatorName: meta['relo.creatorName'] || '',
-                    // Aktueller Bearbeiter
-                    assignedUser: meta.assignedUser || meta['relo.assignedUser'] || '',
-                    assignedUserName: meta['relo.assignedUserName'] || '',
+                    creatorName: meta['relo.creatorName'] || meta.creatorName || '',
+                    assignedUser: meta.assignedUser || '',
+                    assignedUserName: meta['relo.assignedUserName'] || meta.assignedUserName || '',
                     // Status
                     status: this.mapRelocationStatus(meta['p.status'] || meta.status),
                     // Erstellt am
                     createdAt: meta.created || meta.createdAt || null,
                     // Anzahl Positionen
                     assetCount: meta['p.size'] || meta.positionCount || 0,
+                    // Typ des Prozesses (für Debug)
+                    processType: meta['p.type'] || meta['pp.type'] || meta.type || '',
                     // Original-Daten für Debug
                     originalData: item
                 };
             });
+
+            // Debug: Zeige ersten Eintrag mit allen meta-Feldern
+            if (filteredBySupplier.length > 0) {
+                const sampleMeta = filteredBySupplier[0].meta || {};
+                console.log('=== DEBUG: Sample subprocess data ===');
+                console.log('Process type:', sampleMeta['p.type']);
+                console.log('Parent process:', sampleMeta['pp.pid']);
+                console.log('All meta fields:', Object.keys(sampleMeta).sort());
+                console.log('relo.* fields:', Object.keys(sampleMeta).filter(k => k.startsWith('relo.')));
+                console.log('Sample values:');
+                console.log('  - relo.identifier:', sampleMeta['relo.identifier']);
+                console.log('  - relo.from.address:', sampleMeta['relo.from.address']);
+                console.log('  - relo.to.address:', sampleMeta['relo.to.address']);
+                console.log('  - relo.arrival:', sampleMeta['relo.arrival']);
+                console.log('  - relo.departure:', sampleMeta['relo.departure']);
+                console.log('  - contractPartner:', sampleMeta.contractPartner);
+                console.log('  - description:', sampleMeta.description);
+                console.log('=== END DEBUG ===');
+            }
+
+            // Debug: Zeige transformiertes Ergebnis
+            if (transformedData.length > 0) {
+                console.log('=== Transformed sample ===');
+                const sample = transformedData[0];
+                console.log('Identifier:', sample.identifier);
+                console.log('Source:', sample.sourceLocation);
+                console.log('Target:', sample.targetLocation);
+                console.log('Arrival:', sample.arrivalDate);
+                console.log('========================');
+            }
 
             return {
                 success: true,
