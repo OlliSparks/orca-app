@@ -1118,7 +1118,26 @@ class APIService {
             });
             console.log('Relocation processes found:', relocationProcesses.length);
 
-            const transformedData = relocationProcesses.map((item, index) => {
+            // Filtere nach dem eingestellten Lieferanten (supplierNumber)
+            const supplierNumber = this.supplierNumber;
+            console.log('Filtering by supplier:', supplierNumber);
+
+            const filteredBySupplier = supplierNumber
+                ? relocationProcesses.filter(p => {
+                    const contractPartner = p.meta?.contractPartner || '';
+                    const supplier = p.meta?.supplier || '';
+                    const assignedUser = p.meta?.assignedUser || '';
+                    // Prüfe ob der Lieferant beteiligt ist
+                    return contractPartner.includes(supplierNumber) ||
+                           supplier.includes(supplierNumber) ||
+                           contractPartner === supplierNumber ||
+                           supplier === supplierNumber;
+                })
+                : relocationProcesses;
+
+            console.log('After supplier filter:', filteredBySupplier.length);
+
+            const transformedData = filteredBySupplier.map((item, index) => {
                 const meta = item.meta || {};
                 return {
                     id: item.key || item.context?.key || index,
