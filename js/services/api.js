@@ -1102,13 +1102,19 @@ class APIService {
             console.log('Loaded process details:', processDetails.length);
 
             // Log alle Prozess-Typen zur Analyse
-            const types = [...new Set(processDetails.map(p => p.meta?.type || 'UNKNOWN'))];
+            // Typen können in meta['p.type'], meta['pp.type'] oder meta.type sein
+            const types = [...new Set(processDetails.map(p =>
+                p.meta?.['p.type'] || p.meta?.['pp.type'] || p.meta?.type || 'UNKNOWN'
+            ))];
             console.log('Process types found:', types);
 
             // Filtere nach RELOCATION
             const relocationProcesses = processDetails.filter(p => {
+                const pType = (p.meta?.['p.type'] || '').toUpperCase();
+                const ppType = (p.meta?.['pp.type'] || '').toUpperCase();
                 const type = (p.meta?.type || '').toUpperCase();
-                return type.includes('RELOCATION') || type.includes('VERLAGERUNG');
+                return pType.includes('RELOCATION') || ppType.includes('RELOCATION') ||
+                       type.includes('RELOCATION') || pType.includes('VERLAGERUNG');
             });
             console.log('Relocation processes found:', relocationProcesses.length);
 
@@ -1117,13 +1123,15 @@ class APIService {
                 processKey: item.key || item.context?.key || '',
                 number: item.meta?.number || item.meta?.processNumber || `VRL-${String(index + 1).padStart(4, '0')}`,
                 name: item.meta?.description || item.meta?.title || item.meta?.name || 'Verlagerung',
-                supplier: item.meta?.supplier || item.meta?.supplierName || '',
-                sourceLocation: item.meta?.sourceLocation || item.meta?.fromLocation || item.meta?.source || '',
-                targetLocation: item.meta?.targetLocation || item.meta?.toLocation || item.meta?.target || '',
-                status: this.mapRelocationStatus(item.meta?.status),
-                dueDate: item.meta?.dueDate || item.meta?.deadline || null,
-                createdAt: item.meta?.createdAt || item.meta?.created || null,
-                assetCount: item.meta?.assetCount || item.meta?.positionCount || 0,
+                supplier: item.meta?.contractPartner || item.meta?.supplier || '',
+                sourceLocation: item.meta?.['relo.from.company'] || item.meta?.sourceLocation || '',
+                targetLocation: item.meta?.['relo.to.company'] || item.meta?.targetLocation || '',
+                status: this.mapRelocationStatus(item.meta?.['p.status'] || item.meta?.status),
+                dueDate: item.meta?.['relo.arrival'] || item.meta?.dueDate || null,
+                departureDate: item.meta?.['relo.departure'] || null,
+                createdAt: item.meta?.created || item.meta?.createdAt || null,
+                assetCount: item.meta?.['p.size'] || item.meta?.assetCount || 0,
+                assignedUser: item.meta?.assignedUser || '',
                 originalData: item
             }));
 
@@ -1350,8 +1358,18 @@ class APIService {
     }
 
     // Map API relocation status to internal status
+    // p.status: I = Init, O = Open, P = In Progress, C = Completed, etc.
     mapRelocationStatus(status) {
         const statusMap = {
+            // Kurz-Codes
+            'I': 'offen',
+            'O': 'offen',
+            'N': 'offen',
+            'A': 'feinplanung',
+            'P': 'in-inventur',
+            'C': 'abgeschlossen',
+            'D': 'abgeschlossen',
+            // Lang-Codes
             'INIT': 'offen',
             'NEW': 'offen',
             'OPEN': 'offen',
