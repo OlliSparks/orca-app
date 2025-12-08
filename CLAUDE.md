@@ -50,6 +50,25 @@ Fuer jeden Geschaeftsprozess existiert ein eigener Skill mit Status-Maschine, AP
 
 ---
 
+### 4. UX-Audit Skill
+Bei Feature-Reviews, vor Releases und bei UX-Entscheidungen konsultieren.
+
+**Skill-Pfad:** `.claude/skills/ux-audit/SKILL.md`
+
+**Trigger:** Feature-Review, UI-Pruefung, Release-Vorbereitung, UX-Entscheidungen
+
+**Ziel:**
+> "Die App so einfach machen, dass Lieferanten sie als einzige Werkzeug-Management-Loesung nutzen wollen."
+
+**Enthaelt:**
+- 10 UX-Gebote fuer orca
+- Checklisten (Feature, Liste, Formular, Workflow)
+- Scoring-Matrix und Bewertungssystem
+- Anti-Patterns
+- Audit-Protokoll Template
+
+---
+
 ## Quick-Checks
 
 ### Bei Features (Supplier-Persona):
