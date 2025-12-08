@@ -69,6 +69,26 @@ Bei Feature-Reviews, vor Releases und bei UX-Entscheidungen konsultieren.
 
 ---
 
+### 5. Testing Skill
+Nach jeder Prozess-Implementierung Tests erstellen und durchlaufen lassen.
+
+**Skill-Pfad:** `.claude/skills/testing/SKILL.md`
+
+**Trigger:** Prozess-Implementierung abgeschlossen, vor Release, nach Aenderungen
+
+**Workflow:**
+```
+Prozess-Skill → Implementierung → Tests erstellen → Tests gruen → Fertig
+```
+
+**Tests werden abgeleitet aus:**
+- Status-Maschine → Status-Uebergangs-Tests
+- API-Integration → API-Tests (Success + Error)
+- UI-Anforderungen → UI-Interaktions-Tests
+- Edge Cases → Edge-Case-Tests
+
+---
+
 ## Quick-Checks
 
 ### Bei Features (Supplier-Persona):
