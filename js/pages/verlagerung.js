@@ -73,12 +73,12 @@ class VerlagerungPage {
                     <table>
                         <thead>
                             <tr>
-                                <th class="sortable" data-sort="number">Verlagerungs-Nr.</th>
-                                <th class="sortable" data-sort="name">Beschreibung</th>
-                                <th class="sortable" data-sort="sourceLocation">Von</th>
-                                <th class="sortable" data-sort="targetLocation">Nach</th>
+                                <th class="sortable" data-sort="number">Verlagerungsauftrag</th>
+                                <th class="sortable" data-sort="identifier">Identifier</th>
+                                <th class="sortable" data-sort="sourceLocation">Ausgangsort</th>
+                                <th class="sortable" data-sort="targetLocation">Zielstandort</th>
                                 <th class="sortable" data-sort="status">Status</th>
-                                <th class="sortable" data-sort="dueDate">Fällig</th>
+                                <th class="sortable" data-sort="dueDate">Ankunft</th>
                                 <th>Aktionen</th>
                             </tr>
                         </thead>
@@ -313,16 +313,20 @@ class VerlagerungPage {
                     'abgeschlossen': { class: 'status-abgeschlossen', text: 'Abgeschlossen' }
                 }[tool.status] || { class: 'status-offen', text: tool.status };
 
-                // Source and target locations
-                const sourceLocation = tool.sourceLocation || tool.location || '-';
+                // Verlagerungsauftrag = number + name
+                const auftrag = tool.name || tool.number || '-';
+                // Identifier
+                const identifier = tool.identifier || '-';
+                // Ausgangsort und Zielstandort
+                const sourceLocation = tool.sourceLocation || '-';
                 const targetLocation = tool.targetLocation || '-';
 
                 return `
                     <tr class="clickable-row" onclick="verlagerungPage.openDetail('${tool.id || tool.processKey}')">
-                        <td class="tool-number">${tool.number || tool.toolNumber || '-'}</td>
-                        <td class="tool-name">${tool.name}</td>
-                        <td>${sourceLocation}</td>
-                        <td>${targetLocation}</td>
+                        <td class="tool-name" style="max-width: 250px;">${auftrag}</td>
+                        <td style="max-width: 200px; font-size: 0.8rem;">${identifier}</td>
+                        <td style="max-width: 180px; font-size: 0.85rem;">${sourceLocation}</td>
+                        <td style="max-width: 180px; font-size: 0.85rem;">${targetLocation}</td>
                         <td><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span></td>
                         <td style="color: #6b7280;">${tool.dueDate ? this.formatDate(tool.dueDate) : '-'}</td>
                         <td>

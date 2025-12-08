@@ -91,7 +91,8 @@ class VerlagerungDetailPage {
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">${rel.name || 'Verlagerung'}</h1>
-                            <p style="color: #6b7280; margin-bottom: 0.5rem;">Verlagerungs-Nr.: ${rel.number || rel.processKey}</p>
+                            <p style="color: #6b7280; margin-bottom: 0.5rem;">Verlagerungs-Nr.: ${rel.processKey}</p>
+                            ${rel.identifier ? `<p style="color: #3b82f6; margin-bottom: 0.5rem;">Identifier: ${rel.identifier}</p>` : ''}
                             <span class="status-badge ${statusInfo.class}" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">
                                 ${statusInfo.icon} ${statusInfo.text}
                             </span>
@@ -103,13 +104,32 @@ class VerlagerungDetailPage {
                     </div>
                 </div>
 
+                <!-- Info Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Vertragspartner</p>
+                        <p style="font-weight: 500;">${rel.supplierName || rel.supplier || '-'}</p>
+                    </div>
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Geplanter Verladetermin</p>
+                        <p style="font-weight: 500;">${rel.departureDate ? this.formatDate(rel.departureDate) : '-'}</p>
+                    </div>
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Geplanter Ankunftstermin</p>
+                        <p style="font-weight: 500;">${rel.arrivalDate ? this.formatDate(rel.arrivalDate) : '-'}</p>
+                    </div>
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Aktueller Bearbeiter</p>
+                        <p style="font-weight: 500;">${rel.assignedUserName || rel.assignedUser || '-'}</p>
+                    </div>
+                </div>
+
                 <!-- Location Cards -->
                 <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; margin-bottom: 1.5rem; align-items: center;">
                     <!-- Source Location -->
                     <div class="card" style="text-align: center;">
-                        <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem;">Von (Quellstandort)</p>
-                        <h3 style="font-size: 1.1rem; margin-bottom: 0.25rem;">${rel.sourceLocation?.name || '-'}</h3>
-                        <p style="color: #6b7280; font-size: 0.9rem;">${rel.sourceLocation?.city || ''} ${rel.sourceLocation?.country || ''}</p>
+                        <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem;">Ausgangsort</p>
+                        <p style="font-size: 0.95rem;">${rel.sourceLocation || '-'}</p>
                     </div>
 
                     <!-- Arrow -->
@@ -117,9 +137,8 @@ class VerlagerungDetailPage {
 
                     <!-- Target Location -->
                     <div class="card" style="text-align: center; border: 2px solid #3b82f6;">
-                        <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem;">Nach (Zielstandort)</p>
-                        <h3 style="font-size: 1.1rem; margin-bottom: 0.25rem;">${rel.targetLocation?.name || '-'}</h3>
-                        <p style="color: #6b7280; font-size: 0.9rem;">${rel.targetLocation?.city || ''} ${rel.targetLocation?.country || ''}</p>
+                        <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem;">Zielstandort</p>
+                        <p style="font-size: 0.95rem;">${rel.targetLocation || '-'}</p>
                     </div>
                 </div>
 

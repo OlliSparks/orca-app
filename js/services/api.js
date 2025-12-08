@@ -1073,9 +1073,9 @@ class APIService {
         }
 
         try {
-            // Schritt 1: Prozess-Liste abrufen (nur Keys)
+            // Schritt 1: Prozess-Liste abrufen (alle, keine Limitierung)
             const params = new URLSearchParams();
-            params.append('limit', filters.limit || 100);
+            params.append('limit', filters.limit || 1000);
             params.append('skip', filters.skip || 0);
 
             let endpoint = `/process?${params.toString()}`;
@@ -1118,22 +1118,48 @@ class APIService {
             });
             console.log('Relocation processes found:', relocationProcesses.length);
 
-            const transformedData = relocationProcesses.map((item, index) => ({
-                id: item.key || item.context?.key || index,
-                processKey: item.key || item.context?.key || '',
-                number: item.meta?.number || item.meta?.processNumber || `VRL-${String(index + 1).padStart(4, '0')}`,
-                name: item.meta?.description || item.meta?.title || item.meta?.name || 'Verlagerung',
-                supplier: item.meta?.contractPartner || item.meta?.supplier || '',
-                sourceLocation: item.meta?.['relo.from.company'] || item.meta?.sourceLocation || '',
-                targetLocation: item.meta?.['relo.to.company'] || item.meta?.targetLocation || '',
-                status: this.mapRelocationStatus(item.meta?.['p.status'] || item.meta?.status),
-                dueDate: item.meta?.['relo.arrival'] || item.meta?.dueDate || null,
-                departureDate: item.meta?.['relo.departure'] || null,
-                createdAt: item.meta?.created || item.meta?.createdAt || null,
-                assetCount: item.meta?.['p.size'] || item.meta?.assetCount || 0,
-                assignedUser: item.meta?.assignedUser || '',
-                originalData: item
-            }));
+            const transformedData = relocationProcesses.map((item, index) => {
+                const meta = item.meta || {};
+                return {
+                    id: item.key || item.context?.key || index,
+                    processKey: item.key || item.context?.key || '',
+                    // Identifier aus description extrahieren (z.B. "KPORCATEST 510 - Verelagerung CZ nach DE")
+                    number: meta.description?.split(' - ')[0] || meta.number || `VRL-${String(index + 1).padStart(4, '0')}`,
+                    // Volle Beschreibung
+                    name: meta.description || meta.title || 'Verlagerung',
+                    // Identifier (z.B. "CZ-Modřice → DE-Hardheim-[Eigentum/Property]")
+                    identifier: meta['relo.identifier'] || '',
+                    // Vertragspartner
+                    supplier: meta.contractPartner || meta['relo.contractPartner'] || '',
+                    supplierName: meta['relo.contractPartnerName'] || '',
+                    // Zielunternehmen
+                    targetCompany: meta['relo.to.companyName'] || meta['relo.to.company'] || '',
+                    // Ausgangsort (Quellstandort)
+                    sourceLocation: meta['relo.from.address'] || meta['relo.from.location'] || meta['relo.from'] || '',
+                    // Zielstandort
+                    targetLocation: meta['relo.to.address'] || meta['relo.to.location'] || meta['relo.to'] || '',
+                    // Geplanter Verladetermin
+                    departureDate: meta['relo.departure'] || null,
+                    // Geplanter Ankunftstermin
+                    arrivalDate: meta['relo.arrival'] || null,
+                    // Fällig = Ankunftstermin
+                    dueDate: meta['relo.arrival'] || meta.dueDate || null,
+                    // Ersteller
+                    creator: meta['relo.creator'] || meta.creator || '',
+                    creatorName: meta['relo.creatorName'] || '',
+                    // Aktueller Bearbeiter
+                    assignedUser: meta.assignedUser || meta['relo.assignedUser'] || '',
+                    assignedUserName: meta['relo.assignedUserName'] || '',
+                    // Status
+                    status: this.mapRelocationStatus(meta['p.status'] || meta.status),
+                    // Erstellt am
+                    createdAt: meta.created || meta.createdAt || null,
+                    // Anzahl Positionen
+                    assetCount: meta['p.size'] || meta.positionCount || 0,
+                    // Original-Daten für Debug
+                    originalData: item
+                };
+            });
 
             return {
                 success: true,
@@ -1162,31 +1188,38 @@ class APIService {
             console.log('Relocation detail response:', response);
 
             const item = response.data || response;
+            const meta = item.meta || {};
+
             return {
                 success: true,
                 data: {
-                    id: item.context?.key || processKey,
-                    processKey: item.context?.key || processKey,
-                    number: item.meta?.number || '',
-                    name: item.meta?.description || item.meta?.title || 'Verlagerung',
-                    status: this.mapRelocationStatus(item.meta?.status),
-                    sourceLocation: {
-                        key: item.meta?.sourceLocationKey || '',
-                        name: item.meta?.sourceLocation || '',
-                        country: item.meta?.sourceCountry || '',
-                        city: item.meta?.sourceCity || ''
-                    },
-                    targetLocation: {
-                        key: item.meta?.targetLocationKey || '',
-                        name: item.meta?.targetLocation || '',
-                        country: item.meta?.targetCountry || '',
-                        city: item.meta?.targetCity || ''
-                    },
-                    dueDate: item.meta?.dueDate || null,
-                    createdAt: item.meta?.createdAt || null,
-                    completedAt: item.meta?.completedAt || null,
-                    comment: item.meta?.comment || '',
-                    assetCount: item.meta?.assetCount || 0,
+                    id: item.key || processKey,
+                    processKey: item.key || processKey,
+                    number: meta.description?.split(' - ')[0] || meta.number || '',
+                    name: meta.description || meta.title || 'Verlagerung',
+                    identifier: meta['relo.identifier'] || '',
+                    status: this.mapRelocationStatus(meta['p.status'] || meta.status),
+                    // Vertragspartner
+                    supplier: meta.contractPartner || '',
+                    supplierName: meta['relo.contractPartnerName'] || '',
+                    // Standorte
+                    sourceLocation: meta['relo.from.address'] || meta['relo.from.location'] || '',
+                    targetLocation: meta['relo.to.address'] || meta['relo.to.location'] || '',
+                    targetCompany: meta['relo.to.companyName'] || meta['relo.to.company'] || '',
+                    // Termine
+                    departureDate: meta['relo.departure'] || null,
+                    arrivalDate: meta['relo.arrival'] || null,
+                    dueDate: meta['relo.arrival'] || null,
+                    // Bearbeiter
+                    creator: meta['relo.creator'] || meta.creator || '',
+                    creatorName: meta['relo.creatorName'] || '',
+                    assignedUser: meta.assignedUser || '',
+                    assignedUserName: meta['relo.assignedUserName'] || '',
+                    // Erstellt am
+                    createdAt: meta.created || null,
+                    // Anzahl Positionen
+                    assetCount: meta['p.size'] || 0,
+                    // Original-Daten
                     originalData: item
                 }
             };
