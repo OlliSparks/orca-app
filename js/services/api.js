@@ -1067,68 +1067,67 @@ class APIService {
     // === Verlagerung (Relocation) Endpoints ===
 
     // Get list of relocation processes
-    // NOTE: Verlagerung nutzt aktuell immer Mock-Daten, da die INT-Umgebung
-    // keine RELOCATION-Prozesse enthält. Bei Live-API-Anbindung den Code
-    // unten aktivieren und Mock-Fallback entfernen.
     async getVerlagerungList(filters = {}) {
-        // Aktuell: Immer Mock-Daten verwenden (API hat keine Verlagerungsdaten)
-        // TODO: Bei vorhandenen API-Daten auf Live umstellen
-        return this.getMockVerlagerungData(filters);
+        if (this.mode === 'mock') {
+            return this.getMockVerlagerungData(filters);
+        }
 
-        /* Live-API Implementation (für später):
-        return this.callWithFallback(
-            async () => {
-                const params = new URLSearchParams();
-                params.append('meta.type', 'RELOCATION');
-                if (filters.status) params.append('meta.status', filters.status);
-                if (filters.supplier) params.append('meta.supplier', filters.supplier);
-                params.append('limit', filters.limit || 100);
-                params.append('skip', filters.skip || 0);
+        try {
+            // Versuche zuerst /process mit type Filter
+            const params = new URLSearchParams();
+            params.append('limit', filters.limit || 100);
+            params.append('skip', filters.skip || 0);
 
-                const endpoint = `/process?${params.toString()}`;
-                console.log('Calling process list for relocations:', endpoint);
-                const response = await this.call(endpoint, 'GET');
-                console.log('Relocation process response:', response);
+            // Versuch 1: Alle Prozesse laden und nach RELOCATION filtern
+            let endpoint = `/process?${params.toString()}`;
+            console.log('Calling process list:', endpoint);
+            const response = await this.call(endpoint, 'GET');
+            console.log('Process response:', response);
 
-                const items = Array.isArray(response) ? response : (response.data || []);
-                const relocationProcesses = items.filter(p =>
-                    p.meta?.type === 'RELOCATION' ||
-                    p.meta?.processType === 'RELOCATION'
-                );
+            const items = Array.isArray(response) ? response : (response.data || []);
+            console.log('Total processes found:', items.length);
 
-                // Fallback auf Mock wenn keine Daten
-                if (relocationProcesses.length === 0) {
-                    console.log('No relocation processes found, using mock data');
-                    return this.getMockVerlagerungData(filters);
-                }
+            // Log alle Prozess-Typen zur Analyse
+            const types = [...new Set(items.map(p => p.meta?.type || p.meta?.processType || 'UNKNOWN'))];
+            console.log('Process types found:', types);
 
-                const transformedData = relocationProcesses.map((item, index) => ({
-                    id: item.context?.key || index,
-                    processKey: item.context?.key || '',
-                    number: `VRL-${String(index + 1).padStart(4, '0')}`,
-                    toolNumber: item.meta?.assetNumber || item.meta?.inventoryNumber || '',
-                    name: item.meta?.description || item.meta?.title || 'Verlagerung',
-                    supplier: item.meta?.supplier || '',
-                    location: item.meta?.targetLocation || item.meta?.location || '',
-                    sourceLocation: item.meta?.sourceLocation || '',
-                    targetLocation: item.meta?.targetLocation || '',
-                    status: this.mapRelocationStatus(item.meta?.status),
-                    dueDate: item.meta?.dueDate || null,
-                    createdAt: item.meta?.createdAt || null,
-                    lastInventory: item.meta?.lastInventory || null,
-                    assetCount: item.meta?.assetCount || 0,
-                    originalData: item
-                }));
+            // Filtere nach RELOCATION
+            const relocationProcesses = items.filter(p => {
+                const type = (p.meta?.type || p.meta?.processType || '').toUpperCase();
+                return type.includes('RELOCATION') || type.includes('VERLAGERUNG');
+            });
+            console.log('Relocation processes found:', relocationProcesses.length);
 
-                return {
-                    success: true,
-                    data: transformedData,
-                    total: transformedData.length
-                };
-            },
-            () => this.getMockVerlagerungData(filters)
-        );
-        */
+            const transformedData = relocationProcesses.map((item, index) => ({
+                id: item.context?.key || index,
+                processKey: item.context?.key || '',
+                number: item.meta?.number || `VRL-${String(index + 1).padStart(4, '0')}`,
+                toolNumber: item.meta?.assetNumber || item.meta?.inventoryNumber || '',
+                name: item.meta?.description || item.meta?.title || 'Verlagerung',
+                supplier: item.meta?.supplier || '',
+                location: item.meta?.targetLocation || item.meta?.location || '',
+                sourceLocation: item.meta?.sourceLocation || item.meta?.fromLocation || '',
+                targetLocation: item.meta?.targetLocation || item.meta?.toLocation || '',
+                status: this.mapRelocationStatus(item.meta?.status),
+                dueDate: item.meta?.dueDate || null,
+                createdAt: item.meta?.createdAt || item.meta?.created || null,
+                assetCount: item.meta?.assetCount || item.meta?.positionCount || 0,
+                originalData: item
+            }));
+
+            return {
+                success: true,
+                data: transformedData,
+                total: transformedData.length
+            };
+        } catch (error) {
+            console.error('Error loading relocations:', error);
+            return {
+                success: false,
+                error: error.message,
+                data: []
+            };
+        }
     }
 
     // Get relocation process details
