@@ -1067,12 +1067,18 @@ class APIService {
     // === Verlagerung (Relocation) Endpoints ===
 
     // Get list of relocation processes
+    // NOTE: Verlagerung nutzt aktuell immer Mock-Daten, da die INT-Umgebung
+    // keine RELOCATION-Prozesse enthält. Bei Live-API-Anbindung den Code
+    // unten aktivieren und Mock-Fallback entfernen.
     async getVerlagerungList(filters = {}) {
+        // Aktuell: Immer Mock-Daten verwenden (API hat keine Verlagerungsdaten)
+        // TODO: Bei vorhandenen API-Daten auf Live umstellen
+        return this.getMockVerlagerungData(filters);
+
+        /* Live-API Implementation (für später):
         return this.callWithFallback(
-            // Live API call
             async () => {
                 const params = new URLSearchParams();
-                // Filter for relocation processes
                 params.append('meta.type', 'RELOCATION');
                 if (filters.status) params.append('meta.status', filters.status);
                 if (filters.supplier) params.append('meta.supplier', filters.supplier);
@@ -1084,13 +1090,17 @@ class APIService {
                 const response = await this.call(endpoint, 'GET');
                 console.log('Relocation process response:', response);
 
-                // Transform API response to our format
                 const items = Array.isArray(response) ? response : (response.data || []);
-                // Filter only RELOCATION type processes
                 const relocationProcesses = items.filter(p =>
                     p.meta?.type === 'RELOCATION' ||
                     p.meta?.processType === 'RELOCATION'
                 );
+
+                // Fallback auf Mock wenn keine Daten
+                if (relocationProcesses.length === 0) {
+                    console.log('No relocation processes found, using mock data');
+                    return this.getMockVerlagerungData(filters);
+                }
 
                 const transformedData = relocationProcesses.map((item, index) => ({
                     id: item.context?.key || index,
@@ -1116,9 +1126,9 @@ class APIService {
                     total: transformedData.length
                 };
             },
-            // Mock fallback
             () => this.getMockVerlagerungData(filters)
         );
+        */
     }
 
     // Get relocation process details
