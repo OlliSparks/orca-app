@@ -1073,96 +1073,30 @@ class APIService {
         }
 
         try {
-            // OPTIMIERT: Server-seitiger Filter nach RELOCATION (wie Produktions-App)
-            // Vorher: GET /process (alle 1000+) + N einzelne Detail-Calls = N+1 Problem
-            // Jetzt: GET /process?md.p.type=RELOCATION = 1 Call mit gefilterten Daten
+            // OPTIMIERT v2: Server-seitiger Filter nach RELOCATION.C + contractPartner
+            // Wie in Produktions-App: /process?md.p.type=RELOCATION.C&md.contractPartner=XXX
+            // Vorher: Alle 906 Verlagerungen laden, dann client-seitig filtern
+            // Jetzt: Nur die relevanten Verlagerungen fuer diesen Supplier laden
             const params = new URLSearchParams();
             params.append('limit', filters.limit || 100);
             params.append('skip', filters.skip || 0);
-            params.append('md.p.type', 'RELOCATION');  // Server-seitiger Filter!
+            params.append('md.p.type', 'RELOCATION.C');  // Unterprozesse (haben Details)
+
+            // Server-seitiger Supplier-Filter!
+            const supplierNumber = this.supplierNumber;
+            if (supplierNumber) {
+                params.append('md.contractPartner', supplierNumber);
+                console.log('Server-side filter by contractPartner:', supplierNumber);
+            }
 
             let endpoint = `/process?${params.toString()}`;
-            console.log('Calling process list with RELOCATION filter:', endpoint);
+            console.log('Calling process list:', endpoint);
             const processList = await this.call(endpoint, 'GET');
             console.log('Process list response:', processList);
 
-            // Die API liefert bereits gefilterte RELOCATION-Prozesse
-            const processDetails = Array.isArray(processList) ? processList : (processList.data || []);
-            console.log('RELOCATION processes loaded directly:', processDetails.length);
-
-            // Typ-Analyse für Debug (sollte nur RELOCATION-Typen zeigen)
-            const types = [...new Set(processDetails.map(p =>
-                p.meta?.['p.type'] || p.meta?.['pp.type'] || p.meta?.type || 'UNKNOWN'
-            ))];
-            console.log('Process types found:', types);
-
-            // Alle geladenen Prozesse sind bereits RELOCATION-gefiltert
-            const allRelocationProcesses = processDetails;
-            console.log('All relocation processes:', allRelocationProcesses.length);
-
-            // Trenne Hauptprozesse (RELOCATION ohne .C/.A) von Unterprozessen (RELOCATION.C, RELOCATION.A)
-            const mainProcesses = allRelocationProcesses.filter(p => {
-                const pType = (p.meta?.['p.type'] || '').toUpperCase();
-                // Hauptprozess = RELOCATION ohne Suffix
-                return pType === 'RELOCATION' || (!pType.includes('.') && pType.includes('RELOCATION'));
-            });
-
-            const subProcesses = allRelocationProcesses.filter(p => {
-                const pType = (p.meta?.['p.type'] || '').toUpperCase();
-                // Unterprozess = RELOCATION.C, RELOCATION.A, etc.
-                return pType.includes('RELOCATION.') || pType === 'RELOCATION.C' || pType === 'RELOCATION.A';
-            });
-
-            console.log('Main processes (RELOCATION):', mainProcesses.length);
-            console.log('Sub processes (RELOCATION.C/A):', subProcesses.length);
-
-            // Erstelle eine Map: Hauptprozess-Key -> zugehörige Unterprozesse
-            // Unterprozesse haben pp.pid der auf den Hauptprozess verweist
-            const subProcessMap = {};
-            for (const sub of subProcesses) {
-                const parentKey = sub.meta?.['pp.pid'] || '';
-                if (parentKey) {
-                    if (!subProcessMap[parentKey]) {
-                        subProcessMap[parentKey] = [];
-                    }
-                    subProcessMap[parentKey].push(sub);
-                }
-            }
-            console.log('SubProcess mapping created for', Object.keys(subProcessMap).length, 'main processes');
-
-            // Verwende die Unterprozesse als Basis (da diese die detaillierten relo.* Felder haben)
-            // Aber zeige nur eindeutige Verlagerungen (basierend auf Hauptprozess)
-            let relocationProcesses = [];
-
-            // Option 1: Wenn Unterprozesse vorhanden, nutze diese (haben mehr Details)
-            if (subProcesses.length > 0) {
-                relocationProcesses = subProcesses;
-                console.log('Using subprocesses as data source (have detailed relo.* fields)');
-            } else {
-                // Option 2: Fallback auf Hauptprozesse
-                relocationProcesses = mainProcesses;
-                console.log('Using main processes as data source');
-            }
-
-            // Filtere nach dem eingestellten Lieferanten (supplierNumber)
-            const supplierNumber = this.supplierNumber;
-            console.log('Filtering by supplier:', supplierNumber);
-
-            const filteredBySupplier = supplierNumber
-                ? relocationProcesses.filter(p => {
-                    const meta = p.meta || {};
-                    const contractPartner = meta.contractPartner || meta['relo.contractPartner'] || '';
-                    const supplier = meta.supplier || '';
-                    const assignedUser = meta.assignedUser || '';
-                    // Prüfe ob der Lieferant beteiligt ist
-                    return contractPartner.includes(supplierNumber) ||
-                           supplier.includes(supplierNumber) ||
-                           contractPartner === supplierNumber ||
-                           supplier === supplierNumber;
-                })
-                : relocationProcesses;
-
-            console.log('After supplier filter:', filteredBySupplier.length);
+            // Die API liefert bereits gefilterte Prozesse fuer diesen Supplier
+            const filteredBySupplier = Array.isArray(processList) ? processList : (processList.data || []);
+            console.log('Processes loaded (already filtered by server):', filteredBySupplier.length);
 
             const transformedData = filteredBySupplier.map((item, index) => {
                 const meta = item.meta || {};
