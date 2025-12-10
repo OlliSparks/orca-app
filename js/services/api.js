@@ -1073,50 +1073,32 @@ class APIService {
         }
 
         try {
-            // Schritt 1: Prozess-Liste abrufen (alle, keine Limitierung)
+            // OPTIMIERT: Server-seitiger Filter nach RELOCATION (wie Produktions-App)
+            // Vorher: GET /process (alle 1000+) + N einzelne Detail-Calls = N+1 Problem
+            // Jetzt: GET /process?md.p.type=RELOCATION = 1 Call mit gefilterten Daten
             const params = new URLSearchParams();
-            params.append('limit', filters.limit || 1000);
+            params.append('limit', filters.limit || 100);
             params.append('skip', filters.skip || 0);
+            params.append('md.p.type', 'RELOCATION');  // Server-seitiger Filter!
 
             let endpoint = `/process?${params.toString()}`;
-            console.log('Calling process list:', endpoint);
+            console.log('Calling process list with RELOCATION filter:', endpoint);
             const processList = await this.call(endpoint, 'GET');
             console.log('Process list response:', processList);
 
-            const processKeys = Array.isArray(processList) ? processList : (processList.data || []);
-            console.log('Total process keys found:', processKeys.length);
+            // Die API liefert bereits gefilterte RELOCATION-Prozesse
+            const processDetails = Array.isArray(processList) ? processList : (processList.data || []);
+            console.log('RELOCATION processes loaded directly:', processDetails.length);
 
-            // Schritt 2: Details für jeden Prozess abrufen
-            const processDetails = [];
-            for (const proc of processKeys) {
-                const key = proc.key || proc.context?.key;
-                if (key) {
-                    try {
-                        const detail = await this.call(`/process/${key}`, 'GET');
-                        processDetails.push(detail);
-                    } catch (e) {
-                        console.warn('Could not load process:', key, e);
-                    }
-                }
-            }
-            console.log('Loaded process details:', processDetails.length);
-
-            // Log alle Prozess-Typen zur Analyse
-            // Typen können in meta['p.type'], meta['pp.type'] oder meta.type sein
+            // Typ-Analyse für Debug (sollte nur RELOCATION-Typen zeigen)
             const types = [...new Set(processDetails.map(p =>
                 p.meta?.['p.type'] || p.meta?.['pp.type'] || p.meta?.type || 'UNKNOWN'
             ))];
             console.log('Process types found:', types);
 
-            // Filtere nach RELOCATION - unterscheide zwischen Haupt- und Unterprozessen
-            const allRelocationProcesses = processDetails.filter(p => {
-                const pType = (p.meta?.['p.type'] || '').toUpperCase();
-                const ppType = (p.meta?.['pp.type'] || '').toUpperCase();
-                const type = (p.meta?.type || '').toUpperCase();
-                return pType.includes('RELOCATION') || ppType.includes('RELOCATION') ||
-                       type.includes('RELOCATION') || pType.includes('VERLAGERUNG');
-            });
-            console.log('All relocation processes found:', allRelocationProcesses.length);
+            // Alle geladenen Prozesse sind bereits RELOCATION-gefiltert
+            const allRelocationProcesses = processDetails;
+            console.log('All relocation processes:', allRelocationProcesses.length);
 
             // Trenne Hauptprozesse (RELOCATION ohne .C/.A) von Unterprozessen (RELOCATION.C, RELOCATION.A)
             const mainProcesses = allRelocationProcesses.filter(p => {
