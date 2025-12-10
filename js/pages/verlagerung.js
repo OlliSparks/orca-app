@@ -146,7 +146,7 @@ class VerlagerungPage {
             if (response.debug) {
                 const debugInfo = document.getElementById('apiModeText');
                 if (debugInfo) {
-                    debugInfo.textContent = `Live-API: ${response.debug.totalProcesses} Prozesse gefunden, Typen: ${response.debug.types.join(', ')}`;
+                    debugInfo.textContent = `Live-API: ${response.debug.totalProcesses} Prozesse geladen`;
                 }
             }
 
