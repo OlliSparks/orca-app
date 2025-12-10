@@ -10,7 +10,6 @@ class APIService {
         this.mockToolsCache = null;
         this.initializeMockData();
 
-        console.log(`API Service initialized in ${this.mode.toUpperCase()} mode`);
     }
 
     // Lade Konfiguration aus localStorage
@@ -47,14 +46,12 @@ class APIService {
         this.bearerToken = config.bearerToken || '';
         this.supplierNumber = config.supplierNumber || '9999999';
         this.isConnected = false;
-        console.log(`API config updated: ${this.mode.toUpperCase()} mode`);
     }
 
     // Initialisiere Mock-Daten EINMAL beim Start
     initializeMockData() {
         if (this.mockToolsCache === null) {
             this.mockToolsCache = this.generateFixedTestData();
-            console.log('Mock-Daten initialisiert:', this.mockToolsCache.length, 'Werkzeuge');
         }
     }
 
@@ -89,7 +86,6 @@ class APIService {
 
         try {
             const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
-            console.log(`API Call: ${method} ${url}`);
             const response = await fetch(url, options);
 
             if (!response.ok) {
@@ -139,7 +135,6 @@ class APIService {
 
         try {
             const response = await this.call('/profile', 'GET');
-            console.log('Profile API response:', response);
 
             // Extract user info from response - handle different API response formats
             const data = response.data || response;
@@ -423,9 +418,7 @@ class APIService {
                 params.append('skip', filters.skip || 0);
 
                 const endpoint = `/asset-list?${params.toString()}`;
-                console.log('Calling asset-list:', endpoint);
                 const response = await this.call(endpoint, 'GET');
-                console.log('Asset-list response:', response);
 
                 // Transform API response to our format
                 const items = Array.isArray(response) ? response : (response.data || []);
@@ -481,9 +474,7 @@ class APIService {
             // Live API call
             async () => {
                 const endpoint = `/asset/${id}`;
-                console.log('Calling asset detail:', endpoint);
                 const response = await this.call(endpoint, 'GET');
-                console.log('Asset detail response:', response);
 
                 // Transform API response to our format
                 const item = response.data || response;
@@ -577,7 +568,6 @@ class APIService {
         // TODO: Replace with real API call
         // return await this.call(`/fm/fertigungsmittel/${id}`, 'PUT', data);
 
-        console.log('Update FM:', id, data);
         return { success: true, message: 'FM aktualisiert (Mock)' };
     }
 
@@ -608,9 +598,7 @@ class APIService {
                 params.append('showPartitions', 'true');
 
                 const endpoint = `/inventory-list?${params.toString()}`;
-                console.log('Calling inventory-list:', endpoint);
                 const response = await this.call(endpoint, 'GET');
-                console.log('Inventory-list response:', response);
 
                 // Transform API response to our format
                 const items = Array.isArray(response) ? response : (response.data || []);
@@ -650,7 +638,6 @@ class APIService {
                             number: this.supplierNumber
                         };
                     }
-                    console.log('Extracted supplier info:', supplierInfo, 'from:', supplierRaw);
                 }
 
                 return {
@@ -681,9 +668,7 @@ class APIService {
         params.append('offset', filters.offset || 0);
 
         const endpoint = `/inventory/${inventoryKey}/positions?${params.toString()}`;
-        console.log('Calling inventory positions:', endpoint);
         const response = await this.call(endpoint, 'GET');
-        console.log('Inventory positions response:', response);
 
         // Transform API response - each position becomes one entry
         const positions = Array.isArray(response) ? response : (response.data || []);
@@ -742,7 +727,6 @@ class APIService {
         // TODO: Replace with real API call
         // return await this.call(`/inventur/${id}`, 'PUT', data);
 
-        console.log('Update Inventory:', id, data);
         return { success: true, message: 'Inventur aktualisiert (Mock)' };
     }
 
@@ -899,9 +883,7 @@ class APIService {
 
     getMockFMDetail(id) {
         // Greife auf gecachte Daten zu
-        console.log('getFMDetail called with ID:', id, 'Type:', typeof id);
         const tool = this.mockToolsCache.find(t => t.id == id);
-        console.log('Found tool:', tool);
 
         if (!tool) {
             console.error('Tool not found for ID:', id);
@@ -1086,17 +1068,13 @@ class APIService {
             const supplierNumber = this.supplierNumber;
             if (supplierNumber) {
                 params.append('md.contractPartner', supplierNumber);
-                console.log('Server-side filter by contractPartner:', supplierNumber);
             }
 
             let endpoint = `/process?${params.toString()}`;
-            console.log('Calling process list:', endpoint);
             const processList = await this.call(endpoint, 'GET');
-            console.log('Process list response:', processList);
 
             // Die API liefert bereits gefilterte Prozesse fuer diesen Supplier
             const filteredBySupplier = Array.isArray(processList) ? processList : (processList.data || []);
-            console.log('Processes loaded (already filtered by server):', filteredBySupplier.length);
 
             const transformedData = filteredBySupplier.map((item, index) => {
                 const meta = item.meta || {};
@@ -1180,31 +1158,11 @@ class APIService {
             // Debug: Zeige ersten Eintrag mit allen meta-Feldern
             if (filteredBySupplier.length > 0) {
                 const sampleMeta = filteredBySupplier[0].meta || {};
-                console.log('=== DEBUG: Sample subprocess data ===');
-                console.log('Process type:', sampleMeta['p.type']);
-                console.log('Parent process:', sampleMeta['pp.pid']);
-                console.log('All meta fields:', Object.keys(sampleMeta).sort());
-                console.log('relo.* fields:', Object.keys(sampleMeta).filter(k => k.startsWith('relo.')));
-                console.log('Sample values:');
-                console.log('  - relo.identifier:', sampleMeta['relo.identifier']);
-                console.log('  - relo.from.address:', sampleMeta['relo.from.address']);
-                console.log('  - relo.to.address:', sampleMeta['relo.to.address']);
-                console.log('  - relo.arrival:', sampleMeta['relo.arrival']);
-                console.log('  - relo.departure:', sampleMeta['relo.departure']);
-                console.log('  - contractPartner:', sampleMeta.contractPartner);
-                console.log('  - description:', sampleMeta.description);
-                console.log('=== END DEBUG ===');
             }
 
             // Debug: Zeige transformiertes Ergebnis
             if (transformedData.length > 0) {
-                console.log('=== Transformed sample ===');
                 const sample = transformedData[0];
-                console.log('Identifier:', sample.identifier);
-                console.log('Source:', sample.sourceLocation);
-                console.log('Target:', sample.targetLocation);
-                console.log('Arrival:', sample.arrivalDate);
-                console.log('========================');
             }
 
             return {
@@ -1231,27 +1189,19 @@ class APIService {
 
         try {
             const response = await this.call(`/process/${processKey}`, 'GET');
-            console.log('Relocation detail response:', response);
 
             const item = response.data || response;
             let meta = item.meta || {};
 
             // Debug: Zeige alle meta-Felder für diese Detail-Ansicht
-            console.log('=== DETAIL DEBUG ===');
-            console.log('Process type:', meta['p.type']);
-            console.log('Parent process (pp.pid):', meta['pp.pid']);
-            console.log('All meta fields:', Object.keys(meta).sort());
 
             // Wenn dieser Prozess einen Parent hat, lade auch den Parent für Standort-Daten
             let parentMeta = {};
             if (meta['pp.pid']) {
                 try {
-                    console.log('Loading parent process:', meta['pp.pid']);
                     const parentResponse = await this.call(`/process/${meta['pp.pid']}`, 'GET');
                     const parentItem = parentResponse.data || parentResponse;
                     parentMeta = parentItem.meta || {};
-                    console.log('Parent meta fields:', Object.keys(parentMeta).sort());
-                    console.log('Parent relo.* fields:', Object.keys(parentMeta).filter(k => k.startsWith('relo.')));
                 } catch (e) {
                     console.warn('Could not load parent process:', e);
                 }
@@ -1259,7 +1209,6 @@ class APIService {
 
             // Kombiniere: Zuerst aus aktuellem Prozess, dann aus Parent
             const combinedMeta = { ...parentMeta, ...meta };
-            console.log('Combined relo.* fields:', Object.keys(combinedMeta).filter(k => k.startsWith('relo.')));
 
             // Standorte - suche in beiden Prozessen
             const sourceLocation = combinedMeta['relo.from.address'] ||
@@ -1274,9 +1223,6 @@ class APIService {
                                    parentMeta['relo.to.address'] ||
                                    '';
 
-            console.log('Resolved sourceLocation:', sourceLocation);
-            console.log('Resolved targetLocation:', targetLocation);
-            console.log('===================');
 
             return {
                 success: true,
@@ -1331,9 +1277,7 @@ class APIService {
             params.append('skip', filters.skip || 0);
 
             const endpoint = `/process/${processKey}/positions?${params.toString()}`;
-            console.log('Calling relocation positions:', endpoint);
             const response = await this.call(endpoint, 'GET');
-            console.log('Relocation positions response:', response);
 
             const positions = Array.isArray(response) ? response : (response.data || []);
             const transformedData = positions.map((pos, index) => ({
@@ -1363,7 +1307,6 @@ class APIService {
     // Create a new relocation process
     async createRelocation(data) {
         if (this.mode === 'mock') {
-            console.log('Create relocation (mock):', data);
             return { success: true, data: { key: 'mock-relocation-' + Date.now() } };
         }
 
@@ -1379,7 +1322,6 @@ class APIService {
                 },
                 assets: data.assetKeys || []
             });
-            console.log('Create relocation response:', response);
             return { success: true, data: response };
         } catch (error) {
             console.error('Create relocation error:', error);
@@ -1390,7 +1332,6 @@ class APIService {
     // Add positions to relocation process (batch)
     async addRelocationPositions(processKey, assetKeys) {
         if (this.mode === 'mock') {
-            console.log('Add relocation positions (mock):', processKey, assetKeys);
             return { success: true };
         }
 
@@ -1401,7 +1342,6 @@ class APIService {
 
             const endpoint = `/process/relocation/${processKey}/positions/batch`;
             const response = await this.call(endpoint, 'POST', positions);
-            console.log('Add relocation positions response:', response);
             return { success: true, data: response };
         } catch (error) {
             console.error('Add relocation positions error:', error);
@@ -1429,7 +1369,6 @@ class APIService {
                 sourceCountry: sourceCountry,
                 targetCountry: targetCountry
             });
-            console.log('Audit check response:', response);
 
             // Response: 1 = black (forbidden), 2 = red (not allowed), 3 = green (allowed)
             const result = response.result || response.data?.result || 3;
@@ -1466,7 +1405,6 @@ class APIService {
 
             const endpoint = `/tasks/system?${params.toString()}`;
             const response = await this.call(endpoint, 'GET');
-            console.log('Relocation tasks response:', response);
 
             const tasks = Array.isArray(response) ? response : (response.data || []);
             return {
@@ -1744,7 +1682,6 @@ class APIService {
             async () => {
                 // Nutze /companies/list um eigene Firmen zu laden
                 const companiesList = await this.call('/companies/list', 'GET');
-                console.log('Companies list response:', companiesList);
 
                 // Erste Company aus der Liste nehmen (oder nach supplierNumber filtern)
                 const companies = Array.isArray(companiesList) ? companiesList : (companiesList.data || []);
@@ -1762,7 +1699,6 @@ class APIService {
 
                 // Key ist direkt auf dem Objekt, nicht unter context
                 const companyKey = company.key || company.context?.key;
-                console.log('Selected company:', company, 'Key:', companyKey);
 
                 if (!companyKey) {
                     throw new Error('No company key found');
@@ -1795,7 +1731,6 @@ class APIService {
         return this.callWithFallback(
             async () => {
                 const response = await this.call(`/companies/${companyKey}/locations?limit=100&showInactive=true`, 'GET');
-                console.log('Locations response:', response);
 
                 const locations = Array.isArray(response) ? response : (response.data || []);
                 return {
@@ -1822,7 +1757,6 @@ class APIService {
         return this.callWithFallback(
             async () => {
                 const response = await this.call(`/access/companies/${companyKey}/users?limit=100&showInactive=true`, 'GET');
-                console.log('Users response:', response);
 
                 const users = Array.isArray(response) ? response : (response.data || []);
                 return {
@@ -1850,7 +1784,6 @@ class APIService {
         return this.callWithFallback(
             async () => {
                 const response = await this.call(`/companies/${companyKey}/suppliers?limit=100`, 'GET');
-                console.log('Suppliers response:', response);
 
                 const suppliers = Array.isArray(response) ? response : (response.data || []);
                 return {
