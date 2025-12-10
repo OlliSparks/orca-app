@@ -1211,60 +1211,50 @@ class APIService {
             const item = response.data || response;
             let meta = item.meta || {};
 
-            // DEBUG: Zeige alle Child-Meta-Felder
-            console.log('=== DEBUG: CHILD PROCESS (RELOCATION.C) ===');
-            console.log('Child meta keys:', Object.keys(meta));
-            console.log('Child meta (full):', JSON.stringify(meta, null, 2));
-
-            // Lade Parent-Prozess fuer Standort-Daten (RELOCATION hat die Adressen)
+            // Lade Parent-Prozess fuer Standort-Daten
             let parentMeta = {};
             const parentKey = meta['pp.pid'];
-            console.log('Parent key (pp.pid):', parentKey);
 
             if (parentKey) {
                 try {
                     const parentResponse = await this.call(`/process/${parentKey}`, 'GET');
                     const parentItem = parentResponse.data || parentResponse;
                     parentMeta = parentItem.meta || {};
-
-                    // DEBUG: Zeige alle Parent-Meta-Felder
-                    console.log('=== DEBUG: PARENT PROCESS (RELOCATION) ===');
-                    console.log('Parent meta keys:', Object.keys(parentMeta));
-                    console.log('Parent meta (full):', JSON.stringify(parentMeta, null, 2));
-
-                    // DEBUG: Suche nach Adress-Feldern
-                    const addressFields = Object.keys(parentMeta).filter(k =>
-                        k.includes('address') || k.includes('Address') ||
-                        k.includes('location') || k.includes('Location') ||
-                        k.includes('from') || k.includes('to') ||
-                        k.includes('From') || k.includes('To')
-                    );
-                    console.log('Address-related fields in parent:', addressFields);
-                    addressFields.forEach(f => console.log('  ' + f + ':', parentMeta[f]));
                 } catch (e) {
                     console.warn('Could not load parent process:', e);
                 }
-            } else {
-                console.log('NO PARENT KEY FOUND - cannot load location data');
             }
 
-            // Standorte primaer aus Parent (RELOCATION), dann aus Child (RELOCATION.C)
-            const sourceLocation = parentMeta['relo.from.address'] ||
-                                   parentMeta['relo.from.location'] ||
-                                   parentMeta['relo.from'] ||
-                                   meta['relo.from.address'] ||
-                                   '';
+            // Standorte: Die API liefert KEINE Adress-Felder!
+            // Adressen muessen ueber Company/Location API geladen werden
+            // Vorlaeufig: Parse aus 'title' (Format: "AT-Ort -> DE-Ort-[Ownership]")
+            let sourceLocation = '';
+            let targetLocation = '';
 
-            const targetLocation = parentMeta['relo.to.address'] ||
-                                   parentMeta['relo.to.location'] ||
-                                   parentMeta['relo.to'] ||
-                                   meta['relo.to.address'] ||
-                                   '';
+            const title = parentMeta.title || meta.title || '';
+            if (title && title.includes('\u21e2')) {
+                // Unicode arrow \u21e2 ist das Trennzeichen
+                const parts = title.split('\u21e2').map(p => p.trim());
+                if (parts.length >= 2) {
+                    sourceLocation = parts[0]; // z.B. "AT-Braunau"
+                    // Target: entferne [Ownership] suffix
+                    targetLocation = parts[1].replace(/-\[.*\]$/, '').trim();
+                }
+            }
 
-            // Identifier aus Parent
-            const identifier = parentMeta['relo.identifier'] ||
-                               meta['relo.identifier'] ||
+            // Fallback: Versuche Company-Namen zu verwenden
+            if (!sourceLocation) {
+                sourceLocation = parentMeta['relo.from.companyName'] || '';
+            }
+            if (!targetLocation) {
+                targetLocation = parentMeta['relo.to.companyName'] || meta['relo.to.companyName'] || '';
+            }
+
+            // Identifier aus Parent 'title' Feld (z.B. "AT-Braunau -> DE-Radolfzell...")
+            const identifier = parentMeta.title ||
+                               meta.title ||
                                parentMeta.description ||
+                               meta.description ||
                                '';
 
             return {
