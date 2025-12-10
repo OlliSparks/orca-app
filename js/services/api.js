@@ -1211,13 +1211,12 @@ class APIService {
             const item = response.data || response;
             let meta = item.meta || {};
 
-            // Debug: Zeige alle meta-Felder für diese Detail-Ansicht
-
-            // Wenn dieser Prozess einen Parent hat, lade auch den Parent für Standort-Daten
+            // Lade Parent-Prozess fuer Standort-Daten (RELOCATION hat die Adressen)
             let parentMeta = {};
-            if (meta['pp.pid']) {
+            const parentKey = meta['pp.pid'];
+            if (parentKey) {
                 try {
-                    const parentResponse = await this.call(`/process/${meta['pp.pid']}`, 'GET');
+                    const parentResponse = await this.call(`/process/${parentKey}`, 'GET');
                     const parentItem = parentResponse.data || parentResponse;
                     parentMeta = parentItem.meta || {};
                 } catch (e) {
@@ -1225,44 +1224,47 @@ class APIService {
                 }
             }
 
-            // Kombiniere: Zuerst aus aktuellem Prozess, dann aus Parent
-            const combinedMeta = { ...parentMeta, ...meta };
-
-            // Standorte - suche in beiden Prozessen
-            const sourceLocation = combinedMeta['relo.from.address'] ||
-                                   combinedMeta['relo.from.location'] ||
-                                   combinedMeta['relo.from'] ||
-                                   parentMeta['relo.from.address'] ||
+            // Standorte primaer aus Parent (RELOCATION), dann aus Child (RELOCATION.C)
+            const sourceLocation = parentMeta['relo.from.address'] ||
+                                   parentMeta['relo.from.location'] ||
+                                   parentMeta['relo.from'] ||
+                                   meta['relo.from.address'] ||
                                    '';
 
-            const targetLocation = combinedMeta['relo.to.address'] ||
-                                   combinedMeta['relo.to.location'] ||
-                                   combinedMeta['relo.to'] ||
-                                   parentMeta['relo.to.address'] ||
+            const targetLocation = parentMeta['relo.to.address'] ||
+                                   parentMeta['relo.to.location'] ||
+                                   parentMeta['relo.to'] ||
+                                   meta['relo.to.address'] ||
                                    '';
 
+            // Identifier aus Parent
+            const identifier = parentMeta['relo.identifier'] ||
+                               meta['relo.identifier'] ||
+                               parentMeta.description ||
+                               '';
 
             return {
                 success: true,
                 data: {
                     id: item.key || processKey,
                     processKey: item.key || processKey,
-                    parentProcessKey: meta['pp.pid'] || '',
+                    parentProcessKey: parentKey || '',
                     number: meta.description?.split(' - ')[0] || meta.number || '',
-                    name: meta.description || meta.title || 'Verlagerung',
-                    identifier: combinedMeta['relo.identifier'] || '',
+                    name: parentMeta.description || meta.description || 'Verlagerung',
+                    identifier: identifier,
                     status: this.mapRelocationStatus(meta['p.status'] || meta.status),
                     // Vertragspartner
                     supplier: meta.contractPartner || '',
-                    supplierName: meta.contractPartnerName || combinedMeta['relo.contractPartnerName'] || '',
-                    // Standorte (aus kombiniertem Meta)
+                    supplierName: meta.contractPartnerName || parentMeta.contractPartnerName || '',
+                    // Standorte (primaer aus Parent!)
                     sourceLocation: sourceLocation,
                     targetLocation: targetLocation,
-                    targetCompany: meta['relo.to.companyName'] || combinedMeta['relo.to.companyName'] || '',
+                    sourceCompany: parentMeta['relo.from.companyName'] || '',
+                    targetCompany: parentMeta['relo.to.companyName'] || meta['relo.to.companyName'] || '',
                     // Termine
-                    departureDate: meta['relo.departure'] || combinedMeta['relo.departure'] || null,
-                    arrivalDate: meta['relo.arrival'] || combinedMeta['relo.arrival'] || null,
-                    dueDate: meta['relo.arrival'] || combinedMeta['relo.arrival'] || null,
+                    departureDate: meta['relo.departure'] || parentMeta['relo.departure'] || null,
+                    arrivalDate: meta['relo.arrival'] || parentMeta['relo.arrival'] || null,
+                    dueDate: meta['relo.arrival'] || parentMeta['relo.arrival'] || null,
                     // Bearbeiter
                     creator: meta['creator.key'] || '',
                     creatorName: meta['creator.name'] || '',
@@ -1270,9 +1272,10 @@ class APIService {
                     assignedUserName: meta['relo.currentUser.name'] || '',
                     // Erstellt am
                     createdAt: meta.created || null,
+                    finishedAt: meta.finished || null,
                     // Anzahl Positionen
                     assetCount: meta['p.size'] || 0,
-                    // Original-Daten für Debugging
+                    // Original-Daten
                     originalData: item,
                     parentData: parentMeta
                 }
@@ -1298,18 +1301,42 @@ class APIService {
             const response = await this.call(endpoint, 'GET');
 
             const positions = Array.isArray(response) ? response : (response.data || []);
-            const transformedData = positions.map((pos, index) => ({
-                id: pos.context?.key || index,
-                positionKey: pos.context?.key || '',
-                assetKey: pos.asset?.context?.key || '',
-                inventoryNumber: pos.asset?.meta?.inventoryNumber || '',
-                name: pos.asset?.meta?.description || pos.asset?.meta?.inventoryText || 'Unbekannt',
-                currentLocation: pos.meta?.sourceLocation || pos.asset?.meta?.location || '',
-                targetLocation: pos.meta?.targetLocation || '',
-                status: pos.meta?.status || 'PENDING',
-                comment: pos.meta?.comment || '',
-                originalData: pos
-            }));
+            const transformedData = positions.map((pos, index) => {
+                const assetMeta = pos.asset?.meta || {};
+                const posMeta = pos.meta || {};
+
+                // Inventarnummer kann in verschiedenen Feldern sein
+                const invNr = assetMeta.inventoryNumber ||
+                              assetMeta['inventory.number'] ||
+                              assetMeta.number ||
+                              pos.asset?.context?.key ||
+                              '';
+
+                // Beschreibung/Name
+                const description = assetMeta.description ||
+                                    assetMeta.inventoryText ||
+                                    assetMeta.name ||
+                                    assetMeta.title ||
+                                    'Unbekannt';
+
+                return {
+                    id: pos.context?.key || index,
+                    positionKey: pos.context?.key || '',
+                    assetKey: pos.asset?.context?.key || '',
+                    inventoryNumber: invNr,
+                    name: description,
+                    // Kombiniere: "Beschreibung - Inventarnummer" wie in Prod-App
+                    displayName: invNr ? `${description} - ${invNr}` : description,
+                    currentLocation: posMeta.sourceLocation || assetMeta.location || assetMeta['location.address'] || '',
+                    targetLocation: posMeta.targetLocation || '',
+                    status: posMeta.status || posMeta['p.status'] || 'PENDING',
+                    comment: posMeta.comment || '',
+                    // Zusaetzliche Asset-Infos
+                    partNumber: assetMeta.partNumber || assetMeta['part.number'] || '',
+                    additionalInfo: assetMeta.additionalInfo || assetMeta.info || '',
+                    originalData: pos
+                };
+            });
 
             return {
                 success: true,
