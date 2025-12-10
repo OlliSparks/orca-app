@@ -1315,6 +1315,17 @@ class APIService {
             const response = await this.call(endpoint, 'GET');
 
             const positions = Array.isArray(response) ? response : (response.data || []);
+
+            // DEBUG: Zeige erste Position komplett
+            if (positions.length > 0) {
+                console.log('=== DEBUG: POSITIONS ===');
+                console.log('First position (full):', JSON.stringify(positions[0], null, 2));
+                console.log('pos.asset:', positions[0].asset);
+                console.log('pos.asset.meta keys:', Object.keys(positions[0].asset?.meta || {}));
+                console.log('pos.asset.context:', positions[0].asset?.context);
+                console.log('pos.meta keys:', Object.keys(positions[0].meta || {}));
+            }
+
             const transformedData = positions.map((pos, index) => {
                 const assetMeta = pos.asset?.meta || {};
                 const posMeta = pos.meta || {};
