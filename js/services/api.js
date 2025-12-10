@@ -1316,49 +1316,46 @@ class APIService {
 
             const positions = Array.isArray(response) ? response : (response.data || []);
 
-            // DEBUG: Zeige erste Position komplett
-            if (positions.length > 0) {
-                console.log('=== DEBUG: POSITIONS ===');
-                console.log('First position (full):', JSON.stringify(positions[0], null, 2));
-                console.log('pos.asset:', positions[0].asset);
-                console.log('pos.asset.meta keys:', Object.keys(positions[0].asset?.meta || {}));
-                console.log('pos.asset.context:', positions[0].asset?.context);
-                console.log('pos.meta keys:', Object.keys(positions[0].meta || {}));
-            }
-
             const transformedData = positions.map((pos, index) => {
-                const assetMeta = pos.asset?.meta || {};
+                // WICHTIG: Asset-Daten sind in pos.meta mit "asset." Prefix, NICHT in pos.asset!
                 const posMeta = pos.meta || {};
 
-                // Inventarnummer kann in verschiedenen Feldern sein
-                const invNr = assetMeta.inventoryNumber ||
-                              assetMeta['inventory.number'] ||
-                              assetMeta.number ||
-                              pos.asset?.context?.key ||
+                // Inventarnummer: pos.meta['asset.inventoryNumber']
+                const invNr = posMeta['asset.inventoryNumber'] ||
+                              posMeta['asset.number'] ||
+                              posMeta['ref.key'] ||
                               '';
 
-                // Beschreibung/Name
-                const description = assetMeta.description ||
-                                    assetMeta.inventoryText ||
-                                    assetMeta.name ||
-                                    assetMeta.title ||
+                // Beschreibung: pos.meta['asset.inventoryText']
+                const description = posMeta['asset.inventoryText'] ||
+                                    posMeta['asset.description'] ||
+                                    posMeta['asset.name'] ||
                                     'Unbekannt';
 
+                // Standort: aus actualDestination oder asset.*
+                const destMeta = pos.actualDestination?.meta || pos.plannedDestination?.meta || {};
+                const currentLoc = posMeta['asset.assetCity'] && posMeta['asset.assetCountry']
+                    ? `${posMeta['asset.assetCity']}, ${posMeta['asset.assetCountry']}`
+                    : '';
+                const targetLoc = destMeta.city && destMeta.country
+                    ? `${destMeta.street || ''} ${destMeta.postcode || ''} ${destMeta.city} ${destMeta.country}`.trim()
+                    : '';
+
                 return {
-                    id: pos.context?.key || index,
-                    positionKey: pos.context?.key || '',
-                    assetKey: pos.asset?.context?.key || '',
+                    id: pos.key || index,
+                    positionKey: pos.key || '',
+                    assetKey: posMeta['ref.key'] || '',
                     inventoryNumber: invNr,
                     name: description,
                     // Kombiniere: "Beschreibung - Inventarnummer" wie in Prod-App
                     displayName: invNr ? `${description} - ${invNr}` : description,
-                    currentLocation: posMeta.sourceLocation || assetMeta.location || assetMeta['location.address'] || '',
-                    targetLocation: posMeta.targetLocation || '',
-                    status: posMeta.status || posMeta['p.status'] || 'PENDING',
-                    comment: posMeta.comment || '',
+                    currentLocation: currentLoc,
+                    targetLocation: targetLoc,
+                    status: posMeta['relo.status'] || 'PENDING',
+                    comment: posMeta['relo.declaration.description'] || '',
                     // Zusaetzliche Asset-Infos
-                    partNumber: assetMeta.partNumber || assetMeta['part.number'] || '',
-                    additionalInfo: assetMeta.additionalInfo || assetMeta.info || '',
+                    partNumber: posMeta['asset.partNumberText'] || '',
+                    additionalInfo: posMeta['asset.factNumberAI'] || '',
                     originalData: pos
                 };
             });
