@@ -1,0 +1,48 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Orca API",
+    "version": "1.1.0",
+    "description": "Orca Lieferanten-API fuer das Asset-Management-System"
+  },
+  "servers": [
+    {
+      "url": "https://int.bmw.organizingcompanyassets.com/api/orca",
+      "description": "Integration Environment"
+    }
+  ],
+  "paths": {
+    "/assets": {
+      "get": {
+        "summary": "Liste aller Assets",
+        "description": "TODO: Vollstaendige Spezifikation einfuegen"
+      }
+    },
+    "/processes": {
+      "get": {
+        "summary": "Liste aller Prozesse",
+        "description": "TODO: Vollstaendige Spezifikation einfuegen"
+      }
+    },
+    "/relocations": {
+      "get": {
+        "summary": "Liste aller Verlagerungen",
+        "description": "TODO: Vollstaendige Spezifikation einfuegen"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}
