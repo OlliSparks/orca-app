@@ -1083,7 +1083,7 @@ class APIService {
                 // Identifier: Kann in verschiedenen Feldern sein
                 const identifier = meta['relo.identifier'] ||
                                    meta.identifier ||
-                                   (meta.description?.includes('→') ? meta.description : '') ||
+                                   meta.description ||
                                    '';
 
                 // Standorte: Verschiedene mögliche Feldnamen
@@ -1103,6 +1103,7 @@ class APIService {
                                        meta.toLocation ||
                                        meta.targetLocation ||
                                        meta.target ||
+                                       meta['relo.to.companyName'] ||
                                        '';
 
                 // Datum: Verschiedene mögliche Feldnamen
@@ -1128,7 +1129,7 @@ class APIService {
                     identifier: identifier,
                     // Vertragspartner
                     supplier: meta.contractPartner || meta.supplier || '',
-                    supplierName: meta['relo.contractPartnerName'] || meta.supplierName || '',
+                    supplierName: meta.contractPartnerName || meta['relo.contractPartnerName'] || meta.supplierName || '',
                     // Standorte
                     sourceLocation: sourceLocation,
                     targetLocation: targetLocation,
@@ -1138,10 +1139,10 @@ class APIService {
                     arrivalDate: arrivalDate,
                     dueDate: arrivalDate,
                     // Bearbeiter
-                    creator: meta['relo.creator'] || meta.creator || '',
-                    creatorName: meta['relo.creatorName'] || meta.creatorName || '',
-                    assignedUser: meta.assignedUser || '',
-                    assignedUserName: meta['relo.assignedUserName'] || meta.assignedUserName || '',
+                    creator: meta['creator.key'] || meta['relo.creator'] || meta.creator || '',
+                    creatorName: meta['creator.name'] || meta['relo.creatorName'] || meta.creatorName || '',
+                    assignedUser: meta['relo.currentUser.key'] || meta.assignedUser || '',
+                    assignedUserName: meta['relo.currentUser.name'] || meta['relo.assignedUserName'] || meta.assignedUserName || '',
                     // Status
                     status: this.mapRelocationStatus(meta['p.status'] || meta.status),
                     // Erstellt am
@@ -1248,7 +1249,7 @@ class APIService {
                     // Bearbeiter
                     creator: meta['creator.key'] || '',
                     creatorName: meta['creator.name'] || '',
-                    assignedUser: meta.assignedUser || '',
+                    assignedUser: meta['relo.currentUser.key'] || meta.assignedUser || '',
                     assignedUserName: meta['relo.currentUser.name'] || '',
                     // Erstellt am
                     createdAt: meta.created || null,
