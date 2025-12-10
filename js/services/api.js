@@ -1076,83 +1076,100 @@ class APIService {
             // Die API liefert bereits gefilterte Prozesse fuer diesen Supplier
             const filteredBySupplier = Array.isArray(processList) ? processList : (processList.data || []);
 
+            // Parent-Prozesse laden um Standort-Daten zu bekommen
+            // RELOCATION.C hat pp.pid der auf den RELOCATION Parent verweist
+            const parentIds = [...new Set(filteredBySupplier
+                .map(p => p.meta?.['pp.pid'])
+                .filter(Boolean))];
+
+            // Lade alle Parents parallel
+            const parentMap = {};
+            if (parentIds.length > 0) {
+                const parentPromises = parentIds.map(pid =>
+                    this.call(`/process/${pid}`, 'GET').catch(() => null)
+                );
+                const parentResults = await Promise.all(parentPromises);
+                parentResults.forEach((result, idx) => {
+                    if (result) {
+                        const parent = result.data || result;
+                        parentMap[parentIds[idx]] = parent.meta || {};
+                    }
+                });
+            }
+
             const transformedData = filteredBySupplier.map((item, index) => {
                 const meta = item.meta || {};
+                const parentMeta = parentMap[meta['pp.pid']] || {};
 
-                // Versuche verschiedene Feld-Varianten (Haupt- und Unterprozesse haben unterschiedliche Strukturen)
-                // Identifier: Kann in verschiedenen Feldern sein
+                // Identifier aus Child oder Parent
                 const identifier = meta['relo.identifier'] ||
                                    meta.identifier ||
+                                   parentMeta['relo.identifier'] ||
                                    meta.description ||
                                    '';
 
-                // Standorte: Verschiedene mögliche Feldnamen
-                const sourceLocation = meta['relo.from.address'] ||
-                                       meta['relo.from.location'] ||
-                                       meta['relo.from'] ||
-                                       meta['from.location'] ||
-                                       meta.fromLocation ||
+                // Standorte: Primaer aus Parent (RELOCATION hat die Adressen)
+                const sourceLocation = parentMeta['relo.from.address'] ||
+                                       parentMeta['relo.from.location'] ||
+                                       parentMeta['relo.from'] ||
+                                       meta['relo.from.address'] ||
                                        meta.sourceLocation ||
-                                       meta.source ||
                                        '';
 
-                const targetLocation = meta['relo.to.address'] ||
-                                       meta['relo.to.location'] ||
-                                       meta['relo.to'] ||
-                                       meta['to.location'] ||
-                                       meta.toLocation ||
-                                       meta.targetLocation ||
-                                       meta.target ||
+                const targetLocation = parentMeta['relo.to.address'] ||
+                                       parentMeta['relo.to.location'] ||
+                                       parentMeta['relo.to'] ||
+                                       meta['relo.to.address'] ||
                                        meta['relo.to.companyName'] ||
                                        '';
 
-                // Datum: Verschiedene mögliche Feldnamen
+                // Datum aus Child (hat aktuellere Werte)
                 const arrivalDate = meta['relo.arrival'] ||
-                                    meta.arrival ||
-                                    meta.arrivalDate ||
+                                    parentMeta['relo.arrival'] ||
                                     meta.dueDate ||
-                                    meta.deadline ||
                                     null;
 
                 const departureDate = meta['relo.departure'] ||
-                                      meta.departure ||
-                                      meta.departureDate ||
+                                      parentMeta['relo.departure'] ||
                                       null;
 
                 return {
                     id: item.key || item.context?.key || index,
                     processKey: item.key || item.context?.key || '',
+                    parentProcessKey: meta['pp.pid'] || '',
                     // Name/Beschreibung
                     number: meta.description?.split(' - ')[0] || meta.name || meta.number || `VRL-${String(index + 1).padStart(4, '0')}`,
-                    name: meta.description || meta.name || meta.title || 'Verlagerung',
+                    name: parentMeta.description || meta.description || meta.name || 'Verlagerung',
                     // Identifier
                     identifier: identifier,
                     // Vertragspartner
                     supplier: meta.contractPartner || meta.supplier || '',
-                    supplierName: meta.contractPartnerName || meta['relo.contractPartnerName'] || meta.supplierName || '',
-                    // Standorte
+                    supplierName: meta.contractPartnerName || parentMeta.contractPartnerName || '',
+                    // Standorte (aus Parent!)
                     sourceLocation: sourceLocation,
                     targetLocation: targetLocation,
-                    targetCompany: meta['relo.to.companyName'] || meta['relo.to.company'] || meta.targetCompany || '',
+                    sourceCompany: parentMeta['relo.from.companyName'] || parentMeta['relo.from.company'] || '',
+                    targetCompany: parentMeta['relo.to.companyName'] || meta['relo.to.companyName'] || '',
                     // Termine
                     departureDate: departureDate,
                     arrivalDate: arrivalDate,
                     dueDate: arrivalDate,
                     // Bearbeiter
-                    creator: meta['creator.key'] || meta['relo.creator'] || meta.creator || '',
-                    creatorName: meta['creator.name'] || meta['relo.creatorName'] || meta.creatorName || '',
+                    creator: meta['creator.key'] || meta['relo.creator'] || '',
+                    creatorName: meta['creator.name'] || meta['relo.creatorName'] || '',
                     assignedUser: meta['relo.currentUser.key'] || meta.assignedUser || '',
-                    assignedUserName: meta['relo.currentUser.name'] || meta['relo.assignedUserName'] || meta.assignedUserName || '',
+                    assignedUserName: meta['relo.currentUser.name'] || '',
                     // Status
                     status: this.mapRelocationStatus(meta['p.status'] || meta.status),
                     // Erstellt am
                     createdAt: meta.created || meta.createdAt || null,
                     // Anzahl Positionen
                     assetCount: meta['p.size'] || meta.positionCount || 0,
-                    // Typ des Prozesses (für Debug)
-                    processType: meta['p.type'] || meta['pp.type'] || meta.type || '',
-                    // Original-Daten für Debug
-                    originalData: item
+                    // Typ des Prozesses
+                    processType: meta['p.type'] || '',
+                    // Original-Daten
+                    originalData: item,
+                    parentData: parentMap[meta['pp.pid']] || null
                 };
             });
 
