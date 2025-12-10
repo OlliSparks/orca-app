@@ -32,6 +32,28 @@ Bei API-Calls, Datenabruf und Backend-Integration konsultieren.
 
 ---
 
+### 3. Inventur Skill
+Bei Inventur-Features, Werkzeug-Bestaetigung und Bestandspruefung konsultieren.
+
+**Skill-Pfad:** .claude/skills/inventur/SKILL.md
+
+**Trigger:** Inventur, Werkzeug-Bestaetigung, Status-Handling, Bulk-Operationen
+
+**Workflow:** pending -> confirmed | relocated | missing
+
+---
+
+### 4. Verlagerung Skill
+Bei Verlagerungs-Features, Standortwechsel und Transport-Workflows konsultieren.
+
+**Skill-Pfad:** .claude/skills/verlagerung/SKILL.md
+
+**Trigger:** Verlagerung, Standortwechsel, Transport, Audit-Pruefung
+
+**Workflow:** offen -> feinplanung -> in-inventur -> abgeschlossen
+
+---
+
 ## Quick-Checks
 
 ### Bei Features (Supplier-Persona):
