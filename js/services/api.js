@@ -1211,7 +1211,7 @@ class APIService {
                 success: true,
                 data: transformedData,
                 total: transformedData.length,
-                debug: { types, totalProcesses: processDetails.length }
+                debug: { totalProcesses: filteredBySupplier.length }
             };
         } catch (error) {
             console.error('Error loading relocations:', error);
