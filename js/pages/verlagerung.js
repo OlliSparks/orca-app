@@ -26,12 +26,15 @@ class VerlagerungPage {
         // Initial HTML
         app.innerHTML = `
             <div class="container">
-                <!-- HANDLUNGSHINWEIS -->
-                <div class="action-hint" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left: 4px solid #2c4a8c; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
-                    <div style="font-size: 1.5rem;">🚚</div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; color: #1e3a6d; margin-bottom: 0.25rem;">Was ist zu tun?</div>
-                        <div style="color: #4b5563; font-size: 0.9rem;">Bestaetigen Sie die Durchfuehrung genehmigter Verlagerungen. Tragen Sie Verlade- und Ankunftstermine ein.</div>
+                <!-- Info Box mit Hilfe-Icon (wie Inventur) -->
+                <div class="info-widget-compact">
+                    <h2>Verlagerungen
+                        <span class="help-icon" id="helpIconVerlagerung">?</span>
+                    </h2>
+                    <div class="help-tooltip" id="helpTooltipVerlagerung">
+                        <strong>Was ist zu tun?</strong><br>
+                        Bestaetigen Sie die Durchfuehrung genehmigter Verlagerungen. Tragen Sie Verlade- und Ankunftstermine ein.<br><br>
+                        <strong>Hinweis:</strong> Der Vertragspartner bleibt bei einer Verlagerung gleich - nur der Standort wechselt.
                     </div>
                 </div>
 
@@ -244,6 +247,14 @@ class VerlagerungPage {
                 this.sortTable(column);
             });
         });
+
+        // Help icon toggle
+        const helpIcon = document.getElementById('helpIconVerlagerung');
+        if (helpIcon) {
+            helpIcon.addEventListener('click', () => {
+                document.getElementById('helpTooltipVerlagerung').classList.toggle('visible');
+            });
+        }
     }
 
     applyFilter() {

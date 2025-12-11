@@ -28,12 +28,14 @@ class ABLPage {
         // Initial HTML mit Speedometer und Filter-Chips
         app.innerHTML = `
             <div class="container">
-                <!-- HANDLUNGSHINWEIS -->
-                <div class="action-hint" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left: 4px solid #2c4a8c; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
-                    <div style="font-size: 1.5rem;">📦</div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; color: #1e3a6d; margin-bottom: 0.25rem;">Was ist zu tun?</div>
-                        <div style="color: #4b5563; font-size: 0.9rem;">Pruefen Sie die Abnahmebereitschaft Ihrer Werkzeuge und bestaetigen Sie die Positionen. Bei Abweichungen: Kommentar hinterlassen.</div>
+                <!-- Info Box mit Hilfe-Icon (wie Inventur) -->
+                <div class="info-widget-compact">
+                    <h2>Abnahmebereitschaft (ABL)
+                        <span class="help-icon" id="helpIconABL">?</span>
+                    </h2>
+                    <div class="help-tooltip" id="helpTooltipABL">
+                        <strong>Was ist zu tun?</strong><br>
+                        Pruefen Sie die Abnahmebereitschaft Ihrer Werkzeuge und bestaetigen Sie die Positionen. Bei Abweichungen: Kommentar hinterlassen.
                     </div>
                 </div>
 
@@ -546,6 +548,14 @@ class ABLPage {
                 this.sortTable(column);
             });
         });
+
+        // Help icon toggle
+        const helpIcon = document.getElementById('helpIconABL');
+        if (helpIcon) {
+            helpIcon.addEventListener('click', () => {
+                document.getElementById('helpTooltipABL').classList.toggle('visible');
+            });
+        }
     }
 
     applyFilter() {

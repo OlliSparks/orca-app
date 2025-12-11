@@ -28,26 +28,17 @@ class PartnerwechselPage {
         // Initial HTML
         app.innerHTML = `
             <div class="container">
-                <!-- HANDLUNGSHINWEIS -->
-                <div class="action-hint" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left: 4px solid #2c4a8c; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
-                    <div style="font-size: 1.5rem;">🔄</div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; color: #1e3a6d; margin-bottom: 0.25rem;">Was ist zu tun?</div>
-                        <div style="color: #4b5563; font-size: 0.9rem;">Bestaetigen Sie die Abgabe oder Uebernahme von Werkzeugen beim Vertragspartnerwechsel. Alle Beteiligten muessen den Prozess bestaetigen.</div>
-                    </div>
-                </div>
-
-                <!-- INFO-BOX: VPW erklaert -->
-                <div style="background: white; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #f97316;">
-                    <div style="display: flex; align-items: flex-start; gap: 1rem;">
-                        <div style="font-size: 1.25rem;">💡</div>
-                        <div>
-                            <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">Vertragspartnerwechsel vs. Verlagerung</div>
-                            <div style="font-size: 0.85rem; color: #6b7280;">
-                                Bei einer <strong>Verlagerung</strong> bleibt der Vertragspartner gleich - nur der Standort wechselt.<br>
-                                Beim <strong>Vertragspartnerwechsel (VPW)</strong> wechselt der Vertragspartner selbst. Rechte und Pflichten werden uebertragen.
-                            </div>
-                        </div>
+                <!-- Info Box mit Hilfe-Icon (wie Inventur) -->
+                <div class="info-widget-compact">
+                    <h2>Vertragspartnerwechsel
+                        <span class="help-icon" id="helpIconVPW">?</span>
+                    </h2>
+                    <div class="help-tooltip" id="helpTooltipVPW">
+                        <strong>Was ist zu tun?</strong><br>
+                        Bestaetigen Sie die Abgabe oder Uebernahme von Werkzeugen beim Vertragspartnerwechsel. Alle Beteiligten muessen den Prozess bestaetigen.<br><br>
+                        <strong>Unterschied zur Verlagerung:</strong><br>
+                        Bei einer Verlagerung bleibt der Vertragspartner gleich - nur der Standort wechselt.
+                        Beim VPW wechselt der Vertragspartner selbst. Rechte und Pflichten werden uebertragen.
                     </div>
                 </div>
 
@@ -445,6 +436,11 @@ class PartnerwechselPage {
         document.getElementById('submitConfirm').addEventListener('click', () => this.submitConfirmation());
         document.getElementById('confirmModal').addEventListener('click', (e) => {
             if (e.target.id === 'confirmModal') this.closeConfirmModal();
+        });
+
+        // Help icon toggle
+        document.getElementById('helpIconVPW').addEventListener('click', () => {
+            document.getElementById('helpTooltipVPW').classList.toggle('visible');
         });
     }
 

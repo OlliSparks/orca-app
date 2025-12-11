@@ -26,12 +26,14 @@ class VerschrottungPage {
         // Initial HTML
         app.innerHTML = `
             <div class="container">
-                <!-- HANDLUNGSHINWEIS -->
-                <div class="action-hint" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left: 4px solid #2c4a8c; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
-                    <div style="font-size: 1.5rem;">♻️</div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; color: #1e3a6d; margin-bottom: 0.25rem;">Was ist zu tun?</div>
-                        <div style="color: #4b5563; font-size: 0.9rem;">Pruefen Sie genehmigte Verschrottungen und bestaetigen Sie die Durchfuehrung. Dokumentieren Sie den Abschluss.</div>
+                <!-- Info Box mit Hilfe-Icon (wie Inventur) -->
+                <div class="info-widget-compact">
+                    <h2>Verschrottung
+                        <span class="help-icon" id="helpIconScrap">?</span>
+                    </h2>
+                    <div class="help-tooltip" id="helpTooltipScrap">
+                        <strong>Was ist zu tun?</strong><br>
+                        Pruefen Sie genehmigte Verschrottungen und bestaetigen Sie die Durchfuehrung. Dokumentieren Sie den Abschluss.
                     </div>
                 </div>
 
@@ -230,6 +232,14 @@ class VerschrottungPage {
                 this.sortTable(column);
             });
         });
+
+        // Help icon toggle
+        const helpIcon = document.getElementById('helpIconScrap');
+        if (helpIcon) {
+            helpIcon.addEventListener('click', () => {
+                document.getElementById('helpTooltipScrap').classList.toggle('visible');
+            });
+        }
     }
 
     applyFilter() {

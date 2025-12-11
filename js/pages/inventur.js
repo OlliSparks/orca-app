@@ -517,12 +517,8 @@ class InventurPage {
         const headerElement = document.querySelector('.info-widget-compact h2');
         if (headerElement && this.supplier) {
             headerElement.innerHTML = `Ihre Inventuraufträge von ${this.supplier.name} (${this.supplier.number})
-                <span class="help-icon" id="helpIcon">?</span>`;
-            // Re-attach help icon event listener
-            document.getElementById('helpIcon').addEventListener('click', () => {
-                const tooltip = document.getElementById('helpTooltip');
-                tooltip.classList.toggle('visible');
-            });
+                <span class="help-icon">?</span>`;
+            // Event listener is handled via event delegation in attachEventListeners()
         }
     }
 
@@ -659,10 +655,12 @@ class InventurPage {
             if (e.target.id === 'delegateModal') this.closeDelegateModal();
         });
 
-        // Help icon toggle
-        document.getElementById('helpIcon').addEventListener('click', () => {
-            const tooltip = document.getElementById('helpTooltip');
-            tooltip.classList.toggle('visible');
+        // Help icon toggle - use event delegation to handle dynamically created elements
+        document.querySelector('.info-widget-compact').addEventListener('click', (e) => {
+            if (e.target.classList.contains('help-icon')) {
+                const tooltip = document.getElementById('helpTooltip');
+                tooltip.classList.toggle('visible');
+            }
         });
 
         // Populate location selects
