@@ -80,6 +80,12 @@ class OrcaApp {
             partnerwechselPage.render();
         });
 
+        // Vertragspartnerwechsel Detail (mit dynamischer ID)
+        router.addRoute('/partnerwechsel/:id', (params) => {
+            const id = params.id;
+            partnerwechselDetailPage.render(id);
+        });
+
         // Verschrottung
         router.addRoute('/verschrottung', () => {
             verschrottungPage.render();

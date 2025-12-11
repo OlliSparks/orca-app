@@ -1898,43 +1898,76 @@ class APIService {
     }
 
     getMockPartnerwechselData(filters = {}) {
-        const toolTypes = ['VPW-Werkzeug', 'Partner-Tool', 'Wechsel-Tool'];
-        const parts = ['B-Säule rechts', 'C-Säule links', 'Dachblech', 'Heckklappe', 'Stoßfänger vorn'];
-        const locations = ['Halle A - Regal 3', 'Halle B - Lager 2', 'Montage Bereich 1'];
+        // VPW = Vertragspartnerwechsel
+        // Der Vertragspartner wechselt - nicht nur der Standort (wie bei Verlagerung)
+        const toolNames = [
+            'Presswerkzeug Seitenteil',
+            'Stanzwerkzeug B-Saeule',
+            'Ziehwerkzeug Motorhaube',
+            'Umformwerkzeug Dachblech',
+            'Schneidwerkzeug Heckklappe'
+        ];
+
+        const fromPartners = [
+            'Schuler AG',
+            'Kuka Systems',
+            'ThyssenKrupp Automotive',
+            'Magna International'
+        ];
+
+        const toPartners = [
+            'Gestamp Automocion',
+            'Benteler Automotive',
+            'Kirchhoff Automotive',
+            'Martinrea International'
+        ];
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const items = [];
-        for (let i = 1; i <= 10; i++) {
-            const toolType = toolTypes[(i - 1) % toolTypes.length];
-            const part = parts[(i - 1) % parts.length];
-            const paddedNum = String(i + 3000).padStart(4, '0');
-            const year = new Date().getFullYear();
 
-            // Berechne Fälligkeitsdatum - erste 5 sind überfällig
+        // Generiere 15 VPW-Prozesse
+        for (let i = 1; i <= 15; i++) {
+            const paddedNum = String(i + 5000).padStart(5, '0');
+            const year = new Date().getFullYear();
+            const toolName = toolNames[(i - 1) % toolNames.length];
+
+            // Faelligkeit: Mix aus ueberfaellig und zukuenftig
             const dueDate = new Date(today);
-            if (i <= 5) {
-                // Überfällig: 3-15 Tage in der Vergangenheit
-                dueDate.setDate(today.getDate() - (3 * i));
+            if (i <= 3) {
+                dueDate.setDate(today.getDate() - (5 * i)); // Ueberfaellig
             } else {
-                // Zukünftig: 7-35 Tage in der Zukunft
-                dueDate.setDate(today.getDate() + (7 * (i - 5)));
+                dueDate.setDate(today.getDate() + (7 * (i - 3))); // Zukuenftig
             }
 
-            // Letzte Inventur: zufällig in den letzten 30 Tagen
-            const lastInv = new Date(today);
-            lastInv.setDate(today.getDate() - ((i - 1) % 28 + 1));
+            // Status-Verteilung:
+            // 1-4: offen (warte auf Abgabe)
+            // 5-8: abgabe-bestaetigt (warte auf Uebernahme)
+            // 9-11: uebernahme-bestaetigt (warte auf OEM)
+            // 12-15: abgeschlossen
+            let status;
+            if (i <= 4) status = 'offen';
+            else if (i <= 8) status = 'abgabe-bestaetigt';
+            else if (i <= 11) status = 'uebernahme-bestaetigt';
+            else status = 'abgeschlossen';
+
+            // Direction: eingehend oder ausgehend (aus Sicht des aktuellen Users)
+            // Erste Haelfte = incoming (User ist uebernehmender Partner)
+            // Zweite Haelfte = outgoing (User ist abgebender Partner)
+            const direction = i <= 8 ? 'incoming' : 'outgoing';
 
             items.push({
-                id: 3000 + i,
-                number: `VPW-${paddedNum}`,
-                toolNumber: `${toolType.substring(0, 3).toUpperCase()}-${year}-${paddedNum}`,
-                name: `${toolType} ${part}`,
-                supplier: 'Bosch Rexroth AG',
-                location: locations[(i - 1) % locations.length],
-                status: i <= 5 ? 'offen' : (i <= 7 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: lastInv.toISOString().split('T')[0],
-                dueDate: dueDate.toISOString().split('T')[0]
+                id: `vpw-${paddedNum}`,
+                processKey: `VPW-${year}-${paddedNum}`,
+                toolNumber: `WZ-${year}-${paddedNum}`,
+                toolName: toolName,
+                name: `VPW ${toolName}`, // Fallback
+                fromPartner: fromPartners[(i - 1) % fromPartners.length],
+                toPartner: toPartners[(i - 1) % toPartners.length],
+                status: status,
+                dueDate: dueDate.toISOString().split('T')[0],
+                direction: direction,
+                createdAt: new Date(today.getTime() - (i * 86400000 * 3)).toISOString().split('T')[0]
             });
         }
 
