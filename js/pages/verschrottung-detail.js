@@ -57,30 +57,54 @@ class VerschrottungDetailPage {
             const rawData = detailResult.data;
             const meta = rawData.meta || rawData;
 
+            // Vertragspartner - SCRAPPING verwendet contractPartner.name und contractPartner.key
+            const contractPartnerName = meta['contractPartner.name'] || meta.contractPartner || '';
+            const contractPartnerKey = meta['contractPartner.key'] || '';
+            const contractPartner = contractPartnerKey
+                ? `${contractPartnerName} (${contractPartnerKey})`
+                : contractPartnerName;
+
+            // Betreiber - SCRAPPING verwendet operator.name und operator.key
+            const operatorName = meta['operator.name'] || meta.operator || '';
+            const operatorKey = meta['operator.key'] || '';
+            const operator = operatorKey
+                ? `${operatorName} (${operatorKey})`
+                : operatorName;
+
+            // Standort - SCRAPPING verwendet scrap.city, scrap.country, scrap.postcode
+            let location = '';
+            if (meta['scrap.city']) {
+                const postcode = meta['scrap.postcode'] || '';
+                location = postcode
+                    ? `${meta['scrap.country'] || ''}-${meta['scrap.city']} (${postcode})`
+                    : `${meta['scrap.city']} (${meta['scrap.country'] || ''})`;
+            }
+
             this.scrapping = {
                 processKey: this.processKey,
                 // Bezeichnung
                 title: meta.title || meta.description || 'Verschrottung',
                 // Beteiligte
-                contractPartner: meta.contractPartner || meta.supplier || '',
-                operator: meta.operator || meta['asset.owner'] || '',
-                // Werkzeug-Infos
-                baureihe: meta.baureihe || meta.series || meta.project || '',
-                partNumber: meta.partNumber || meta.partNumbers || meta.inventoryNumber || '',
-                // Personen
-                creator: meta.creator || meta.createdBy || '',
-                buyer: meta.buyer || meta.facheinkaeufer || meta.purchaser || '',
+                contractPartner: contractPartner,
+                operator: operator,
+                // Werkzeug-Infos - SCRAPPING verwendet scrap.derivat und scrap.partNumber
+                baureihe: meta['scrap.derivat'] || meta.baureihe || meta.series || '',
+                partNumber: meta['scrap.partNumber'] || meta.partNumber || '',
+                partText: meta['scrap.partText'] || '',
+                // Personen - SCRAPPING verwendet creator.name und scrap.wvo.name
+                creator: meta['creator.name'] || meta.creator || '',
+                buyer: meta['scrap.wvo.name'] || meta.buyer || meta.facheinkaeufer || '',
                 // Standort
-                location: this.buildLocation(meta),
-                // Status
-                status: meta.status || meta.state || 'NEW',
+                location: location,
+                // Status - SCRAPPING verwendet p.status (I=Initial, Z=Closed)
+                status: meta['p.status'] || meta.status || 'I',
                 // Termine
                 dueDate: meta.dueDate || null,
                 createdAt: meta.created || meta.createdAt || null,
                 // Genehmigungen
                 approvalInfo: meta.approvalInfo || meta.approval || '',
-                // Kommentar
-                comment: meta.comment || '',
+                // Kommentar - SCRAPPING verwendet scrap.comment
+                comment: meta['scrap.comment'] || meta.comment || '',
                 // Original
                 originalMeta: meta
             };
@@ -102,28 +126,22 @@ class VerschrottungDetailPage {
         }
     }
 
-    buildLocation(meta) {
-        if (meta.assetCity && meta.assetCountry) {
-            return `${meta.assetCity} (${meta.assetCountry})`;
-        } else if (meta.location) {
-            return meta.location;
-        } else if (meta['asset.city']) {
-            return `${meta['asset.city']} (${meta['asset.country'] || ''})`;
-        }
-        return '';
-    }
-
     renderDetail() {
         const app = document.getElementById('app');
         const scrap = this.scrapping;
 
-        // Status-Mapping
+        // Status-Mapping (SCRAPPING verwendet I=Initial/Offen, Z=Closed/Abgeschlossen)
         const statusInfo = {
+            'I': { class: 'status-offen', text: 'Offen' },
             'NEW': { class: 'status-offen', text: 'Offen' },
             'OPEN': { class: 'status-offen', text: 'Offen' },
+            'P': { class: 'status-in-bearbeitung', text: 'In Bearbeitung' },
             'IN_PROGRESS': { class: 'status-in-bearbeitung', text: 'In Bearbeitung' },
             'PENDING': { class: 'status-in-bearbeitung', text: 'In Bearbeitung' },
+            'A': { class: 'status-genehmigt', text: 'Genehmigt' },
             'APPROVED': { class: 'status-genehmigt', text: 'Genehmigt' },
+            'Z': { class: 'status-abgeschlossen', text: 'Abgeschlossen' },
+            'C': { class: 'status-abgeschlossen', text: 'Abgeschlossen' },
             'COMPLETED': { class: 'status-abgeschlossen', text: 'Abgeschlossen' },
             'DONE': { class: 'status-abgeschlossen', text: 'Abgeschlossen' },
             'CLOSED': { class: 'status-abgeschlossen', text: 'Abgeschlossen' }
