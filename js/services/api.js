@@ -2077,18 +2077,43 @@ class APIService {
                         });
                         console.log('SCRAPPING-Prozesse gefunden:', scrappingProcesses.length);
 
-                        // Debug: Zeige erstes SCRAPPING-Item
+                        // Debug: Zeige erstes SCRAPPING-Item und versuche verschiedene Endpunkte
                         if (scrappingProcesses.length > 0) {
+                            const firstKey = scrappingProcesses[0].key;
                             console.log('Erstes SCRAPPING:', JSON.stringify(scrappingProcesses[0], null, 2));
 
-                            // Lade Positionen des ersten Prozesses um Struktur zu sehen
+                            // Versuch 1: /process/{key}/positions
                             try {
-                                const firstKey = scrappingProcesses[0].key;
                                 const posResponse = await this.call(`/process/${firstKey}/positions?limit=5`, 'GET');
                                 const positions = Array.isArray(posResponse) ? posResponse : (posResponse.data || []);
-                                console.log('Positionen des ersten SCRAPPING:', JSON.stringify(positions, null, 2));
-                            } catch (posErr) {
-                                console.log('Positionen laden fehlgeschlagen:', posErr.message);
+                                console.log('Positionen (/positions):', positions.length, JSON.stringify(positions, null, 2));
+                            } catch (e) {
+                                console.log('/positions fehlgeschlagen:', e.message);
+                            }
+
+                            // Versuch 2: /process/{key}/details
+                            try {
+                                const detailResponse = await this.call(`/process/${firstKey}/details`, 'GET');
+                                console.log('Details (/details):', JSON.stringify(detailResponse, null, 2));
+                            } catch (e) {
+                                console.log('/details fehlgeschlagen:', e.message);
+                            }
+
+                            // Versuch 3: /process/{key} direkt
+                            try {
+                                const procResponse = await this.call(`/process/${firstKey}`, 'GET');
+                                console.log('Process direkt:', JSON.stringify(procResponse, null, 2));
+                            } catch (e) {
+                                console.log('/process/{key} fehlgeschlagen:', e.message);
+                            }
+
+                            // Versuch 4: /process/{key}/partitions (Sub-Prozesse)
+                            try {
+                                const partResponse = await this.call(`/process/${firstKey}/partitions?limit=5`, 'GET');
+                                const partitions = Array.isArray(partResponse) ? partResponse : (partResponse.data || []);
+                                console.log('Partitions:', partitions.length, JSON.stringify(partitions, null, 2));
+                            } catch (e) {
+                                console.log('/partitions fehlgeschlagen:', e.message);
                             }
                         }
 
