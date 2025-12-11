@@ -1101,27 +1101,37 @@ class APIService {
                 const meta = item.meta || {};
                 const parentMeta = parentMap[meta['pp.pid']] || {};
 
-                // Identifier aus Child oder Parent
-                const identifier = meta['relo.identifier'] ||
-                                   meta.identifier ||
-                                   parentMeta['relo.identifier'] ||
+                // Identifier aus Parent 'title' Feld (wie in Detail-Ansicht)
+                // Format: "AT-Braunau ⇢ DE-Radolfzell-[Ownership]"
+                const identifier = parentMeta.title ||
+                                   meta.title ||
+                                   parentMeta.description ||
                                    meta.description ||
                                    '';
 
-                // Standorte: Primaer aus Parent (RELOCATION hat die Adressen)
-                const sourceLocation = parentMeta['relo.from.address'] ||
-                                       parentMeta['relo.from.location'] ||
-                                       parentMeta['relo.from'] ||
-                                       meta['relo.from.address'] ||
-                                       meta.sourceLocation ||
-                                       '';
+                // Standorte: Parse aus 'title' (wie in Detail-Ansicht)
+                // Die API liefert keine Adress-Felder direkt
+                let sourceLocation = '';
+                let targetLocation = '';
 
-                const targetLocation = parentMeta['relo.to.address'] ||
-                                       parentMeta['relo.to.location'] ||
-                                       parentMeta['relo.to'] ||
-                                       meta['relo.to.address'] ||
-                                       meta['relo.to.companyName'] ||
-                                       '';
+                const title = parentMeta.title || meta.title || '';
+                if (title && title.includes('⇢')) {
+                    // Unicode arrow ⇢ ist das Trennzeichen
+                    const parts = title.split('⇢').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        sourceLocation = parts[0]; // z.B. "AT-Braunau"
+                        // Target: entferne [Ownership] suffix
+                        targetLocation = parts[1].replace(/-\[.*\]$/, '').trim();
+                    }
+                }
+
+                // Fallback: Versuche Company-Namen zu verwenden
+                if (!sourceLocation) {
+                    sourceLocation = parentMeta['relo.from.companyName'] || '';
+                }
+                if (!targetLocation) {
+                    targetLocation = parentMeta['relo.to.companyName'] || meta['relo.to.companyName'] || '';
+                }
 
                 // Datum aus Child (hat aktuellere Werte)
                 const arrivalDate = meta['relo.arrival'] ||
