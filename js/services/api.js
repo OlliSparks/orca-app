@@ -1961,39 +1961,13 @@ class APIService {
                     params.append('md.contractPartner', supplierNumber);
                 }
 
-                // Versuche zuerst SCRAPPING Prozesse zu laden
-                // Falls keine gefunden, lade alle und filtere nach type
-                let endpoint = `/process?${params.toString()}&md.p.type=SCRAPPING`;
+                // Verschrottung nutzt eigenen Endpunkt: /process/scrapping
+                let endpoint = `/process/scrapping?${params.toString()}`;
+                console.log('Verschrottung API Endpoint:', endpoint);
+
                 let response = await this.call(endpoint, 'GET');
                 let items = Array.isArray(response) ? response : (response.data || []);
-
-                // Falls keine SCRAPPING gefunden, versuche SCRAPPING.C (wie RELOCATION.C)
-                if (items.length === 0) {
-                    console.log('Keine SCRAPPING Prozesse, versuche SCRAPPING.C...');
-                    endpoint = `/process?${params.toString()}&md.p.type=SCRAPPING.C`;
-                    response = await this.call(endpoint, 'GET');
-                    items = Array.isArray(response) ? response : (response.data || []);
-                }
-
-                // Falls immer noch keine, lade alle und suche nach scrapping im type
-                if (items.length === 0) {
-                    console.log('Keine SCRAPPING.C, lade alle Prozesse und filtere...');
-                    endpoint = `/process?${params.toString()}`;
-                    response = await this.call(endpoint, 'GET');
-                    const allItems = Array.isArray(response) ? response : (response.data || []);
-
-                    // Debug: Zeige alle Process-Typen
-                    const types = [...new Set(allItems.map(p => p.meta?.['p.type'] || p.meta?.type || 'unknown'))];
-                    console.log('Gefundene Process-Typen:', types);
-
-                    // Filtere nach scrapping-aehnlichen Typen
-                    items = allItems.filter(p => {
-                        const pType = (p.meta?.['p.type'] || p.meta?.type || '').toUpperCase();
-                        return pType.includes('SCRAPPING') || pType.includes('SCRAP');
-                    });
-
-                    console.log('Gefilterte Scrapping-Prozesse:', items.length);
-                }
+                console.log('Verschrottung Response:', items.length, 'Items');
 
                 // Debug-Log
                 if (items.length > 0) {
