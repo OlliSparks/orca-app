@@ -121,7 +121,7 @@ class ABLDetailPage {
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
                         <div>
                             <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">${inv.title || inv.description || 'Abnahmebereitschaft'}</h1>
-                            <p style="color: #6b7280; margin-bottom: 0.5rem;">ABL-Nr.: ${inv.identifier || inv.orders || this.inventoryKey.substring(0, 8)}</p>
+                            <p style="color: #6b7280; margin-bottom: 0.5rem;">Bestell-Position: ${inv.identifier || inv.orders || this.inventoryKey.substring(0, 8)}</p>
                             <span class="status-badge ${statusInfo.class}" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">
                                 ${statusInfo.text}
                             </span>
@@ -156,10 +156,6 @@ class ABLDetailPage {
                     <div class="card">
                         <p style="color: #6b7280; font-size: 0.85rem;">Lieferant</p>
                         <p style="font-weight: 500;">${inv.supplier || '-'}</p>
-                    </div>
-                    <div class="card">
-                        <p style="color: #6b7280; font-size: 0.85rem;">Standort(e)</p>
-                        <p style="font-weight: 500;">${locationStr}</p>
                     </div>
                     <div class="card">
                         <p style="color: #6b7280; font-size: 0.85rem;">Verantwortlicher</p>

@@ -63,11 +63,8 @@ class ABLPage {
                             type="text"
                             class="search-input"
                             id="searchInput"
-                            placeholder="Suche nach ABL-Nr., Bezeichnung, Standort..."
+                            placeholder="Suche nach Bezeichnung oder Bestell-Position..."
                         >
-                        <button class="btn btn-secondary" id="locationFilterBtn" onclick="ablPage.showLocationFilter()">
-                            Standort
-                        </button>
                         <div class="view-toggle">
                             <button class="view-btn active" data-view="table" onclick="ablPage.setView('table')">
                                 Tabelle
@@ -102,9 +99,8 @@ class ABLPage {
                     <table>
                         <thead>
                             <tr>
-                                <th class="sortable" data-sort="identifier">ABL-Nr.</th>
                                 <th class="sortable" data-sort="title">Bezeichnung</th>
-                                <th class="sortable" data-sort="location">Standort</th>
+                                <th class="sortable" data-sort="identifier">Bestell-Position</th>
                                 <th class="sortable" data-sort="status">Status</th>
                                 <th class="sortable" data-sort="progress">Fortschritt</th>
                                 <th class="sortable" data-sort="dueDate">Faellig</th>
@@ -113,7 +109,7 @@ class ABLPage {
                         </thead>
                         <tbody id="tableBody">
                             <tr>
-                                <td colspan="7" style="text-align: center; padding: 2rem;">
+                                <td colspan="6" style="text-align: center; padding: 2rem;">
                                     Lade Daten...
                                 </td>
                             </tr>
@@ -511,8 +507,7 @@ class ABLPage {
                 if (searchTerm) {
                     this.filteredABL = this.allABL.filter(abl =>
                         (abl.identifier || '').toLowerCase().includes(searchTerm) ||
-                        (abl.title || '').toLowerCase().includes(searchTerm) ||
-                        (abl.location || '').toLowerCase().includes(searchTerm)
+                        (abl.title || '').toLowerCase().includes(searchTerm)
                     );
                 } else {
                     this.applyFilter();
@@ -714,7 +709,7 @@ class ABLPage {
         if (pageItems.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="7">
+                    <td colspan="6">
                         <div class="empty-state">
                             <div class="empty-state-icon">&#128269;</div>
                             <div class="empty-state-text">Keine ABL-Auftraege gefunden</div>
@@ -732,9 +727,8 @@ class ABLPage {
 
                 return `
                     <tr onclick="ablPage.openDetail('${abl.key}')" style="cursor: pointer;">
-                        <td class="tool-number">${abl.identifier || '-'}</td>
                         <td class="tool-name">${abl.title || '-'}</td>
-                        <td>${abl.location || '-'}</td>
+                        <td class="tool-number">${abl.identifier || '-'}</td>
                         <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
                         <td>
                             <div class="progress-bar-container" style="width: 100px;">
@@ -787,11 +781,10 @@ class ABLPage {
                 return `
                     <div class="abl-card" onclick="ablPage.openDetail('${abl.key}')">
                         <div class="abl-card-header">
-                            <span class="abl-card-id">${abl.identifier || '-'}</span>
+                            <span class="abl-card-title">${abl.title || '-'}</span>
                             <span class="status-badge ${statusClass}">${statusLabel}</span>
                         </div>
-                        <div class="abl-card-title">${abl.title || '-'}</div>
-                        <div class="abl-card-location">${abl.location || '-'}</div>
+                        <div class="abl-card-id">Bestell-Position: ${abl.identifier || '-'}</div>
                         <div class="abl-card-progress">
                             <div class="progress-bar-container">
                                 <div class="progress-bar-fill" style="width: ${progress}%;"></div>
