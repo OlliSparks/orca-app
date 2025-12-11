@@ -85,6 +85,12 @@ class OrcaApp {
             verschrottungPage.render();
         });
 
+        // Verschrottung Detail (mit dynamischer ID)
+        router.addRoute('/verschrottung-detail/:id', (params) => {
+            const id = params.id;
+            verschrottungDetailPage.render(id);
+        });
+
         // Einstellungen
         router.addRoute('/settings', () => {
             settingsPage.render();

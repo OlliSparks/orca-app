@@ -1,12 +1,13 @@
 // ORCA 2.0 - Verschrottung Liste
+// Strukturiertes Ende. Vollstaendig dokumentiert.
 class VerschrottungPage {
     constructor() {
-        this.allTools = [];
-        this.filteredTools = [];
+        this.allItems = [];
+        this.filteredItems = [];
         this.currentPage = 1;
         this.itemsPerPage = 50;
         this.currentFilter = 'all';
-        this.currentSort = { column: 'number', direction: 'asc' };
+        this.currentSort = { column: 'title', direction: 'asc' };
     }
 
     async render() {
@@ -32,14 +33,8 @@ class VerschrottungPage {
                             type="text"
                             class="search-input"
                             id="searchInput"
-                            placeholder="🔍 Suche nach Verschrottungs-Nr., Name, Lieferant oder Standort..."
+                            placeholder="Suche nach Bezeichnung, Vertragspartner, Teilenummer..."
                         >
-                        <button class="btn btn-secondary" onclick="verschrottungPage.loadFromAPI()">
-                            🔄 API Laden
-                        </button>
-                        <button class="btn btn-neutral" onclick="verschrottungPage.exportData()">
-                            📥 Export
-                        </button>
                     </div>
 
                     <div class="filter-section">
@@ -49,11 +44,14 @@ class VerschrottungPage {
                         <div class="filter-chip" data-filter="offen">
                             Offen <span class="count" id="countOffen">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="feinplanung">
-                            Feinplanung <span class="count" id="countFeinplanung">0</span>
+                        <div class="filter-chip" data-filter="in-bearbeitung">
+                            In Bearbeitung <span class="count" id="countInBearbeitung">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="in-inventur">
-                            in Bearbeitung <span class="count" id="countInInventur">0</span>
+                        <div class="filter-chip" data-filter="genehmigt">
+                            Genehmigt <span class="count" id="countGenehmigt">0</span>
+                        </div>
+                        <div class="filter-chip" data-filter="abgeschlossen">
+                            Abgeschlossen <span class="count" id="countAbgeschlossen">0</span>
                         </div>
                     </div>
                 </div>
@@ -63,12 +61,12 @@ class VerschrottungPage {
                     <table>
                         <thead>
                             <tr>
-                                <th class="sortable" data-sort="number">Werkzeugnummer</th>
-                                <th class="sortable" data-sort="name">Werkzeug</th>
-                                <th class="sortable" data-sort="supplier">Lieferant</th>
+                                <th class="sortable" data-sort="title">Bezeichnung</th>
+                                <th class="sortable" data-sort="contractPartner">Vertragspartner</th>
+                                <th class="sortable" data-sort="baureihe">Baureihe</th>
+                                <th class="sortable" data-sort="partNumber">Teilenummer</th>
                                 <th class="sortable" data-sort="location">Standort</th>
                                 <th class="sortable" data-sort="status">Status</th>
-                                <th>Letzte Verschrottung</th>
                                 <th>Aktionen</th>
                             </tr>
                         </thead>
@@ -86,8 +84,8 @@ class VerschrottungPage {
                             Lade...
                         </div>
                         <div class="pagination-controls">
-                            <button class="page-btn" id="prevPage" onclick="verschrottungPage.prevPage()">◀ Zurück</button>
-                            <button class="page-btn" id="nextPage" onclick="verschrottungPage.nextPage()">Weiter ▶</button>
+                            <button class="page-btn" id="prevPage" onclick="verschrottungPage.prevPage()">Zurueck</button>
+                            <button class="page-btn" id="nextPage" onclick="verschrottungPage.nextPage()">Weiter</button>
                         </div>
                     </div>
                 </div>
@@ -96,27 +94,63 @@ class VerschrottungPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="verschrottungPage.showSettings()">⚙️ Einstellungen</button>
-            <button class="btn btn-primary" onclick="verschrottungPage.showAddModal()">➕ Neue Verschrottung</button>
+            <button class="btn btn-neutral" onclick="verschrottungPage.exportData()">Export</button>
+            <button class="btn btn-primary" onclick="verschrottungPage.loadData()">Aktualisieren</button>
         `;
+
+        // Inject styles
+        this.injectStyles();
 
         // Load data and setup
         await this.loadData();
         this.attachEventListeners();
     }
 
+    injectStyles() {
+        if (document.getElementById('verschrottung-page-styles')) return;
+
+        const styles = document.createElement('style');
+        styles.id = 'verschrottung-page-styles';
+        styles.textContent = `
+            .status-badge.status-offen {
+                background: #fef3c7;
+                color: #92400e;
+            }
+            .status-badge.status-in-bearbeitung {
+                background: #dbeafe;
+                color: #1e40af;
+            }
+            .status-badge.status-genehmigt {
+                background: #d1fae5;
+                color: #065f46;
+            }
+            .status-badge.status-abgeschlossen {
+                background: #f3f4f6;
+                color: #374151;
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+
     async loadData() {
         try {
             const response = await api.getVerschrottungList();
             if (response.success) {
-                this.allTools = response.data;
-                this.filteredTools = [...this.allTools];
+                this.allItems = response.data;
+                this.filteredItems = [...this.allItems];
 
-                // Check for filter from sessionStorage (from dashboard navigation)
+                // Check for filter from sessionStorage
                 const savedFilter = sessionStorage.getItem('verschrottungFilter');
                 if (savedFilter) {
                     this.currentFilter = savedFilter;
                     sessionStorage.removeItem('verschrottungFilter');
+                    // Aktiviere den entsprechenden Filter-Chip
+                    document.querySelectorAll('.filter-chip').forEach(chip => {
+                        chip.classList.remove('active');
+                        if (chip.dataset.filter === savedFilter) {
+                            chip.classList.add('active');
+                        }
+                    });
                     this.applyFilter();
                 }
 
@@ -136,11 +170,12 @@ class VerschrottungPage {
             searchInput.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase();
                 if (searchTerm) {
-                    this.filteredTools = this.allTools.filter(tool =>
-                        tool.number.toLowerCase().includes(searchTerm) ||
-                        tool.name.toLowerCase().includes(searchTerm) ||
-                        tool.supplier.toLowerCase().includes(searchTerm) ||
-                        tool.location.toLowerCase().includes(searchTerm)
+                    this.filteredItems = this.allItems.filter(item =>
+                        (item.title || '').toLowerCase().includes(searchTerm) ||
+                        (item.contractPartner || '').toLowerCase().includes(searchTerm) ||
+                        (item.partNumber || '').toLowerCase().includes(searchTerm) ||
+                        (item.baureihe || '').toLowerCase().includes(searchTerm) ||
+                        (item.location || '').toLowerCase().includes(searchTerm)
                     );
                 } else {
                     this.applyFilter();
@@ -174,20 +209,9 @@ class VerschrottungPage {
 
     applyFilter() {
         if (this.currentFilter === 'all') {
-            this.filteredTools = [...this.allTools];
-        } else if (this.currentFilter === 'overdue') {
-            // Filter für überfällige Aufgaben
-            const today = new Date(); today.setHours(0, 0, 0, 0);
-            today.setHours(0, 0, 0, 0);
-            this.filteredTools = this.allTools.filter(tool => {
-                if (tool.dueDate) {
-                    const dueDate = new Date(tool.dueDate);
-                    return dueDate < today;
-                }
-                return false;
-            });
+            this.filteredItems = [...this.allItems];
         } else {
-            this.filteredTools = this.allTools.filter(tool => tool.status === this.currentFilter);
+            this.filteredItems = this.allItems.filter(item => item.status === this.currentFilter);
         }
     }
 
@@ -199,9 +223,9 @@ class VerschrottungPage {
             this.currentSort.direction = 'asc';
         }
 
-        this.filteredTools.sort((a, b) => {
-            let aVal = a[column];
-            let bVal = b[column];
+        this.filteredItems.sort((a, b) => {
+            let aVal = a[column] || '';
+            let bVal = b[column] || '';
 
             if (typeof aVal === 'string') {
                 aVal = aVal.toLowerCase();
@@ -220,39 +244,39 @@ class VerschrottungPage {
             th.classList.remove('asc', 'desc');
         });
         const th = document.querySelector(`th[data-sort="${column}"]`);
-        th.classList.add(this.currentSort.direction);
+        if (th) th.classList.add(this.currentSort.direction);
 
         this.renderTable();
     }
 
     updateStats() {
-        const total = this.allTools.length;
-        const offen = this.allTools.filter(t => t.status === 'offen').length;
-        const feinplanung = this.allTools.filter(t => t.status === 'feinplanung').length;
-        const inInventur = this.allTools.filter(t => t.status === 'in-inventur').length;
+        const total = this.allItems.length;
+        const offen = this.allItems.filter(t => t.status === 'offen').length;
+        const inBearbeitung = this.allItems.filter(t => t.status === 'in-bearbeitung').length;
+        const genehmigt = this.allItems.filter(t => t.status === 'genehmigt').length;
+        const abgeschlossen = this.allItems.filter(t => t.status === 'abgeschlossen').length;
 
         // Update filter counts
         document.getElementById('countAll').textContent = total;
         document.getElementById('countOffen').textContent = offen;
-        document.getElementById('countFeinplanung').textContent = feinplanung;
-        document.getElementById('countInInventur').textContent = inInventur;
-
-        // Header stats are hidden - no update needed
+        document.getElementById('countInBearbeitung').textContent = inBearbeitung;
+        document.getElementById('countGenehmigt').textContent = genehmigt;
+        document.getElementById('countAbgeschlossen').textContent = abgeschlossen;
     }
 
     renderTable() {
         const tableBody = document.getElementById('tableBody');
-        const totalPages = Math.ceil(this.filteredTools.length / this.itemsPerPage);
+        const totalPages = Math.ceil(this.filteredItems.length / this.itemsPerPage);
         const startIdx = (this.currentPage - 1) * this.itemsPerPage;
         const endIdx = startIdx + this.itemsPerPage;
-        const pageTools = this.filteredTools.slice(startIdx, endIdx);
+        const pageItems = this.filteredItems.slice(startIdx, endIdx);
 
-        if (pageTools.length === 0) {
+        if (pageItems.length === 0) {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7">
                         <div class="empty-state">
-                            <div class="empty-state-icon">🔍</div>
+                            <div class="empty-state-icon">&#128269;</div>
                             <div class="empty-state-text">Keine Verschrottungen gefunden</div>
                             <div class="empty-state-hint">Versuche einen anderen Suchbegriff oder Filter</div>
                         </div>
@@ -260,24 +284,21 @@ class VerschrottungPage {
                 </tr>
             `;
         } else {
-            tableBody.innerHTML = pageTools.map(tool => {
-                const statusInfo = {
-                    'offen': { class: 'status-offen', text: '⚪ Offen' },
-                    'feinplanung': { class: 'status-feinplanung', text: '🔵 Feinplanung' },
-                    'in-inventur': { class: 'status-in-inventur', text: '✅ in Bearbeitung' }
-                }[tool.status];
+            tableBody.innerHTML = pageItems.map(item => {
+                const statusClass = 'status-' + item.status;
+                const statusLabel = this.getStatusLabel(item.status);
 
                 return `
-                    <tr>
-                        <td class="tool-number">${tool.toolNumber}</td>
-                        <td class="tool-name">${tool.name}</td>
-                        <td>${tool.supplier}</td>
-                        <td>📌 ${tool.location}</td>
-                        <td><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span></td>
-                        <td style="color: #6b7280;">${this.formatDate(tool.lastInventory)}</td>
+                    <tr onclick="verschrottungPage.openDetail('${item.key}')" style="cursor: pointer;">
+                        <td class="tool-name">${item.title || '-'}</td>
+                        <td>${item.contractPartner || '-'}</td>
+                        <td>${item.baureihe || '-'}</td>
+                        <td class="tool-number">${item.partNumber || '-'}</td>
+                        <td>${item.location || '-'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
                         <td>
-                            <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; min-width: 80px; font-size: 0.8rem;" onclick="router.navigate('/detail/${tool.id}')">
-                                👁️ Details
+                            <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="event.stopPropagation(); verschrottungPage.openDetail('${item.key}')">
+                                Details
                             </button>
                         </td>
                     </tr>
@@ -287,14 +308,19 @@ class VerschrottungPage {
 
         // Pagination
         document.getElementById('paginationInfo').textContent =
-            `Zeige ${startIdx + 1}-${Math.min(endIdx, this.filteredTools.length)} von ${this.filteredTools.length} Verschrottungen`;
+            `Zeige ${startIdx + 1}-${Math.min(endIdx, this.filteredItems.length)} von ${this.filteredItems.length} Verschrottungen`;
         document.getElementById('prevPage').disabled = this.currentPage <= 1;
         document.getElementById('nextPage').disabled = this.currentPage >= totalPages;
     }
 
-    formatDate(dateStr) {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    getStatusLabel(status) {
+        const labels = {
+            'offen': 'Offen',
+            'in-bearbeitung': 'In Bearbeitung',
+            'genehmigt': 'Genehmigt',
+            'abgeschlossen': 'Abgeschlossen'
+        };
+        return labels[status] || status || 'Unbekannt';
     }
 
     prevPage() {
@@ -306,7 +332,7 @@ class VerschrottungPage {
     }
 
     nextPage() {
-        const totalPages = Math.ceil(this.filteredTools.length / this.itemsPerPage);
+        const totalPages = Math.ceil(this.filteredItems.length / this.itemsPerPage);
         if (this.currentPage < totalPages) {
             this.currentPage++;
             this.renderTable();
@@ -314,20 +340,31 @@ class VerschrottungPage {
         }
     }
 
-    showAddModal() {
-        alert('➕ Verschrottung Hinzufügen - Diese Funktion wird später implementiert');
-    }
-
-    loadFromAPI() {
-        alert('🔄 API-Anbindung wird geladen...\n\nEndpoint: /api/verschrottung\nStatus: Wird implementiert');
+    openDetail(key) {
+        router.navigate('/verschrottung-detail/' + key);
     }
 
     exportData() {
-        alert(`📥 Export wird vorbereitet...\n\nFormat: CSV\nDatensätze: ${this.filteredTools.length}`);
-    }
+        // CSV Export
+        const headers = ['Bezeichnung', 'Vertragspartner', 'Baureihe', 'Teilenummer', 'Standort', 'Status'];
+        const rows = this.filteredItems.map(item => [
+            item.title || '',
+            item.contractPartner || '',
+            item.baureihe || '',
+            item.partNumber || '',
+            item.location || '',
+            this.getStatusLabel(item.status)
+        ]);
 
-    showSettings() {
-        alert('⚙️ Einstellungen\n\n- API-Konfiguration\n- Export-Optionen\n- Filter-Präferenzen\n- Ansichts-Einstellungen');
+        const csvContent = [headers, ...rows]
+            .map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(';'))
+            .join('\n');
+
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Verschrottung_Export_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.click();
     }
 
     showError(message) {
@@ -335,7 +372,7 @@ class VerschrottungPage {
         app.innerHTML = `
             <div class="container">
                 <div class="card" style="text-align: center; padding: 4rem 2rem;">
-                    <div style="font-size: 4rem; margin-bottom: 1rem; color: #f97316;">⚠️</div>
+                    <div style="font-size: 4rem; margin-bottom: 1rem; color: #f97316;">&#9888;</div>
                     <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Fehler</h2>
                     <p style="color: #6b7280; margin-bottom: 2rem;">${message}</p>
                     <button class="btn btn-primary" onclick="location.reload()">Neu laden</button>

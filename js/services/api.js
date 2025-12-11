@@ -1945,68 +1945,250 @@ class APIService {
         });
     }
 
-    // === Verschrottung Endpoints ===
+    // === Verschrottung (Scrapping) Endpoints ===
+    // Verschrottung nutzt /process mit type=SCRAPPING
+
     async getVerschrottungList(filters = {}) {
         return this.callWithFallback(
-            // Live API call
             async () => {
                 const params = new URLSearchParams();
-                if (filters.status) params.append('status', filters.status);
+                params.append('limit', filters.limit || 100);
+                params.append('skip', filters.skip || 0);
+                params.append('md.p.type', 'SCRAPPING');
 
-                const endpoint = `/verschrottung-list?${params.toString()}`;
+                // Server-seitiger Supplier-Filter
+                const supplierNumber = this.supplierNumber;
+                if (supplierNumber) {
+                    params.append('md.contractPartner', supplierNumber);
+                }
+
+                const endpoint = `/process?${params.toString()}`;
                 const response = await this.call(endpoint, 'GET');
+
+                // Debug-Log
+                const items = Array.isArray(response) ? response : (response.data || []);
+                if (items.length > 0) {
+                    console.log('Verschrottung API Response (erstes Item):', JSON.stringify(items[0], null, 2));
+                }
+
+                const transformedData = items.map((item, index) => {
+                    const meta = item.meta || {};
+                    const context = item.context || {};
+
+                    // Key fuer Navigation
+                    const processKey = context.key || item.key || '';
+
+                    // Bezeichnung (Titel des Prozesses)
+                    const title = meta.title || meta.description || 'Verschrottung';
+
+                    // Vertragspartner
+                    const contractPartner = meta.contractPartner || meta.supplier || '';
+
+                    // Betreiber
+                    const operator = meta.operator || meta['asset.owner'] || '';
+
+                    // Baureihe
+                    const baureihe = meta.baureihe || meta.series || meta.project || '';
+
+                    // Teilenummer
+                    const partNumber = meta.partNumber || meta.partNumbers || meta.inventoryNumber || '';
+
+                    // Ersteller
+                    const creator = meta.creator || meta.createdBy || '';
+
+                    // Facheinkaeufer
+                    const buyer = meta.buyer || meta.facheinkaeufer || meta.purchaser || '';
+
+                    // Standort
+                    let location = '';
+                    if (meta.assetCity && meta.assetCountry) {
+                        location = `${meta.assetCity} (${meta.assetCountry})`;
+                    } else if (meta.location) {
+                        location = meta.location;
+                    } else if (meta['asset.city']) {
+                        location = `${meta['asset.city']} (${meta['asset.country'] || ''})`;
+                    }
+
+                    // Status - Mapping aus Process-Status
+                    let status = 'offen';
+                    const processStatus = meta.status || meta.state || '';
+                    if (processStatus === 'COMPLETED' || processStatus === 'DONE' || processStatus === 'CLOSED') {
+                        status = 'abgeschlossen';
+                    } else if (processStatus === 'IN_PROGRESS' || processStatus === 'PENDING') {
+                        status = 'in-bearbeitung';
+                    } else if (processStatus === 'APPROVED') {
+                        status = 'genehmigt';
+                    } else if (processStatus === 'NEW' || processStatus === 'OPEN') {
+                        status = 'offen';
+                    }
+
+                    // Daten
+                    const dueDate = meta.dueDate ? meta.dueDate.split('T')[0] : null;
+                    const createdAt = meta.created || meta.createdAt || null;
+
+                    return {
+                        id: processKey || index,
+                        key: processKey,
+                        processKey: processKey,
+                        // Bezeichnung
+                        title: title,
+                        name: title,
+                        // Beteiligte
+                        contractPartner: contractPartner,
+                        operator: operator,
+                        // Werkzeug-Infos
+                        baureihe: baureihe,
+                        partNumber: partNumber,
+                        // Personen
+                        creator: creator,
+                        buyer: buyer,
+                        // Standort
+                        location: location,
+                        // Status
+                        status: status,
+                        processStatus: processStatus,
+                        // Termine
+                        dueDate: dueDate,
+                        createdAt: createdAt,
+                        // Original
+                        originalData: item
+                    };
+                });
 
                 return {
                     success: true,
-                    data: response.data || response,
-                    total: response.total || (response.data ? response.data.length : 0)
+                    data: transformedData,
+                    total: transformedData.length
                 };
             },
-            // Mock fallback
             () => this.getMockVerschrottungData(filters)
         );
     }
 
+    // Verschrottung Details laden
+    async getVerschrottungDetail(processKey) {
+        return this.callWithFallback(
+            async () => {
+                const response = await this.call(`/process/${processKey}`, 'GET');
+                const data = response.data || response;
+                console.log('Verschrottung Detail Response:', JSON.stringify(data, null, 2));
+
+                return {
+                    success: true,
+                    data: data
+                };
+            },
+            () => ({ success: false, error: 'Mock nicht verfuegbar' })
+        );
+    }
+
+    // Verschrottung Positionen laden
+    async getVerschrottungPositions(processKey, filters = {}) {
+        return this.callWithFallback(
+            async () => {
+                const params = new URLSearchParams();
+                params.append('limit', filters.limit || 100);
+                params.append('skip', filters.skip || 0);
+
+                const endpoint = `/process/${processKey}/positions?${params.toString()}`;
+                const response = await this.call(endpoint, 'GET');
+
+                const items = Array.isArray(response) ? response : (response.data || []);
+
+                // Debug erstes Item
+                if (items.length > 0) {
+                    console.log('Verschrottung Positionen (erstes Item):', JSON.stringify(items[0], null, 2));
+                }
+
+                const transformedPositions = items.map((pos, index) => {
+                    const meta = pos.meta || {};
+                    const context = pos.context || {};
+
+                    return {
+                        id: context.key || pos.key || index,
+                        positionKey: context.key || pos.key || '',
+                        revision: pos.revision || '',
+                        // Asset-Daten
+                        assetKey: meta.assetKey || meta['asset.key'] || '',
+                        inventoryNumber: meta.inventoryNumber || meta['asset.inventoryNumber'] || '',
+                        orderNumber: meta.orderNumber || meta['asset.orderNumber'] || '',
+                        description: meta.description || meta['asset.inventoryText'] || '',
+                        // Status
+                        status: meta.status || 'PENDING',
+                        // Standort
+                        location: meta.location || meta['asset.city'] || '',
+                        // Original
+                        originalData: pos
+                    };
+                });
+
+                return {
+                    success: true,
+                    data: transformedPositions,
+                    total: transformedPositions.length
+                };
+            },
+            () => ({ success: true, data: [], total: 0 })
+        );
+    }
+
     getMockVerschrottungData(filters = {}) {
-        const toolTypes = ['Schrott-Werkzeug', 'Entsorgung-Tool', 'Recycling-Tool'];
-        const parts = ['Türblech hinten links', 'Kofferraumdeckel', 'Fensterrahmen', 'Verstrebung', 'Halterung'];
-        const locations = ['Halle C - Montage', 'Außenlager Nord', 'Halle A - Regal 1'];
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const items = [];
-        for (let i = 1; i <= 10; i++) {
-            const toolType = toolTypes[(i - 1) % toolTypes.length];
-            const part = parts[(i - 1) % parts.length];
-            const paddedNum = String(i + 4000).padStart(4, '0');
-            const year = new Date().getFullYear();
-
-            // Berechne Fälligkeitsdatum - erste 3 sind überfällig
-            const dueDate = new Date(today);
-            if (i <= 3) {
-                // Überfällig: 10-30 Tage in der Vergangenheit
-                dueDate.setDate(today.getDate() - (10 * i));
-            } else {
-                // Zukünftig: 4-45 Tage in der Zukunft
-                dueDate.setDate(today.getDate() + (5 * (i - 3)));
+        const items = [
+            {
+                id: 1,
+                key: 'mock-scrap-001',
+                processKey: 'mock-scrap-001',
+                title: 'Testverschrottung KPORCATEST 484 Abmessungsdaten',
+                name: 'Testverschrottung KPORCATEST 484 Abmessungsdaten',
+                contractPartner: 'ZF FRIEDRICHSHAFEN AG (147631)',
+                operator: 'ZF FRIEDRICHSHAFEN AG (147631)',
+                baureihe: 'F18',
+                partNumber: '7633770-1 (LU 8P75H HYBRIDGETRIEBE)',
+                creator: 'Ido IVL147631',
+                buyer: 'Daniel Hey',
+                location: 'AT-Eggenburg (3730)',
+                status: 'offen',
+                processStatus: 'NEW',
+                dueDate: '2024-12-31',
+                createdAt: '2024-11-15'
+            },
+            {
+                id: 2,
+                key: 'mock-scrap-002',
+                processKey: 'mock-scrap-002',
+                title: 'Verschrottung Presswerkzeug G30',
+                name: 'Verschrottung Presswerkzeug G30',
+                contractPartner: 'MAHLE BEHR GMBH & CO. KG (116116)',
+                operator: 'MAHLE BEHR GMBH & CO. KG (116116)',
+                baureihe: 'G30',
+                partNumber: '8401234-5',
+                creator: 'Max Mustermann',
+                buyer: 'Anna Schmidt',
+                location: 'DE-Stuttgart (70173)',
+                status: 'in-bearbeitung',
+                processStatus: 'IN_PROGRESS',
+                dueDate: '2025-01-15',
+                createdAt: '2024-10-20'
+            },
+            {
+                id: 3,
+                key: 'mock-scrap-003',
+                processKey: 'mock-scrap-003',
+                title: 'Entsorgung Stanzwerkzeug',
+                name: 'Entsorgung Stanzwerkzeug',
+                contractPartner: 'Bosch Rexroth AG (123456)',
+                operator: 'Bosch Rexroth AG (123456)',
+                baureihe: 'X5',
+                partNumber: '5501122-3',
+                creator: 'Test User',
+                buyer: 'Franz Mueller',
+                location: 'DE-Muenchen (80331)',
+                status: 'genehmigt',
+                processStatus: 'APPROVED',
+                dueDate: '2025-02-28',
+                createdAt: '2024-09-10'
             }
-
-            // Letzte Inventur: zufällig in den letzten 30 Tagen
-            const lastInv = new Date(today);
-            lastInv.setDate(today.getDate() - ((i - 1) % 28 + 1));
-
-            items.push({
-                id: 4000 + i,
-                number: `SCH-${paddedNum}`,
-                toolNumber: `${toolType.substring(0, 3).toUpperCase()}-${year}-${paddedNum}`,
-                name: `${toolType} ${part}`,
-                supplier: 'Bosch Rexroth AG',
-                location: locations[(i - 1) % locations.length],
-                status: i <= 3 ? 'offen' : (i <= 6 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: lastInv.toISOString().split('T')[0],
-                dueDate: dueDate.toISOString().split('T')[0]
-            });
-        }
+        ];
 
         return Promise.resolve({
             success: true,
