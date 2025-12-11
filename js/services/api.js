@@ -976,21 +976,83 @@ class APIService {
         });
     }
 
-    // === ABL (Abnahmebereitschaft) Endpoints ===
+// === ABL (Abnahmebereitschaftserklaerung) Endpoints ===
+    // ABL = Inventur mit Typ ID (Abnahmebereitschaft)
+    // Nutzt /inventory-list mit type=ID Filter
+    // Asset processStatus: A8 (geplant), A9 (in Durchfuehrung)
+
     async getABLList(filters = {}) {
         return this.callWithFallback(
-            // Live API call
+            // Live API call - nutze inventory-list mit type=ID
             async () => {
                 const params = new URLSearchParams();
-                if (filters.status) params.append('status', filters.status);
 
-                const endpoint = `/abl-list?${params.toString()}`;
+                // Inventur-Typ ID = Abnahmebereitschaft
+                params.append('type', 'ID');
+
+                // Status-Filter (I0=geplant, I1=laufend, I2=durchgefuehrt)
+                const statuses = filters.status || ['I0', 'I1'];
+                statuses.forEach(s => params.append('status', s));
+
+                // Supplier-Filter via query
+                if (this.supplierNumber) {
+                    params.append('query', this.supplierNumber);
+                }
+
+                // Pagination
+                params.append('limit', filters.limit || 100);
+                params.append('skip', filters.skip || 0);
+
+                // Partitionen anzeigen
+                params.append('showPartitions', 'true');
+
+                const endpoint = `/inventory-list?${params.toString()}`;
                 const response = await this.call(endpoint, 'GET');
+
+                // Transform API response
+                const items = Array.isArray(response) ? response : (response.data || []);
+                const transformedData = items.map((item, index) => {
+                    const meta = item.meta || {};
+                    const context = item.context || {};
+
+                    return {
+                        id: context.key || index,
+                        inventoryKey: context.key || '',
+                        // Inventarnummer(n)
+                        inventoryNumber: meta.partNumbers?.split(' ')[0] || '',
+                        partNumbers: meta.partNumbers || '',
+                        // Name/Beschreibung
+                        name: meta.description || 'Abnahmebereitschaft',
+                        // Lieferant
+                        supplier: meta.supplier || '',
+                        supplierName: meta.supplier?.replace(/\s*\(\d+\)$/, '') || '',
+                        // Standort
+                        location: meta.assetCity && meta.assetCountry
+                            ? `${meta.assetCity}, ${meta.assetCountry}`
+                            : (meta.locationText || ''),
+                        assetCity: meta.assetCity || '',
+                        assetCountry: meta.assetCountry || '',
+                        // Status
+                        inventoryStatus: meta.status || 'I0',
+                        status: this.mapABLInventoryStatus(meta.status),
+                        inventoryType: meta.type || 'ID',
+                        // Termine
+                        dueDate: meta.dueDate ? meta.dueDate.split('T')[0] : null,
+                        createdAt: meta.created || null,
+                        // Zaehler
+                        assetCount: meta.assetCount || 0,
+                        acceptedAssets: meta.acceptedAssets || 0,
+                        // Verantwortlicher
+                        responsible: meta.assignedUsername || meta.responsibleUser || '',
+                        // Original-Daten
+                        originalData: item
+                    };
+                });
 
                 return {
                     success: true,
-                    data: response.data || response,
-                    total: response.total || (response.data ? response.data.length : 0)
+                    data: transformedData,
+                    total: transformedData.length
                 };
             },
             // Mock fallback
@@ -998,44 +1060,178 @@ class APIService {
         );
     }
 
+    // ABL Inventur-Status Mapping
+    mapABLInventoryStatus(inventoryStatus) {
+        const statusMap = {
+            'I0': 'geplant',        // Geplant, noch nicht versandt
+            'I1': 'laufend',        // An Lieferant versandt
+            'I2': 'durchgefuehrt',  // Lieferant hat zurueckgemeldet
+            'I3': 'akzeptiert',     // Owner hat akzeptiert
+            'I4': 'abgeschlossen'   // Abgeschlossen
+        };
+        return statusMap[inventoryStatus] || 'unbekannt';
+    }
+
+    // ABL Positionen abrufen (einzelne Assets)
+    async getABLPositions(inventoryKey, filters = {}) {
+        const params = new URLSearchParams();
+
+        // Status-Filter
+        if (filters.status) {
+            const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
+            statuses.forEach(s => params.append('status', s));
+        }
+
+        // Pagination
+        params.append('limit', filters.limit || 100);
+        params.append('offset', filters.offset || 0);
+
+        const endpoint = `/inventory/${inventoryKey}/positions?${params.toString()}`;
+        const response = await this.call(endpoint, 'GET');
+
+        // Transform positions
+        const positions = Array.isArray(response) ? response : (response.data || []);
+        const transformedPositions = positions.map((pos, index) => {
+            const meta = pos.meta || {};
+            const assetMeta = meta.asset || {};
+
+            return {
+                id: pos.key || index,
+                positionKey: pos.key || '',
+                revision: pos.revision || 0,
+                // Asset-Daten
+                assetKey: meta.assetKey || '',
+                inventoryNumber: meta['asset.inventoryNumber'] || assetMeta.inventoryNumber || '',
+                toolNumber: meta['asset.orderNumber'] || assetMeta.orderNumber || '',
+                name: meta['asset.inventoryText'] || assetMeta.inventoryText || '',
+                // Standort
+                location: meta['asset.assetCity'] && meta['asset.assetCountry']
+                    ? `${meta['asset.assetStreet'] || ''}, ${meta['asset.assetPostcode'] || ''} ${meta['asset.assetCity']}, ${meta['asset.assetCountry']}`.trim().replace(/^,\s*/, '')
+                    : '',
+                assetCity: meta['asset.assetCity'] || '',
+                assetCountry: meta['asset.assetCountry'] || '',
+                // Geo-Daten (falls vorhanden)
+                latitude: meta.latitude || meta['asset.latitude'] || null,
+                longitude: meta.longitude || meta['asset.longitude'] || null,
+                // Status
+                positionStatus: meta.status || 'P0',
+                status: this.mapABLPositionStatus(meta.status),
+                locationState: meta.locationState || 'PS0',
+                imageState: meta.imageState || 'PS0',
+                documentsState: meta.documentsState || 'PS0',
+                // Validierungszustand
+                hasPhotos: meta.imageState === 'PS3',
+                hasLocation: meta.locationState === 'PS3',
+                hasDocuments: meta.documentsState === 'PS3',
+                // Kommentare
+                comment: meta.comment || '',
+                resultComment: meta.resultComment || '',
+                // Original
+                originalData: pos
+            };
+        });
+
+        return {
+            success: true,
+            data: transformedPositions,
+            total: transformedPositions.length
+        };
+    }
+
+    // ABL Position-Status Mapping
+    mapABLPositionStatus(positionStatus) {
+        const statusMap = {
+            'P0': 'neu',
+            'P1': 'laufend',
+            'P2': 'gemeldet',
+            'P3': 'ergebnis',
+            'P4': 'abgeschlossen',
+            'P5': 'akzeptiert',
+            'P6': 'abgelehnt'
+        };
+        return statusMap[positionStatus] || 'unbekannt';
+    }
+
+    // ABL Position melden (Abnahme durchfuehren)
+    async reportABLPosition(inventoryKey, positionKey, revision, data) {
+        return this.callWithFallback(
+            async () => {
+                const endpoint = `/inventory/${inventoryKey}/${positionKey}/${revision}/report`;
+                const response = await this.call(endpoint, 'PATCH', {
+                    locationState: data.locationState || 'PS3',
+                    imageState: data.imageState || 'PS3',
+                    documentsState: data.documentsState || 'PS3',
+                    comment: data.comment || '',
+                    ...data
+                });
+                return {
+                    success: true,
+                    data: response.data || response
+                };
+            },
+            () => ({ success: false, error: 'Meldung fehlgeschlagen' })
+        );
+    }
+
+    // ABL Position akzeptieren
+    async acceptABLPosition(inventoryKey, positionKey, revision) {
+        return this.callWithFallback(
+            async () => {
+                const endpoint = `/inventory/${inventoryKey}/${positionKey}/${revision}/accept`;
+                const response = await this.call(endpoint, 'PATCH');
+                return {
+                    success: true,
+                    data: response.data || response
+                };
+            },
+            () => ({ success: false, error: 'Akzeptierung fehlgeschlagen' })
+        );
+    }
+
     getMockABLData(filters = {}) {
-        const toolTypes = ['ABL-Werkzeug', 'Prüfwerkzeug', 'Kontrolle'];
-        const parts = ['Motorhaube', 'Türblech vorn links', 'Kotflügel', 'Dachholm', 'A-Säule links'];
-        const locations = ['Halle A - Regal 1', 'Halle B - Lager 1', 'Außenlager Nord'];
+        const cities = ['Muenchen', 'Stuttgart', 'Ingolstadt', 'Regensburg', 'Landshut'];
+        const countries = ['DE', 'AT', 'CZ'];
+        const projects = ['G70', 'G80', 'G90', 'U11', 'U12'];
 
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
         const items = [];
-        for (let i = 1; i <= 10; i++) {
-            const toolType = toolTypes[(i - 1) % toolTypes.length];
-            const part = parts[(i - 1) % parts.length];
-            const paddedNum = String(i + 1000).padStart(4, '0');
-            const year = new Date().getFullYear();
+        for (let i = 1; i <= 12; i++) {
+            const city = cities[(i - 1) % cities.length];
+            const country = countries[(i - 1) % countries.length];
 
-            // Berechne Fälligkeitsdatum - erste 4 sind überfällig
+            // Status-Verteilung: 5 geplant (I0), 4 laufend (I1), 3 durchgefuehrt (I2)
+            let inventoryStatus = 'I0';
+            if (i > 5 && i <= 9) inventoryStatus = 'I1';
+            else if (i > 9) inventoryStatus = 'I2';
+
+            // Faelligkeitsdatum
             const dueDate = new Date(today);
-            if (i <= 4) {
-                // Überfällig: 5-20 Tage in der Vergangenheit
+            if (i <= 3) {
+                // Ueberfaellig
                 dueDate.setDate(today.getDate() - (5 * i));
             } else {
-                // Zukünftig: 5-30 Tage in der Zukunft
-                dueDate.setDate(today.getDate() + (5 * (i - 4)));
+                dueDate.setDate(today.getDate() + (7 * (i - 3)));
             }
 
-            // Letzte Inventur: zufällig in den letzten 30 Tagen
-            const lastInv = new Date(today);
-            lastInv.setDate(today.getDate() - ((i - 1) % 28 + 1));
-
             items.push({
-                id: 1000 + i,
-                number: `ABL-${paddedNum}`,
-                toolNumber: `${toolType.substring(0, 3).toUpperCase()}-${year}-${paddedNum}`,
-                name: `${toolType} ${part}`,
-                supplier: 'Bosch Rexroth AG',
-                location: locations[(i - 1) % locations.length],
-                status: i <= 4 ? 'offen' : (i <= 7 ? 'feinplanung' : 'in-inventur'),
-                lastInventory: lastInv.toISOString().split('T')[0],
-                dueDate: dueDate.toISOString().split('T')[0]
+                id: i,
+                inventoryKey: `abl-inv-${1000 + i}`,
+                inventoryNumber: String(10056190 + i),
+                partNumbers: `${10056190 + i} ${10056200 + i}`,
+                name: `ABL ${city} - ${projects[(i - 1) % projects.length]}`,
+                supplier: `Lieferant GmbH (${this.supplierNumber || '133188'})`,
+                supplierName: 'Lieferant GmbH',
+                location: `${city}, ${country}`,
+                assetCity: city,
+                assetCountry: country,
+                inventoryStatus: inventoryStatus,
+                status: this.mapABLInventoryStatus(inventoryStatus),
+                inventoryType: 'ID',
+                dueDate: dueDate.toISOString().split('T')[0],
+                createdAt: new Date(today.getTime() - (i * 2 * 24 * 60 * 60 * 1000)).toISOString(),
+                assetCount: 2 + (i % 5),
+                acceptedAssets: inventoryStatus === 'I2' ? 2 + (i % 5) : (inventoryStatus === 'I1' ? Math.floor((2 + (i % 5)) / 2) : 0),
+                responsible: i % 3 === 0 ? 'Max Mustermann' : (i % 3 === 1 ? 'Erika Musterfrau' : '')
             });
         }
 
@@ -1046,7 +1242,8 @@ class APIService {
         });
     }
 
-    // === Verlagerung (Relocation) Endpoints ===
+
+        // === Verlagerung (Relocation) Endpoints ===
 
     // Get list of relocation processes
     async getVerlagerungList(filters = {}) {
