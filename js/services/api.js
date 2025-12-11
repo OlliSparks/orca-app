@@ -1946,13 +1946,13 @@ class APIService {
     }
 
     // === Verschrottung (Scrapping) Endpoints ===
-    // Verschrottung nutzt /process mit type=SCRAPPING
+    // Verschrottung nutzt /process mit md.p.type=SCRAPPING Filter
 
     async getVerschrottungList(filters = {}) {
         return this.callWithFallback(
             async () => {
                 const params = new URLSearchParams();
-                params.append('limit', filters.limit || 100);
+                params.append('limit', filters.limit || 500);
                 params.append('skip', filters.skip || 0);
 
                 // Server-seitiger Supplier-Filter
@@ -1961,17 +1961,107 @@ class APIService {
                     params.append('md.contractPartner', supplierNumber);
                 }
 
-                // Verschrottung nutzt eigenen Endpunkt: /process/scrapping
-                let endpoint = `/process/scrapping?${params.toString()}`;
-                console.log('Verschrottung API Endpoint:', endpoint);
+                let items = [];
 
-                let response = await this.call(endpoint, 'GET');
-                let items = Array.isArray(response) ? response : (response.data || []);
-                console.log('Verschrottung Response:', items.length, 'Items');
+                // Versuch 1: /process mit SCRAPPING Type-Filter (korrekter Ansatz laut OpenAPI)
+                try {
+                    console.log('Verschrottung: Lade /process mit md.p.type=SCRAPPING');
+                    // Verschiedene moegliche Type-Werte fuer Scrapping
+                    const scrappingTypes = ['SCRAPPING', 'SCRAPPING.C', 'SCRAPPING.A', 'SCRAP'];
+
+                    for (const sType of scrappingTypes) {
+                        if (items.length > 0) break;
+
+                        let endpoint = `/process?${params.toString()}&md.p.type=${sType}`;
+                        console.log('Versuche:', endpoint);
+                        try {
+                            let response = await this.call(endpoint, 'GET');
+                            let foundItems = Array.isArray(response) ? response : (response.data || []);
+                            if (foundItems.length > 0) {
+                                console.log(`Gefunden mit md.p.type=${sType}:`, foundItems.length, 'Items');
+                                items = foundItems;
+                            }
+                        } catch (e) {
+                            console.log(`md.p.type=${sType} fehlgeschlagen:`, e.message);
+                        }
+                    }
+                } catch (e) {
+                    console.log('Process-Abfrage mit Type-Filter fehlgeschlagen:', e.message);
+                }
+
+                // Versuch 2: System-Tasks mit type=SCRAPPING_COMPLETION pruefen
+                if (items.length === 0) {
+                    try {
+                        console.log('Verschrottung: Pruefe /tasks/system mit type=SCRAPPING_COMPLETION');
+                        let endpoint = `/tasks/system?type=SCRAPPING_COMPLETION&limit=500`;
+                        let response = await this.call(endpoint, 'GET');
+                        let tasks = Array.isArray(response) ? response : (response.data || []);
+                        console.log('System-Tasks SCRAPPING_COMPLETION:', tasks.length);
+
+                        if (tasks.length > 0) {
+                            console.log('Erster Scrapping-Task:', JSON.stringify(tasks[0], null, 2));
+                            // Konvertiere Tasks zu Prozess-Items
+                            items = tasks.map(task => ({
+                                context: { key: task.key || task.objectId },
+                                key: task.key || task.objectId,
+                                meta: {
+                                    title: task.title || task.description || 'Verschrottung',
+                                    contractPartner: task.supplier || task.meta?.supplier || '',
+                                    status: task.status || 'NEW',
+                                    ...task.meta
+                                },
+                                _fromTask: true
+                            }));
+                        }
+                    } catch (e) {
+                        console.log('System-Tasks Abfrage fehlgeschlagen:', e.message);
+                    }
+                }
+
+                // Versuch 3: Alle Prozesse laden und client-seitig filtern
+                if (items.length === 0) {
+                    try {
+                        console.log('Verschrottung: Lade alle Prozesse und filtere client-seitig');
+                        let endpoint = `/process?limit=1000&skip=0`;
+                        let response = await this.call(endpoint, 'GET');
+                        let allItems = Array.isArray(response) ? response : (response.data || []);
+
+                        // Debug: Zeige alle verfuegbaren Typen
+                        const types = [...new Set(allItems.map(p => p.meta?.['p.type'] || 'unknown'))];
+                        console.log('Alle Process-Typen im System:', types);
+
+                        // Zeige auch alle meta-Felder des ersten Items
+                        if (allItems.length > 0) {
+                            console.log('Erstes Process meta-Felder:', Object.keys(allItems[0].meta || {}));
+                            console.log('Erstes Process vollstaendig:', JSON.stringify(allItems[0], null, 2));
+                        }
+
+                        // Filtere nach SCRAPPING-Typen
+                        items = allItems.filter(p => {
+                            const pType = (p.meta?.['p.type'] || '').toUpperCase();
+                            const pCategory = (p.meta?.['p.category'] || '').toUpperCase();
+                            const title = (p.meta?.title || '').toUpperCase();
+                            const description = (p.meta?.description || '').toUpperCase();
+
+                            return pType.includes('SCRAP') ||
+                                   pCategory.includes('SCRAP') ||
+                                   title.includes('VERSCHROTTUNG') ||
+                                   title.includes('SCRAP') ||
+                                   description.includes('VERSCHROTTUNG') ||
+                                   description.includes('SCRAP');
+                        });
+                        console.log('SCRAPPING-Prozesse nach Filter:', items.length);
+                    } catch (e) {
+                        console.log('Allgemeine Process-Abfrage fehlgeschlagen:', e.message);
+                    }
+                }
 
                 // Debug-Log
                 if (items.length > 0) {
-                    console.log('Verschrottung API Response (erstes Item):', JSON.stringify(items[0], null, 2));
+                    console.log('Verschrottung - erstes Item:', JSON.stringify(items[0], null, 2));
+                } else {
+                    console.log('KEINE Verschrottungs-Prozesse gefunden!');
+                    console.log('Hinweis: Pruefe ob der richtige Prozess-Typ in der API existiert.');
                 }
 
                 const transformedData = items.map((item, index) => {
