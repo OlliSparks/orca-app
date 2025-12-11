@@ -1877,24 +1877,152 @@ class APIService {
 
     // === Partnerwechsel Endpoints ===
     async getPartnerwechselList(filters = {}) {
-        return this.callWithFallback(
-            // Live API call
-            async () => {
-                const params = new URLSearchParams();
-                if (filters.status) params.append('status', filters.status);
+        if (this.mode === 'mock') {
+            return this.getMockPartnerwechselData(filters);
+        }
 
-                const endpoint = `/partnerwechsel-list?${params.toString()}`;
-                const response = await this.call(endpoint, 'GET');
+        try {
+            // VPW = Vertragspartnerwechsel
+            // Versuche verschiedene Prozess-Typen die VPW sein koennten
+            const params = new URLSearchParams();
+            params.append('limit', filters.limit || 100);
+            params.append('skip', filters.skip || 0);
+
+            // Server-seitiger Supplier-Filter
+            const supplierNumber = this.supplierNumber;
+            if (supplierNumber) {
+                params.append('md.contractPartner', supplierNumber);
+            }
+
+            let items = [];
+
+            // Moegliche VPW Prozess-Typen (wir wissen nicht den exakten Namen)
+            const vpwTypes = [
+                'CONTRACT_PARTNER.C',
+                'CONTRACT_PARTNER_CHANGE.C',
+                'OWNERSHIP_CHANGE.C',
+                'VPW.C',
+                'PARTNER_CHANGE.C'
+            ];
+
+            for (const vpwType of vpwTypes) {
+                if (items.length > 0) break;
+
+                try {
+                    const endpoint = `/process?${params.toString()}&md.p.type=${vpwType}`;
+                    console.log('VPW: Versuche', endpoint);
+                    const response = await this.call(endpoint, 'GET');
+                    const processList = Array.isArray(response) ? response : (response.data || []);
+
+                    if (processList.length > 0) {
+                        console.log(`VPW: Gefunden mit Typ ${vpwType}:`, processList.length);
+                        items = processList;
+                    }
+                } catch (e) {
+                    console.log(`VPW: Typ ${vpwType} nicht gefunden oder Fehler`);
+                }
+            }
+
+            // Falls kein spezifischer VPW-Typ gefunden, versuche generische Suche
+            if (items.length === 0) {
+                console.log('VPW: Kein spezifischer Typ gefunden, versuche alternative Suche...');
+
+                // Versuche alle Prozesse zu laden und nach relevanten zu filtern
+                try {
+                    const allProcessEndpoint = `/process?${params.toString()}`;
+                    const allResponse = await this.call(allProcessEndpoint, 'GET');
+                    const allProcesses = Array.isArray(allResponse) ? allResponse : (allResponse.data || []);
+
+                    // Filtere nach Prozessen die VPW-relevant sein koennten
+                    // (haben verschiedene contractPartner in from/to)
+                    items = allProcesses.filter(p => {
+                        const meta = p.meta || {};
+                        const pType = (meta['p.type'] || '').toUpperCase();
+                        return pType.includes('CONTRACT') ||
+                               pType.includes('PARTNER') ||
+                               pType.includes('OWNERSHIP') ||
+                               pType.includes('VPW');
+                    });
+
+                    console.log('VPW: Nach Filterung gefunden:', items.length);
+                } catch (e) {
+                    console.log('VPW: Auch alternative Suche fehlgeschlagen');
+                }
+            }
+
+            // Transformiere Daten ins Frontend-Format
+            const transformedData = items.map((item, index) => {
+                const meta = item.meta || {};
+
+                // Status-Mapping von API zu Frontend
+                let status = 'offen';
+                const apiStatus = (meta.status || meta['p.status'] || '').toLowerCase();
+                if (apiStatus.includes('completed') || apiStatus.includes('done') || apiStatus.includes('closed')) {
+                    status = 'abgeschlossen';
+                } else if (apiStatus.includes('accepted') || apiStatus.includes('confirmed')) {
+                    status = 'uebernahme-bestaetigt';
+                } else if (apiStatus.includes('reported') || apiStatus.includes('sent')) {
+                    status = 'abgabe-bestaetigt';
+                }
+
+                // Partner-Informationen extrahieren
+                const fromPartner = meta['vpw.from.company'] ||
+                                   meta['from.contractPartner'] ||
+                                   meta['source.company'] ||
+                                   meta.contractPartner ||
+                                   'Unbekannt';
+
+                const toPartner = meta['vpw.to.company'] ||
+                                 meta['to.contractPartner'] ||
+                                 meta['target.company'] ||
+                                 meta['new.contractPartner'] ||
+                                 'Unbekannt';
+
+                // Werkzeug-Informationen
+                const toolNumber = meta.assetNumber ||
+                                  meta['asset.number'] ||
+                                  meta.toolNumber ||
+                                  item.key ||
+                                  '';
+
+                const toolName = meta.assetName ||
+                                meta['asset.name'] ||
+                                meta.description ||
+                                meta.title ||
+                                '';
 
                 return {
-                    success: true,
-                    data: response.data || response,
-                    total: response.total || (response.data ? response.data.length : 0)
+                    id: item.key || item.context?.key || `vpw-${index}`,
+                    processKey: item.key || item.context?.key || '',
+                    toolNumber: toolNumber,
+                    toolName: toolName,
+                    name: toolName,
+                    fromPartner: fromPartner,
+                    toPartner: toPartner,
+                    status: status,
+                    dueDate: meta.dueDate || meta['due.date'] || null,
+                    direction: 'incoming', // Default, kann spaeter verfeinert werden
+                    createdAt: item.createdAt || meta.createdAt || null,
+                    rawMeta: meta // Fuer Debugging
                 };
-            },
-            // Mock fallback
-            () => this.getMockPartnerwechselData(filters)
-        );
+            });
+
+            return {
+                success: true,
+                data: transformedData,
+                total: transformedData.length,
+                debug: {
+                    totalProcesses: items.length,
+                    mode: 'live'
+                }
+            };
+
+        } catch (error) {
+            console.error('VPW API Error:', error);
+            // Fallback auf Mock-Daten bei Fehler
+            console.log('VPW: Fallback auf Mock-Daten');
+            return this.getMockPartnerwechselData(filters);
+        }
     }
 
     getMockPartnerwechselData(filters = {}) {
