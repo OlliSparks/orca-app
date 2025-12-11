@@ -1011,25 +1011,46 @@ class APIService {
 
                 // Transform API response
                 const items = Array.isArray(response) ? response : (response.data || []);
+
+                // Debug: Zeige erste Response zum Mapping
+                if (items.length > 0) {
+                    console.log('ABL API Response (erstes Item):', JSON.stringify(items[0], null, 2));
+                }
+
                 const transformedData = items.map((item, index) => {
                     const meta = item.meta || {};
                     const context = item.context || {};
 
+                    // Standort zusammenbauen
+                    const locationParts = [];
+                    if (meta.assetCity) locationParts.push(meta.assetCity);
+                    if (meta.assetCountry) locationParts.push(meta.assetCountry);
+                    const locationStr = locationParts.length > 0
+                        ? locationParts.join(', ')
+                        : (meta.locationText || meta.location || '');
+
+                    // Fortschritt berechnen
+                    const assetCount = meta.assetCount || 0;
+                    const acceptedAssets = meta.acceptedAssets || 0;
+                    const progress = assetCount > 0 ? Math.round((acceptedAssets / assetCount) * 100) : 0;
+
                     return {
+                        // Keys fuer Navigation
                         id: context.key || index,
+                        key: context.key || '',
                         inventoryKey: context.key || '',
-                        // Inventarnummer(n)
+                        // ABL-Nummer / Identifier (fuer Anzeige)
+                        identifier: meta.partNumbers?.split(' ')[0] || meta.identifier || context.key?.substring(0, 8) || '',
                         inventoryNumber: meta.partNumbers?.split(' ')[0] || '',
                         partNumbers: meta.partNumbers || '',
-                        // Name/Beschreibung
-                        name: meta.description || 'Abnahmebereitschaft',
+                        // Titel / Bezeichnung
+                        title: meta.description || meta.title || 'Abnahmebereitschaft',
+                        name: meta.description || meta.title || 'Abnahmebereitschaft',
                         // Lieferant
                         supplier: meta.supplier || '',
                         supplierName: meta.supplier?.replace(/\s*\(\d+\)$/, '') || '',
                         // Standort
-                        location: meta.assetCity && meta.assetCountry
-                            ? `${meta.assetCity}, ${meta.assetCountry}`
-                            : (meta.locationText || ''),
+                        location: locationStr,
                         assetCity: meta.assetCity || '',
                         assetCountry: meta.assetCountry || '',
                         // Status
@@ -1039,9 +1060,12 @@ class APIService {
                         // Termine
                         dueDate: meta.dueDate ? meta.dueDate.split('T')[0] : null,
                         createdAt: meta.created || null,
-                        // Zaehler
-                        assetCount: meta.assetCount || 0,
-                        acceptedAssets: meta.acceptedAssets || 0,
+                        // Zaehler und Fortschritt
+                        assetCount: assetCount,
+                        acceptedAssets: acceptedAssets,
+                        positionsTotal: assetCount,
+                        positionsDone: acceptedAssets,
+                        progress: progress,
                         // Verantwortlicher
                         responsible: meta.assignedUsername || meta.responsibleUser || '',
                         // Original-Daten
