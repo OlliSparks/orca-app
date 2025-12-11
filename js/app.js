@@ -58,6 +58,12 @@ class OrcaApp {
             ablPage.render();
         });
 
+        // ABL Detail (mit dynamischer ID)
+        router.addRoute('/abl-detail/:id', (params) => {
+            const id = params.id;
+            ablDetailPage.render(id);
+        });
+
         // Verlagerung
         router.addRoute('/verlagerung', () => {
             verlagerungPage.render();
