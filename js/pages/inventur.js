@@ -636,6 +636,29 @@ class InventurPage {
         document.getElementById('cancelDelegate').addEventListener('click', () => this.closeDelegateModal());
         document.getElementById('confirmDelegate').addEventListener('click', () => this.confirmDelegate());
 
+        // Close modals on backdrop click
+        document.getElementById('bulkLocationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'bulkLocationModal') this.closeLocationFilterModal();
+        });
+        document.getElementById('relocationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'relocationModal') this.closeRelocationModal();
+        });
+        document.getElementById('responsibleFilterModal').addEventListener('click', (e) => {
+            if (e.target.id === 'responsibleFilterModal') this.closeResponsibleFilterModal();
+        });
+        document.getElementById('submitModal').addEventListener('click', (e) => {
+            if (e.target.id === 'submitModal') this.closeSubmitModal();
+        });
+        document.getElementById('photoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'photoModal') this.closePhotoModal();
+        });
+        document.getElementById('missingModal').addEventListener('click', (e) => {
+            if (e.target.id === 'missingModal') this.closeMissingModal();
+        });
+        document.getElementById('delegateModal').addEventListener('click', (e) => {
+            if (e.target.id === 'delegateModal') this.closeDelegateModal();
+        });
+
         // Help icon toggle
         document.getElementById('helpIcon').addEventListener('click', () => {
             const tooltip = document.getElementById('helpTooltip');

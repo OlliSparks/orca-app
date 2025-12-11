@@ -294,6 +294,14 @@ class PlanungPage {
         document.getElementById('cancelBulkLocation').addEventListener('click', () => this.closeBulkLocationModal());
         document.getElementById('confirmBulkLocation').addEventListener('click', () => this.confirmBulkLocation());
 
+        // Close modals on backdrop click
+        document.getElementById('bulkLocationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'bulkLocationModal') this.closeBulkLocationModal();
+        });
+        document.getElementById('relocationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'relocationModal') this.closeRelocationModal();
+        });
+
         // Populate location selects
         this.populateLocationSelects();
     }
