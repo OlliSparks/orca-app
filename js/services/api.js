@@ -2000,18 +2000,41 @@ class APIService {
 
                         if (tasks.length > 0) {
                             console.log('Erster Scrapping-Task:', JSON.stringify(tasks[0], null, 2));
-                            // Konvertiere Tasks zu Prozess-Items
-                            items = tasks.map(task => ({
-                                context: { key: task.key || task.objectId },
-                                key: task.key || task.objectId,
-                                meta: {
-                                    title: task.title || task.description || 'Verschrottung',
-                                    contractPartner: task.supplier || task.meta?.supplier || '',
-                                    status: task.status || 'NEW',
-                                    ...task.meta
-                                },
-                                _fromTask: true
-                            }));
+                            // Konvertiere Tasks zu Prozess-Items mit korrektem Mapping
+                            items = tasks.map(task => {
+                                const scrappingData = task.payload?.scrappingCompletion || {};
+                                const firstAsset = scrappingData.assets?.[0] || {};
+
+                                return {
+                                    context: { key: task.key },
+                                    key: task.key,
+                                    _fromTask: true,
+                                    _taskData: task, // Original-Task fuer Detail-Ansicht
+                                    meta: {
+                                        title: task.title || task.description || 'Verschrottung',
+                                        // Vertragspartner aus payload
+                                        contractPartner: scrappingData.supplierName || firstAsset.contractPartnerName || '',
+                                        contractPartnerNo: scrappingData.supplier || firstAsset.contractPartnerNo || '',
+                                        // Betreiber
+                                        operator: firstAsset.operatorName || '',
+                                        operatorNo: firstAsset.operatorNo || '',
+                                        // Standort aus erstem Asset
+                                        location: firstAsset.city ? `${firstAsset.city} (${firstAsset.country || ''})` : '',
+                                        assetCity: firstAsset.city || '',
+                                        assetCountry: firstAsset.country || '',
+                                        // Asset-Infos
+                                        inventoryNumber: firstAsset.inventoryNumber || '',
+                                        description: firstAsset.description || '',
+                                        // Daten
+                                        created: scrappingData.created || task.created,
+                                        finished: scrappingData.finished || task.finished,
+                                        // Status
+                                        status: task.status || 'NEW',
+                                        // Anzahl Assets
+                                        assetCount: scrappingData.assets?.length || 0
+                                    }
+                                };
+                            });
                         }
                     } catch (e) {
                         console.log('System-Tasks Abfrage fehlgeschlagen:', e.message);
@@ -2159,12 +2182,60 @@ class APIService {
     }
 
     // Verschrottung Details laden
+    // Unterstuetzt sowohl Process-basierte als auch Task-basierte Scrapping-Daten
     async getVerschrottungDetail(processKey) {
         return this.callWithFallback(
             async () => {
+                // Versuch 1: Als System-Task laden (SCRAPPING_COMPLETION)
+                try {
+                    console.log('Verschrottung Detail: Versuche /tasks/system/' + processKey);
+                    const taskResponse = await this.call(`/tasks/system/${processKey}`, 'GET');
+                    const task = taskResponse.data || taskResponse;
+
+                    if (task && task.type === 'SCRAPPING_COMPLETION') {
+                        console.log('Verschrottung Detail (Task):', JSON.stringify(task, null, 2));
+                        const scrappingData = task.payload?.scrappingCompletion || {};
+                        const assets = scrappingData.assets || [];
+                        const firstAsset = assets[0] || {};
+
+                        return {
+                            success: true,
+                            data: {
+                                _fromTask: true,
+                                _taskData: task,
+                                meta: {
+                                    title: task.title || task.description || 'Verschrottung',
+                                    contractPartner: scrappingData.supplierName || '',
+                                    contractPartnerNo: scrappingData.supplier || '',
+                                    operator: firstAsset.operatorName || '',
+                                    operatorNo: firstAsset.operatorNo || '',
+                                    status: task.status || 'NEW',
+                                    created: scrappingData.created || task.created,
+                                    finished: scrappingData.finished,
+                                    assetCity: firstAsset.city || '',
+                                    assetCountry: firstAsset.country || '',
+                                    // Assets als Positionen
+                                    assets: assets
+                                }
+                            },
+                            positions: assets.map((asset, idx) => ({
+                                id: asset.key || idx,
+                                assetKey: asset.key,
+                                inventoryNumber: asset.inventoryNumber || '',
+                                description: asset.description || '',
+                                location: asset.city ? `${asset.city} (${asset.country || ''})` : '',
+                                status: asset.inventoryResult ? 'COMPLETED' : 'PENDING'
+                            }))
+                        };
+                    }
+                } catch (e) {
+                    console.log('Task-Abfrage fehlgeschlagen, versuche Process:', e.message);
+                }
+
+                // Versuch 2: Als Process laden
                 const response = await this.call(`/process/${processKey}`, 'GET');
                 const data = response.data || response;
-                console.log('Verschrottung Detail Response:', JSON.stringify(data, null, 2));
+                console.log('Verschrottung Detail (Process):', JSON.stringify(data, null, 2));
 
                 return {
                     success: true,
@@ -2176,9 +2247,42 @@ class APIService {
     }
 
     // Verschrottung Positionen laden
+    // Bei Task-basierten Scrapping-Daten sind die Positionen bereits im Detail enthalten
     async getVerschrottungPositions(processKey, filters = {}) {
         return this.callWithFallback(
             async () => {
+                // Versuch 1: Pruefe ob es ein System-Task ist
+                try {
+                    const taskResponse = await this.call(`/tasks/system/${processKey}`, 'GET');
+                    const task = taskResponse.data || taskResponse;
+
+                    if (task && task.type === 'SCRAPPING_COMPLETION') {
+                        const assets = task.payload?.scrappingCompletion?.assets || [];
+                        console.log('Verschrottung Positionen aus Task:', assets.length, 'Assets');
+
+                        const transformedPositions = assets.map((asset, idx) => ({
+                            id: asset.key || idx,
+                            positionKey: asset.key || '',
+                            assetKey: asset.key,
+                            inventoryNumber: asset.inventoryNumber || '',
+                            orderNumber: asset.orderNumber || '',
+                            description: asset.description || '',
+                            status: asset.inventoryResult ? 'COMPLETED' : 'PENDING',
+                            location: asset.city ? `${asset.city} (${asset.country || ''})` : '',
+                            originalData: asset
+                        }));
+
+                        return {
+                            success: true,
+                            data: transformedPositions,
+                            total: transformedPositions.length
+                        };
+                    }
+                } catch (e) {
+                    console.log('Task-Positionen nicht gefunden, versuche Process:', e.message);
+                }
+
+                // Versuch 2: Process-Positionen laden
                 const params = new URLSearchParams();
                 params.append('limit', filters.limit || 100);
                 params.append('skip', filters.skip || 0);
