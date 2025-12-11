@@ -2062,10 +2062,11 @@ class APIService {
                     }
                 }
 
-                // Versuch 3: Alle Prozesse laden und client-seitig filtern
+                // Versuch 3: Alle Prozesse laden und nach SCRAPPING filtern
                 if (items.length === 0) {
                     try {
-                        console.log('Verschrottung: Lade alle Prozesse und filtere client-seitig');
+                        console.log('Verschrottung: Lade alle Prozesse und filtere nach SCRAPPING');
+                        // Lade ohne contractPartner-Filter, da SCRAPPING keinen hat
                         let endpoint = `/process?limit=1000&skip=0`;
                         let response = await this.call(endpoint, 'GET');
                         let allItems = Array.isArray(response) ? response : (response.data || []);
@@ -2074,27 +2075,18 @@ class APIService {
                         const types = [...new Set(allItems.map(p => p.meta?.['p.type'] || 'unknown'))];
                         console.log('Alle Process-Typen im System:', types);
 
-                        // Zeige auch alle meta-Felder des ersten Items
-                        if (allItems.length > 0) {
-                            console.log('Erstes Process meta-Felder:', Object.keys(allItems[0].meta || {}));
-                            console.log('Erstes Process vollstaendig:', JSON.stringify(allItems[0], null, 2));
-                        }
-
-                        // Filtere nach SCRAPPING-Typen
+                        // Filtere NUR nach p.type === 'SCRAPPING'
                         items = allItems.filter(p => {
                             const pType = (p.meta?.['p.type'] || '').toUpperCase();
-                            const pCategory = (p.meta?.['p.category'] || '').toUpperCase();
-                            const title = (p.meta?.title || '').toUpperCase();
-                            const description = (p.meta?.description || '').toUpperCase();
-
-                            return pType.includes('SCRAP') ||
-                                   pCategory.includes('SCRAP') ||
-                                   title.includes('VERSCHROTTUNG') ||
-                                   title.includes('SCRAP') ||
-                                   description.includes('VERSCHROTTUNG') ||
-                                   description.includes('SCRAP');
+                            return pType === 'SCRAPPING';
                         });
-                        console.log('SCRAPPING-Prozesse nach Filter:', items.length);
+                        console.log('SCRAPPING-Prozesse gefunden:', items.length);
+
+                        // Debug: Zeige erstes SCRAPPING-Item mit allen Feldern
+                        if (items.length > 0) {
+                            console.log('Erstes SCRAPPING meta-Felder:', Object.keys(items[0].meta || {}));
+                            console.log('Erstes SCRAPPING vollstaendig:', JSON.stringify(items[0], null, 2));
+                        }
                     } catch (e) {
                         console.log('Allgemeine Process-Abfrage fehlgeschlagen:', e.message);
                     }
@@ -2116,22 +2108,23 @@ class APIService {
                     const processKey = context.key || item.key || '';
 
                     // Bezeichnung (Titel des Prozesses)
+                    // SCRAPPING hat: description, creator.name
                     const title = meta.title || meta.description || 'Verschrottung';
 
-                    // Vertragspartner
-                    const contractPartner = meta.contractPartner || meta.supplier || '';
+                    // Vertragspartner - bei SCRAPPING oft nicht direkt verfuegbar
+                    const contractPartner = meta.contractPartner || meta.supplier || meta['scrap.supplier'] || '';
 
                     // Betreiber
-                    const operator = meta.operator || meta['asset.owner'] || '';
+                    const operator = meta.operator || meta['asset.owner'] || meta['scrap.operator'] || '';
 
                     // Baureihe
-                    const baureihe = meta.baureihe || meta.series || meta.project || '';
+                    const baureihe = meta.baureihe || meta.series || meta.project || meta['scrap.project'] || '';
 
                     // Teilenummer
                     const partNumber = meta.partNumber || meta.partNumbers || meta.inventoryNumber || '';
 
-                    // Ersteller
-                    const creator = meta.creator || meta.createdBy || '';
+                    // Ersteller - SCRAPPING hat creator.name und creator.key
+                    const creator = meta['creator.name'] || meta.creator || meta.createdBy || '';
 
                     // Facheinkaeufer
                     const buyer = meta.buyer || meta.facheinkaeufer || meta.purchaser || '';
@@ -2144,18 +2137,20 @@ class APIService {
                         location = meta.location;
                     } else if (meta['asset.city']) {
                         location = `${meta['asset.city']} (${meta['asset.country'] || ''})`;
+                    } else if (meta['scrap.city']) {
+                        location = `${meta['scrap.city']} (${meta['scrap.country'] || ''})`;
                     }
 
-                    // Status - Mapping aus Process-Status
+                    // Status - SCRAPPING verwendet p.status (I = Initial/Offen)
                     let status = 'offen';
-                    const processStatus = meta.status || meta.state || '';
-                    if (processStatus === 'COMPLETED' || processStatus === 'DONE' || processStatus === 'CLOSED') {
+                    const processStatus = meta['p.status'] || meta.status || meta.state || '';
+                    if (processStatus === 'C' || processStatus === 'COMPLETED' || processStatus === 'DONE' || processStatus === 'CLOSED') {
                         status = 'abgeschlossen';
-                    } else if (processStatus === 'IN_PROGRESS' || processStatus === 'PENDING') {
+                    } else if (processStatus === 'P' || processStatus === 'IN_PROGRESS' || processStatus === 'PENDING') {
                         status = 'in-bearbeitung';
-                    } else if (processStatus === 'APPROVED') {
+                    } else if (processStatus === 'A' || processStatus === 'APPROVED') {
                         status = 'genehmigt';
-                    } else if (processStatus === 'NEW' || processStatus === 'OPEN') {
+                    } else if (processStatus === 'I' || processStatus === 'NEW' || processStatus === 'OPEN') {
                         status = 'offen';
                     }
 
