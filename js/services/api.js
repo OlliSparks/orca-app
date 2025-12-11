@@ -2062,33 +2062,73 @@ class APIService {
                     }
                 }
 
-                // Versuch 3: Alle Prozesse laden und nach SCRAPPING filtern
+                // Versuch 3: Alle SCRAPPING-Prozesse laden und nach Supplier in Positionen filtern
                 if (items.length === 0) {
                     try {
-                        console.log('Verschrottung: Lade alle Prozesse und filtere nach SCRAPPING');
-                        // Lade ohne contractPartner-Filter, da SCRAPPING keinen hat
+                        console.log('Verschrottung: Lade alle SCRAPPING-Prozesse');
                         let endpoint = `/process?limit=1000&skip=0`;
                         let response = await this.call(endpoint, 'GET');
                         let allItems = Array.isArray(response) ? response : (response.data || []);
 
-                        // Debug: Zeige alle verfuegbaren Typen
-                        const types = [...new Set(allItems.map(p => p.meta?.['p.type'] || 'unknown'))];
-                        console.log('Alle Process-Typen im System:', types);
-
-                        // Filtere NUR nach p.type === 'SCRAPPING'
-                        items = allItems.filter(p => {
+                        // Filtere nach p.type === 'SCRAPPING'
+                        let scrappingProcesses = allItems.filter(p => {
                             const pType = (p.meta?.['p.type'] || '').toUpperCase();
                             return pType === 'SCRAPPING';
                         });
-                        console.log('SCRAPPING-Prozesse gefunden:', items.length);
+                        console.log('SCRAPPING-Prozesse gefunden:', scrappingProcesses.length);
 
-                        // Debug: Zeige erstes SCRAPPING-Item mit allen Feldern
-                        if (items.length > 0) {
-                            console.log('Erstes SCRAPPING meta-Felder:', Object.keys(items[0].meta || {}));
-                            console.log('Erstes SCRAPPING vollstaendig:', JSON.stringify(items[0], null, 2));
+                        // Debug: Zeige erstes SCRAPPING-Item
+                        if (scrappingProcesses.length > 0) {
+                            console.log('Erstes SCRAPPING:', JSON.stringify(scrappingProcesses[0], null, 2));
+
+                            // Lade Positionen des ersten Prozesses um Struktur zu sehen
+                            try {
+                                const firstKey = scrappingProcesses[0].key;
+                                const posResponse = await this.call(`/process/${firstKey}/positions?limit=5`, 'GET');
+                                const positions = Array.isArray(posResponse) ? posResponse : (posResponse.data || []);
+                                console.log('Positionen des ersten SCRAPPING:', JSON.stringify(positions, null, 2));
+                            } catch (posErr) {
+                                console.log('Positionen laden fehlgeschlagen:', posErr.message);
+                            }
+                        }
+
+                        // Wenn Supplier-Filter aktiv, muessen wir Positionen pruefen
+                        if (supplierNumber && scrappingProcesses.length > 0) {
+                            console.log('Filtere SCRAPPING nach Supplier', supplierNumber, '- lade Positionen...');
+
+                            // Lade fuer jeden Prozess die Positionen und pruefe Supplier
+                            const filteredProcesses = [];
+                            for (const proc of scrappingProcesses) {
+                                try {
+                                    const posResponse = await this.call(`/process/${proc.key}/positions?limit=100`, 'GET');
+                                    const positions = Array.isArray(posResponse) ? posResponse : (posResponse.data || []);
+
+                                    // Pruefe ob eine Position zum Supplier gehoert
+                                    const hasSupplier = positions.some(pos => {
+                                        const posMeta = pos.meta || {};
+                                        const posSupplier = posMeta.contractPartner || posMeta.supplier ||
+                                                           posMeta['asset.contractPartner'] || posMeta['contractPartnerNo'] || '';
+                                        return posSupplier === supplierNumber || posSupplier.includes(supplierNumber);
+                                    });
+
+                                    if (hasSupplier) {
+                                        // Speichere auch die Positionen fuer spaetere Verwendung
+                                        proc._positions = positions;
+                                        filteredProcesses.push(proc);
+                                        console.log('SCRAPPING mit Supplier gefunden:', proc.meta?.description || proc.key);
+                                    }
+                                } catch (e) {
+                                    // Prozess ohne Positionen ueberspringen
+                                }
+                            }
+
+                            items = filteredProcesses;
+                            console.log('SCRAPPING nach Supplier-Filter:', items.length);
+                        } else {
+                            items = scrappingProcesses;
                         }
                     } catch (e) {
-                        console.log('Allgemeine Process-Abfrage fehlgeschlagen:', e.message);
+                        console.log('SCRAPPING-Abfrage fehlgeschlagen:', e.message);
                     }
                 }
 
