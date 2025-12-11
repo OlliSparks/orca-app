@@ -642,9 +642,15 @@ class ABLPage {
         ).length;
         const offen = total - abgeschlossen;
 
-        document.getElementById('statTotal').textContent = total;
-        document.getElementById('statDone').textContent = abgeschlossen;
-        document.getElementById('statOpen').textContent = offen;
+        console.log('ABL Stats:', { total, abgeschlossen, offen, geplant, laufend, durchgefuehrt });
+
+        const statTotalEl = document.getElementById('statTotal');
+        const statDoneEl = document.getElementById('statDone');
+        const statOpenEl = document.getElementById('statOpen');
+
+        if (statTotalEl) statTotalEl.textContent = total;
+        if (statDoneEl) statDoneEl.textContent = abgeschlossen;
+        if (statOpenEl) statOpenEl.textContent = offen;
     }
 
     updateSpeedometer() {

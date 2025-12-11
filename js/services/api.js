@@ -1021,18 +1021,61 @@ class APIService {
                     const meta = item.meta || {};
                     const context = item.context || {};
 
-                    // Standort zusammenbauen
-                    const locationParts = [];
-                    if (meta.assetCity) locationParts.push(meta.assetCity);
-                    if (meta.assetCountry) locationParts.push(meta.assetCountry);
-                    const locationStr = locationParts.length > 0
-                        ? locationParts.join(', ')
-                        : (meta.locationText || meta.location || '');
+                    // Identifier: meta.identifier ist oft ein JSON-String, nicht nutzbar
+                    // Nutze orders (z.B. "4438914-177") oder context.key als ABL-Nr.
+                    const keyShort = context.key ? context.key.substring(0, 8) : '';
+                    let identifier = '';
+
+                    // Prioritaet: orders > partNumbers (wenn String) > key-Anfang
+                    if (meta.orders && typeof meta.orders === 'string') {
+                        identifier = meta.orders;
+                    } else if (meta.partNumbers && typeof meta.partNumbers === 'string') {
+                        identifier = meta.partNumbers.split(' ')[0];
+                    } else {
+                        identifier = keyShort || String(index + 1);
+                    }
+
+                    const partNumberStr = (meta.partNumbers && typeof meta.partNumbers === 'string')
+                        ? meta.partNumbers.split(' ')[0]
+                        : '';
+
+                    // Standort: Versuche verschiedene Felder
+                    let locationStr = '';
+                    if (meta.assetCity && meta.assetCountry) {
+                        locationStr = `${meta.assetCity}, ${meta.assetCountry}`;
+                    } else if (meta.assetCity) {
+                        locationStr = meta.assetCity;
+                    } else if (meta.assetCountry) {
+                        locationStr = meta.assetCountry;
+                    } else if (meta.locationText) {
+                        locationStr = meta.locationText;
+                    } else if (meta.location) {
+                        locationStr = typeof meta.location === 'string' ? meta.location : '';
+                    }
 
                     // Fortschritt berechnen
                     const assetCount = meta.assetCount || 0;
                     const acceptedAssets = meta.acceptedAssets || 0;
                     const progress = assetCount > 0 ? Math.round((acceptedAssets / assetCount) * 100) : 0;
+
+                    // Titel/Description sicher extrahieren
+                    let titleStr = '';
+                    if (typeof meta.description === 'string') {
+                        titleStr = meta.description;
+                    } else if (typeof meta.title === 'string') {
+                        titleStr = meta.title;
+                    } else if (typeof meta.name === 'string') {
+                        titleStr = meta.name;
+                    }
+                    if (!titleStr) titleStr = 'Abnahmebereitschaft';
+
+                    // Supplier sicher extrahieren
+                    let supplierStr = '';
+                    if (typeof meta.supplier === 'string') {
+                        supplierStr = meta.supplier;
+                    } else if (meta.supplier && typeof meta.supplier === 'object' && meta.supplier.name) {
+                        supplierStr = meta.supplier.name;
+                    }
 
                     return {
                         // Keys fuer Navigation
@@ -1040,15 +1083,15 @@ class APIService {
                         key: context.key || '',
                         inventoryKey: context.key || '',
                         // ABL-Nummer / Identifier (fuer Anzeige)
-                        identifier: meta.partNumbers?.split(' ')[0] || meta.identifier || context.key?.substring(0, 8) || '',
-                        inventoryNumber: meta.partNumbers?.split(' ')[0] || '',
-                        partNumbers: meta.partNumbers || '',
+                        identifier: identifier,
+                        inventoryNumber: partNumberStr,
+                        partNumbers: partNumberStr,
                         // Titel / Bezeichnung
-                        title: meta.description || meta.title || 'Abnahmebereitschaft',
-                        name: meta.description || meta.title || 'Abnahmebereitschaft',
+                        title: titleStr,
+                        name: titleStr,
                         // Lieferant
-                        supplier: meta.supplier || '',
-                        supplierName: meta.supplier?.replace(/\s*\(\d+\)$/, '') || '',
+                        supplier: supplierStr,
+                        supplierName: supplierStr.replace(/\s*\(\d+\)$/, ''),
                         // Standort
                         location: locationStr,
                         assetCity: meta.assetCity || '',
