@@ -1993,10 +1993,31 @@ class APIService {
                 if (items.length === 0) {
                     try {
                         console.log('Verschrottung: Pruefe /tasks/system mit type=SCRAPPING_COMPLETION');
-                        let endpoint = `/tasks/system?type=SCRAPPING_COMPLETION&limit=500`;
+                        // Supplier-Filter auch fuer Tasks anwenden (falls API es unterstuetzt)
+                        let taskParams = new URLSearchParams();
+                        taskParams.append('type', 'SCRAPPING_COMPLETION');
+                        taskParams.append('limit', '500');
+                        if (supplierNumber) {
+                            taskParams.append('supplier', supplierNumber);
+                        }
+
+                        let endpoint = `/tasks/system?${taskParams.toString()}`;
                         let response = await this.call(endpoint, 'GET');
                         let tasks = Array.isArray(response) ? response : (response.data || []);
-                        console.log('System-Tasks SCRAPPING_COMPLETION:', tasks.length);
+                        console.log('System-Tasks SCRAPPING_COMPLETION (vor Filter):', tasks.length);
+
+                        // Client-seitige Filterung nach Supplier (falls Server-Filter nicht greift)
+                        if (supplierNumber) {
+                            tasks = tasks.filter(task => {
+                                const scrappingData = task.payload?.scrappingCompletion || {};
+                                const taskSupplier = scrappingData.supplier || '';
+                                const firstAsset = scrappingData.assets?.[0] || {};
+                                const assetSupplier = firstAsset.contractPartnerNo || '';
+
+                                return taskSupplier === supplierNumber || assetSupplier === supplierNumber;
+                            });
+                            console.log('System-Tasks nach Supplier-Filter:', tasks.length, '(Supplier:', supplierNumber, ')');
+                        }
 
                         if (tasks.length > 0) {
                             console.log('Erster Scrapping-Task:', JSON.stringify(tasks[0], null, 2));
