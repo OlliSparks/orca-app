@@ -2062,13 +2062,27 @@ class APIService {
                     }
                 }
 
-                // Versuch 3: Alle SCRAPPING-Prozesse laden und nach Supplier in Positionen filtern
+                // Versuch 3: Suche nach "Test-123" und "YAN Test" in allen Prozessen
                 if (items.length === 0) {
                     try {
-                        console.log('Verschrottung: Lade alle SCRAPPING-Prozesse');
+                        console.log('Verschrottung: Suche nach Test-123 und YAN Test in allen Prozessen');
                         let endpoint = `/process?limit=1000&skip=0`;
                         let response = await this.call(endpoint, 'GET');
                         let allItems = Array.isArray(response) ? response : (response.data || []);
+
+                        // Suche nach den bekannten Verschrottungen
+                        const searchTerms = ['test-123', 'yan test', 'draexlmaier', '133188'];
+                        const matchingProcesses = allItems.filter(p => {
+                            const meta = p.meta || {};
+                            const allValues = Object.values(meta).map(v => String(v).toLowerCase()).join(' ');
+                            return searchTerms.some(term => allValues.includes(term.toLowerCase()));
+                        });
+                        console.log('Prozesse mit Test-123/YAN Test/DRAEXLMAIER/133188:', matchingProcesses.length);
+                        if (matchingProcesses.length > 0) {
+                            matchingProcesses.forEach((p, i) => {
+                                console.log(`Match ${i+1}:`, JSON.stringify(p, null, 2));
+                            });
+                        }
 
                         // Filtere nach p.type === 'SCRAPPING'
                         let scrappingProcesses = allItems.filter(p => {
