@@ -26,6 +26,31 @@ class VerschrottungPage {
         // Initial HTML
         app.innerHTML = `
             <div class="container">
+                <!-- HANDLUNGSHINWEIS -->
+                <div class="action-hint" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left: 4px solid #2c4a8c; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
+                    <div style="font-size: 1.5rem;">♻️</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #1e3a6d; margin-bottom: 0.25rem;">Was ist zu tun?</div>
+                        <div style="color: #4b5563; font-size: 0.9rem;">Pruefen Sie genehmigte Verschrottungen und bestaetigen Sie die Durchfuehrung. Dokumentieren Sie den Abschluss.</div>
+                    </div>
+                </div>
+
+                <!-- FORTSCHRITTS-UEBERSICHT -->
+                <div class="progress-overview" style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #2c4a8c;" id="statTotalScrap">0</div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">Gesamt</div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #f59e0b;" id="statOffenScrap">0</div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">Offen</div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #22c55e;" id="statAbgeschlossenScrap">0</div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">Abgeschlossen</div>
+                    </div>
+                </div>
+
                 <!-- CONTROLS -->
                 <div class="controls">
                     <div class="search-bar">
@@ -262,6 +287,15 @@ class VerschrottungPage {
         document.getElementById('countInBearbeitung').textContent = inBearbeitung;
         document.getElementById('countGenehmigt').textContent = genehmigt;
         document.getElementById('countAbgeschlossen').textContent = abgeschlossen;
+
+        // Update progress overview stats
+        const statTotal = document.getElementById('statTotalScrap');
+        const statOffen = document.getElementById('statOffenScrap');
+        const statAbgeschlossen = document.getElementById('statAbgeschlossenScrap');
+
+        if (statTotal) statTotal.textContent = total;
+        if (statOffen) statOffen.textContent = offen + inBearbeitung + genehmigt;
+        if (statAbgeschlossen) statAbgeschlossen.textContent = abgeschlossen;
     }
 
     renderTable() {

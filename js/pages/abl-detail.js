@@ -142,7 +142,7 @@ class ABLDetailPage {
                                 <span style="font-weight: 600;">${progress}%</span>
                             </div>
                             <div style="background: #e5e7eb; border-radius: 4px; height: 12px; overflow: hidden;">
-                                <div style="height: 100%; background: #10b981; border-radius: 4px; width: ${progress}%; transition: width 0.3s;"></div>
+                                <div style="height: 100%; background: #22c55e; border-radius: 4px; width: ${progress}%; transition: width 0.3s;"></div>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
                                 <span>${done} von ${total} Positionen erledigt</span>

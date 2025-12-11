@@ -25,6 +25,31 @@ class PartnerwechselPage {
         // Initial HTML
         app.innerHTML = `
             <div class="container">
+                <!-- HANDLUNGSHINWEIS -->
+                <div class="action-hint" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left: 4px solid #2c4a8c; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
+                    <div style="font-size: 1.5rem;">🔄</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #1e3a6d; margin-bottom: 0.25rem;">Was ist zu tun?</div>
+                        <div style="color: #4b5563; font-size: 0.9rem;">Pruefen Sie anstehende Vertragspartnerwechsel. Bestaetigen Sie die Uebernahme oder Abgabe von Werkzeugen.</div>
+                    </div>
+                </div>
+
+                <!-- FORTSCHRITTS-UEBERSICHT -->
+                <div class="progress-overview" style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #2c4a8c;" id="statTotalVPW">0</div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">Gesamt</div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #f59e0b;" id="statOffenVPW">0</div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">Offen</div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #3b82f6;" id="statInBearbeitungVPW">0</div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">In Bearbeitung</div>
+                    </div>
+                </div>
+
                 <!-- CONTROLS -->
                 <div class="controls">
                     <div class="search-bar">
@@ -237,7 +262,14 @@ class PartnerwechselPage {
         document.getElementById('countFeinplanung').textContent = feinplanung;
         document.getElementById('countInInventur').textContent = inInventur;
 
-        // Header stats are hidden - no update needed
+        // Update progress overview stats
+        const statTotal = document.getElementById('statTotalVPW');
+        const statOffen = document.getElementById('statOffenVPW');
+        const statInBearbeitung = document.getElementById('statInBearbeitungVPW');
+
+        if (statTotal) statTotal.textContent = total;
+        if (statOffen) statOffen.textContent = offen + feinplanung;
+        if (statInBearbeitung) statInBearbeitung.textContent = inInventur;
     }
 
     renderTable() {

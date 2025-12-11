@@ -50,12 +50,12 @@ class PlanungPage {
 
                                     <!-- Status Segments -->
                                     <path id="segmentInInventur" d="M 20 100 A 80 80 0 0 1 180 100"
-                                          fill="none" stroke="#86efac" stroke-width="20" stroke-linecap="round"
+                                          fill="none" stroke="#dcfce7" stroke-width="20" stroke-linecap="round"
                                           stroke-dasharray="251.2" stroke-dashoffset="251.2"
                                           style="transition: stroke-dashoffset 0.5s ease;"/>
 
                                     <path id="segmentFeinplanung" d="M 20 100 A 80 80 0 0 1 180 100"
-                                          fill="none" stroke="#93c5fd" stroke-width="20" stroke-linecap="round"
+                                          fill="none" stroke="#dbeafe" stroke-width="20" stroke-linecap="round"
                                           stroke-dasharray="251.2" stroke-dashoffset="251.2"
                                           style="transition: stroke-dashoffset 0.5s ease;"/>
 

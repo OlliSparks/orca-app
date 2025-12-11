@@ -28,6 +28,15 @@ class ABLPage {
         // Initial HTML mit Speedometer und Filter-Chips
         app.innerHTML = `
             <div class="container">
+                <!-- HANDLUNGSHINWEIS -->
+                <div class="action-hint" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left: 4px solid #2c4a8c; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
+                    <div style="font-size: 1.5rem;">📦</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #1e3a6d; margin-bottom: 0.25rem;">Was ist zu tun?</div>
+                        <div style="color: #4b5563; font-size: 0.9rem;">Pruefen Sie die Abnahmebereitschaft Ihrer Werkzeuge und bestaetigen Sie die Positionen. Bei Abweichungen: Kommentar hinterlassen.</div>
+                    </div>
+                </div>
+
                 <!-- FORTSCHRITTS-UEBERSICHT (Speedometer) -->
                 <div class="progress-overview" id="progressOverview">
                     <div class="speedometer-card">
@@ -215,7 +224,7 @@ class ABLPage {
             }
             .speedometer-progress {
                 fill: none;
-                stroke: #10b981;
+                stroke: #22c55e;
                 stroke-width: 12;
                 stroke-linecap: round;
                 stroke-dasharray: 251.2;
@@ -330,7 +339,7 @@ class ABLPage {
             }
             .progress-bar-fill {
                 height: 100%;
-                background: #10b981;
+                background: #22c55e;
                 border-radius: 4px;
                 transition: width 0.3s ease;
             }

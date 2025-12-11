@@ -1201,7 +1201,7 @@ class InventurPage {
             await this.loadData();
 
             btn.innerHTML = '✓ Daten geladen';
-            btn.style.background = '#10b981';
+            btn.style.background = '#22c55e';
 
             // Update display
             this.updateCounts();
