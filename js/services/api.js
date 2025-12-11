@@ -2062,110 +2062,41 @@ class APIService {
                     }
                 }
 
-                // Versuch 3: Suche nach "Test-123" und "YAN Test" in allen Prozessen
+                // Versuch 3: SCRAPPING-Prozesse mit contractPartner.key Filter
                 if (items.length === 0) {
                     try {
-                        console.log('Verschrottung: Suche nach Test-123 und YAN Test in allen Prozessen');
-                        let endpoint = `/process?limit=1000&skip=0`;
+                        console.log('Verschrottung: Lade SCRAPPING mit contractPartner.key=' + supplierNumber);
+
+                        // Versuche server-seitigen Filter mit contractPartner.key
+                        let endpoint = `/process?limit=500&skip=0&md.p.type=SCRAPPING&md.contractPartner.key=${supplierNumber}`;
+                        console.log('Versuche:', endpoint);
                         let response = await this.call(endpoint, 'GET');
-                        let allItems = Array.isArray(response) ? response : (response.data || []);
+                        let filteredItems = Array.isArray(response) ? response : (response.data || []);
+                        console.log('Server-Filter Ergebnis:', filteredItems.length);
 
-                        // Suche nach den bekannten Verschrottungen
-                        const searchTerms = ['test-123', 'yan test', 'draexlmaier', '133188'];
-                        const matchingProcesses = allItems.filter(p => {
-                            const meta = p.meta || {};
-                            const allValues = Object.values(meta).map(v => String(v).toLowerCase()).join(' ');
-                            return searchTerms.some(term => allValues.includes(term.toLowerCase()));
-                        });
-                        console.log('Prozesse mit Test-123/YAN Test/DRAEXLMAIER/133188:', matchingProcesses.length);
-                        if (matchingProcesses.length > 0) {
-                            matchingProcesses.forEach((p, i) => {
-                                console.log(`Match ${i+1}:`, JSON.stringify(p, null, 2));
-                            });
-                        }
-
-                        // Filtere nach p.type === 'SCRAPPING'
-                        let scrappingProcesses = allItems.filter(p => {
-                            const pType = (p.meta?.['p.type'] || '').toUpperCase();
-                            return pType === 'SCRAPPING';
-                        });
-                        console.log('SCRAPPING-Prozesse gefunden:', scrappingProcesses.length);
-
-                        // Debug: Zeige erstes SCRAPPING-Item und versuche verschiedene Endpunkte
-                        if (scrappingProcesses.length > 0) {
-                            const firstKey = scrappingProcesses[0].key;
-                            console.log('Erstes SCRAPPING:', JSON.stringify(scrappingProcesses[0], null, 2));
-
-                            // Versuch 1: /process/{key}/positions
-                            try {
-                                const posResponse = await this.call(`/process/${firstKey}/positions?limit=5`, 'GET');
-                                const positions = Array.isArray(posResponse) ? posResponse : (posResponse.data || []);
-                                console.log('Positionen (/positions):', positions.length, JSON.stringify(positions, null, 2));
-                            } catch (e) {
-                                console.log('/positions fehlgeschlagen:', e.message);
-                            }
-
-                            // Versuch 2: /process/{key}/details
-                            try {
-                                const detailResponse = await this.call(`/process/${firstKey}/details`, 'GET');
-                                console.log('Details (/details):', JSON.stringify(detailResponse, null, 2));
-                            } catch (e) {
-                                console.log('/details fehlgeschlagen:', e.message);
-                            }
-
-                            // Versuch 3: /process/{key} direkt
-                            try {
-                                const procResponse = await this.call(`/process/${firstKey}`, 'GET');
-                                console.log('Process direkt:', JSON.stringify(procResponse, null, 2));
-                            } catch (e) {
-                                console.log('/process/{key} fehlgeschlagen:', e.message);
-                            }
-
-                            // Versuch 4: /process/{key}/partitions (Sub-Prozesse)
-                            try {
-                                const partResponse = await this.call(`/process/${firstKey}/partitions?limit=5`, 'GET');
-                                const partitions = Array.isArray(partResponse) ? partResponse : (partResponse.data || []);
-                                console.log('Partitions:', partitions.length, JSON.stringify(partitions, null, 2));
-                            } catch (e) {
-                                console.log('/partitions fehlgeschlagen:', e.message);
-                            }
-                        }
-
-                        // Wenn Supplier-Filter aktiv, muessen wir Positionen pruefen
-                        if (supplierNumber && scrappingProcesses.length > 0) {
-                            console.log('Filtere SCRAPPING nach Supplier', supplierNumber, '- lade Positionen...');
-
-                            // Lade fuer jeden Prozess die Positionen und pruefe Supplier
-                            const filteredProcesses = [];
-                            for (const proc of scrappingProcesses) {
-                                try {
-                                    const posResponse = await this.call(`/process/${proc.key}/positions?limit=100`, 'GET');
-                                    const positions = Array.isArray(posResponse) ? posResponse : (posResponse.data || []);
-
-                                    // Pruefe ob eine Position zum Supplier gehoert
-                                    const hasSupplier = positions.some(pos => {
-                                        const posMeta = pos.meta || {};
-                                        const posSupplier = posMeta.contractPartner || posMeta.supplier ||
-                                                           posMeta['asset.contractPartner'] || posMeta['contractPartnerNo'] || '';
-                                        return posSupplier === supplierNumber || posSupplier.includes(supplierNumber);
-                                    });
-
-                                    if (hasSupplier) {
-                                        // Speichere auch die Positionen fuer spaetere Verwendung
-                                        proc._positions = positions;
-                                        filteredProcesses.push(proc);
-                                        console.log('SCRAPPING mit Supplier gefunden:', proc.meta?.description || proc.key);
-                                    }
-                                } catch (e) {
-                                    // Prozess ohne Positionen ueberspringen
-                                }
-                            }
-
-                            items = filteredProcesses;
-                            console.log('SCRAPPING nach Supplier-Filter:', items.length);
+                        if (filteredItems.length > 0) {
+                            items = filteredItems;
                         } else {
-                            items = scrappingProcesses;
+                            // Fallback: Alle laden und client-seitig filtern
+                            console.log('Server-Filter leer, lade alle und filtere client-seitig');
+                            endpoint = `/process?limit=1000&skip=0`;
+                            response = await this.call(endpoint, 'GET');
+                            let allItems = Array.isArray(response) ? response : (response.data || []);
+
+                            // Filtere nach p.type === 'SCRAPPING' UND contractPartner.key === supplierNumber
+                            items = allItems.filter(p => {
+                                const meta = p.meta || {};
+                                const pType = (meta['p.type'] || '').toUpperCase();
+                                const contractPartnerKey = meta['contractPartner.key'] || '';
+
+                                const isScrap = pType === 'SCRAPPING';
+                                const hasSupplier = !supplierNumber || contractPartnerKey === supplierNumber;
+
+                                return isScrap && hasSupplier;
+                            });
+                            console.log('SCRAPPING mit contractPartner.key=' + supplierNumber + ':', items.length);
                         }
+
                     } catch (e) {
                         console.log('SCRAPPING-Abfrage fehlgeschlagen:', e.message);
                     }
@@ -2187,43 +2118,52 @@ class APIService {
                     const processKey = context.key || item.key || '';
 
                     // Bezeichnung (Titel des Prozesses)
-                    // SCRAPPING hat: description, creator.name
                     const title = meta.title || meta.description || 'Verschrottung';
 
-                    // Vertragspartner - bei SCRAPPING oft nicht direkt verfuegbar
-                    const contractPartner = meta.contractPartner || meta.supplier || meta['scrap.supplier'] || '';
+                    // Vertragspartner - SCRAPPING verwendet contractPartner.name und contractPartner.key
+                    const contractPartnerName = meta['contractPartner.name'] || meta.contractPartner || meta.supplier || '';
+                    const contractPartnerKey = meta['contractPartner.key'] || '';
+                    const contractPartner = contractPartnerKey
+                        ? `${contractPartnerName} (${contractPartnerKey})`
+                        : contractPartnerName;
 
-                    // Betreiber
-                    const operator = meta.operator || meta['asset.owner'] || meta['scrap.operator'] || '';
+                    // Betreiber - SCRAPPING verwendet operator.name und operator.key
+                    const operatorName = meta['operator.name'] || meta.operator || meta['asset.owner'] || '';
+                    const operatorKey = meta['operator.key'] || '';
+                    const operator = operatorKey
+                        ? `${operatorName} (${operatorKey})`
+                        : operatorName;
 
-                    // Baureihe
-                    const baureihe = meta.baureihe || meta.series || meta.project || meta['scrap.project'] || '';
+                    // Baureihe - SCRAPPING verwendet scrap.derivat
+                    const baureihe = meta['scrap.derivat'] || meta.baureihe || meta.series || meta.project || '';
 
-                    // Teilenummer
-                    const partNumber = meta.partNumber || meta.partNumbers || meta.inventoryNumber || '';
+                    // Teilenummer - SCRAPPING verwendet scrap.partNumber und scrap.partText
+                    const partNumber = meta['scrap.partNumber'] || meta.partNumber || meta.partNumbers || '';
+                    const partText = meta['scrap.partText'] || '';
 
-                    // Ersteller - SCRAPPING hat creator.name und creator.key
+                    // Ersteller - SCRAPPING verwendet creator.name
                     const creator = meta['creator.name'] || meta.creator || meta.createdBy || '';
 
-                    // Facheinkaeufer
-                    const buyer = meta.buyer || meta.facheinkaeufer || meta.purchaser || '';
+                    // Facheinkaeufer/WVO - SCRAPPING verwendet scrap.wvo.name
+                    const buyer = meta['scrap.wvo.name'] || meta.buyer || meta.facheinkaeufer || meta.purchaser || '';
 
-                    // Standort
+                    // Standort - SCRAPPING verwendet scrap.city und scrap.country
                     let location = '';
-                    if (meta.assetCity && meta.assetCountry) {
+                    if (meta['scrap.city']) {
+                        const postcode = meta['scrap.postcode'] || '';
+                        location = postcode
+                            ? `${meta['scrap.country'] || ''}-${meta['scrap.city']} (${postcode})`
+                            : `${meta['scrap.city']} (${meta['scrap.country'] || ''})`;
+                    } else if (meta.assetCity && meta.assetCountry) {
                         location = `${meta.assetCity} (${meta.assetCountry})`;
                     } else if (meta.location) {
                         location = meta.location;
-                    } else if (meta['asset.city']) {
-                        location = `${meta['asset.city']} (${meta['asset.country'] || ''})`;
-                    } else if (meta['scrap.city']) {
-                        location = `${meta['scrap.city']} (${meta['scrap.country'] || ''})`;
                     }
 
-                    // Status - SCRAPPING verwendet p.status (I = Initial/Offen)
+                    // Status - SCRAPPING verwendet p.status (I = Initial, Z = abgeschlossen/rejected)
                     let status = 'offen';
                     const processStatus = meta['p.status'] || meta.status || meta.state || '';
-                    if (processStatus === 'C' || processStatus === 'COMPLETED' || processStatus === 'DONE' || processStatus === 'CLOSED') {
+                    if (processStatus === 'C' || processStatus === 'Z' || processStatus === 'COMPLETED' || processStatus === 'DONE' || processStatus === 'CLOSED') {
                         status = 'abgeschlossen';
                     } else if (processStatus === 'P' || processStatus === 'IN_PROGRESS' || processStatus === 'PENDING') {
                         status = 'in-bearbeitung';
