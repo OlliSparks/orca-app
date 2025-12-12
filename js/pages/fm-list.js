@@ -32,13 +32,10 @@ class FMListPage {
                             type="text"
                             class="search-input"
                             id="searchInput"
-                            placeholder="🔍 Suche nach Inventur-Nr., Name, Lieferant oder Standort..."
+                            placeholder="Suche nach Inventur-Nr., Name, Lieferant oder Standort..."
                         >
-                        <button class="btn btn-secondary" onclick="fmListPage.loadFromAPI()">
-                            🔄 API Laden
-                        </button>
                         <button class="btn btn-neutral" onclick="fmListPage.exportData()">
-                            📥 Export
+                            Export
                         </button>
                     </div>
 
@@ -96,8 +93,7 @@ class FMListPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="fmListPage.showSettings()">⚙️ Einstellungen</button>
-            <button class="btn btn-primary" onclick="fmListPage.showAddModal()">➕ Neues Werkzeug</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/settings')">Einstellungen</button>
         `;
 
         // Load data and setup

@@ -85,16 +85,10 @@ class PartnerwechselPage {
                             type="text"
                             class="search-input"
                             id="searchInput"
-                            placeholder="🔍 Suche nach Werkzeugnummer, Name, Partner..."
+                            placeholder="Suche nach Werkzeugnummer, Name, Partner..."
                         >
-                        <button class="btn btn-secondary" id="refreshBtn">
-                            🔄 Aktualisieren
-                        </button>
-                        <button class="btn btn-success" id="confirmAllBtn" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
-                            ✓ Alle bestaetigen
-                        </button>
                         <button class="btn btn-neutral" id="exportBtn">
-                            📥 Export
+                            Export
                         </button>
                     </div>
 
@@ -184,7 +178,7 @@ class PartnerwechselPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="router.navigate('/settings')">⚙️ Einstellungen</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/settings')">Einstellungen</button>
         `;
 
         // Show API mode
@@ -411,12 +405,6 @@ class PartnerwechselPage {
                 this.sortTable(column);
             });
         });
-
-        // Refresh button
-        document.getElementById('refreshBtn').addEventListener('click', () => this.refreshData());
-
-        // Confirm all button
-        document.getElementById('confirmAllBtn').addEventListener('click', () => this.confirmAll());
 
         // Export button
         document.getElementById('exportBtn').addEventListener('click', () => this.exportData());

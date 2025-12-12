@@ -53,6 +53,12 @@ class VerschrottungPage {
                     </div>
                 </div>
 
+                <!-- API MODE INDICATOR -->
+                <div class="api-mode-indicator" id="apiModeIndicator" style="margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span id="apiModeIcon">●</span>
+                    <span id="apiModeText">Modus wird geladen...</span>
+                </div>
+
                 <!-- CONTROLS -->
                 <div class="controls">
                     <div class="search-bar">
@@ -62,6 +68,9 @@ class VerschrottungPage {
                             id="searchInput"
                             placeholder="Suche nach Bezeichnung, Vertragspartner, Teilenummer..."
                         >
+                        <button class="btn btn-neutral" onclick="verschrottungPage.exportData()">
+                            Export
+                        </button>
                     </div>
 
                     <div class="filter-section">
@@ -121,16 +130,36 @@ class VerschrottungPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="verschrottungPage.exportData()">Export</button>
-            <button class="btn btn-primary" onclick="verschrottungPage.loadData()">Aktualisieren</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/settings')">Einstellungen</button>
         `;
 
         // Inject styles
         this.injectStyles();
 
+        // Show API mode
+        this.updateApiModeIndicator();
+
         // Load data and setup
         await this.loadData();
         this.attachEventListeners();
+    }
+
+    updateApiModeIndicator() {
+        const indicator = document.getElementById('apiModeIndicator');
+        const icon = document.getElementById('apiModeIcon');
+        const text = document.getElementById('apiModeText');
+
+        if (api.mode === 'live') {
+            indicator.style.background = '#d1fae5';
+            indicator.style.color = '#065f46';
+            icon.style.color = '#22c55e';
+            text.textContent = 'Live-API verbunden';
+        } else {
+            indicator.style.background = '#fef3c7';
+            indicator.style.color = '#92400e';
+            icon.style.color = '#f59e0b';
+            text.textContent = 'Mock-Modus (Testdaten)';
+        }
     }
 
     injectStyles() {

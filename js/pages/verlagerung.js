@@ -73,9 +73,6 @@ class VerlagerungPage {
                             id="searchInput"
                             placeholder="Suche nach Verlagerungs-Nr., Name, Standort..."
                         >
-                        <button class="btn btn-secondary" id="refreshBtn" onclick="verlagerungPage.refreshData()">
-                            Aktualisieren
-                        </button>
                         <button class="btn btn-neutral" onclick="verlagerungPage.exportData()">
                             Export
                         </button>
@@ -139,7 +136,6 @@ class VerlagerungPage {
         // Update footer
         document.getElementById('footerActions').innerHTML = `
             <button class="btn btn-neutral" onclick="router.navigate('/settings')">Einstellungen</button>
-            <button class="btn btn-primary" onclick="verlagerungPage.showCreateModal()">+ Neue Verlagerung</button>
         `;
 
         // Show API mode
