@@ -197,7 +197,7 @@ class APIService {
             const params = new URLSearchParams();
             if (filters.status) params.append('status', filters.status);
             if (filters.type) params.append('type', filters.type);
-            params.append('limit', filters.limit || 100);
+            params.append('limit', filters.limit || 1000);
             params.append('offset', filters.offset || 0);
 
             const endpoint = `/tasks?${params.toString()}`;
@@ -232,7 +232,7 @@ class APIService {
         try {
             const params = new URLSearchParams();
             params.append('skip', filters.skip || 0);
-            params.append('limit', filters.limit || 50);
+            params.append('limit', filters.limit || 1000);
             if (filters.query) params.append('query', filters.query);
 
             const endpoint = `/process?${params.toString()}`;
@@ -282,7 +282,7 @@ class APIService {
 
         try {
             const params = new URLSearchParams();
-            params.append('limit', filters.limit || 100);
+            params.append('limit', filters.limit || 1000);
             params.append('offset', filters.offset || 0);
             if (filters.supplier) params.append('supplier', filters.supplier);
             if (filters.status) params.append('status', filters.status);
@@ -414,7 +414,7 @@ class APIService {
                 params.append('supplier', this.supplierNumber);
                 if (filters.status) params.append('status', filters.status);
                 if (filters.location) params.append('location', filters.location);
-                params.append('limit', filters.limit || 100);
+                params.append('limit', filters.limit || 1000);
                 params.append('skip', filters.skip || 0);
 
                 const endpoint = `/asset-list?${params.toString()}`;
@@ -587,7 +587,7 @@ class APIService {
                 params.append('query', this.supplierNumber);
 
                 // Pagination
-                params.append('limit', filters.limit || 100);
+                params.append('limit', filters.limit || 1000);
                 params.append('skip', filters.skip || 0);
 
                 // Optionale Filter
@@ -664,7 +664,7 @@ class APIService {
         }
 
         // Pagination
-        params.append('limit', filters.limit || 100);
+        params.append('limit', filters.limit || 1000);
         params.append('offset', filters.offset || 0);
 
         const endpoint = `/inventory/${inventoryKey}/positions?${params.toString()}`;
@@ -1000,7 +1000,7 @@ class APIService {
                 }
 
                 // Pagination
-                params.append('limit', filters.limit || 100);
+                params.append('limit', filters.limit || 1000);
                 params.append('skip', filters.skip || 0);
 
                 // Partitionen anzeigen
@@ -1150,7 +1150,7 @@ class APIService {
         }
 
         // Pagination
-        params.append('limit', filters.limit || 100);
+        params.append('limit', filters.limit || 1000);
         params.append('offset', filters.offset || 0);
 
         const endpoint = `/inventory/${inventoryKey}/positions?${params.toString()}`;
@@ -1324,7 +1324,7 @@ class APIService {
             // Vorher: Alle 906 Verlagerungen laden, dann client-seitig filtern
             // Jetzt: Nur die relevanten Verlagerungen fuer diesen Supplier laden
             const params = new URLSearchParams();
-            params.append('limit', filters.limit || 100);
+            params.append('limit', filters.limit || 1000);
             params.append('skip', filters.skip || 0);
             params.append('md.p.type', 'RELOCATION.C');  // Unterprozesse (haben Details)
 
@@ -1582,7 +1582,7 @@ class APIService {
 
         try {
             const params = new URLSearchParams();
-            params.append('limit', filters.limit || 100);
+            params.append('limit', filters.limit || 1000);
             params.append('skip', filters.skip || 0);
 
             const endpoint = `/process/${processKey}/positions?${params.toString()}`;
@@ -1741,7 +1741,7 @@ class APIService {
             params.append('type', 'RELOCATION_COMPLETION');
             if (filters.status) params.append('status', filters.status);
             if (filters.supplier) params.append('supplier', filters.supplier);
-            params.append('limit', filters.limit || 100);
+            params.append('limit', filters.limit || 1000);
             params.append('offset', filters.offset || 0);
 
             const endpoint = `/tasks/system?${params.toString()}`;
@@ -1885,7 +1885,7 @@ class APIService {
             // VPW = Vertragspartnerwechsel
             // Versuche verschiedene Prozess-Typen die VPW sein koennten
             const params = new URLSearchParams();
-            params.append('limit', filters.limit || 100);
+            params.append('limit', filters.limit || 1000);
             params.append('skip', filters.skip || 0);
 
             // Server-seitiger Supplier-Filter
@@ -2113,7 +2113,7 @@ class APIService {
         return this.callWithFallback(
             async () => {
                 const params = new URLSearchParams();
-                params.append('limit', filters.limit || 500);
+                params.append('limit', filters.limit || 1000);
                 params.append('skip', filters.skip || 0);
 
                 // Server-seitiger Supplier-Filter
@@ -2229,7 +2229,7 @@ class APIService {
                         console.log('Verschrottung: Lade SCRAPPING mit contractPartner.key=' + supplierNumber);
 
                         // Versuche server-seitigen Filter mit contractPartner.key
-                        let endpoint = `/process?limit=500&skip=0&md.p.type=SCRAPPING&md.contractPartner.key=${supplierNumber}`;
+                        let endpoint = `/process?limit=1000&skip=0&md.p.type=SCRAPPING&md.contractPartner.key=${supplierNumber}`;
                         console.log('Versuche:', endpoint);
                         let response = await this.call(endpoint, 'GET');
                         let filteredItems = Array.isArray(response) ? response : (response.data || []);
@@ -2480,7 +2480,7 @@ class APIService {
 
                 // Versuch 2: Process-Positionen laden
                 const params = new URLSearchParams();
-                params.append('limit', filters.limit || 100);
+                params.append('limit', filters.limit || 1000);
                 params.append('skip', filters.skip || 0);
 
                 const endpoint = `/process/${processKey}/positions?${params.toString()}`;
@@ -2646,7 +2646,7 @@ class APIService {
     async getCompanyLocations(companyKey) {
         return this.callWithFallback(
             async () => {
-                const response = await this.call(`/companies/${companyKey}/locations?limit=100&showInactive=true`, 'GET');
+                const response = await this.call(`/companies/${companyKey}/locations?limit=1000&showInactive=true`, 'GET');
 
                 const locations = Array.isArray(response) ? response : (response.data || []);
                 return {
@@ -2672,7 +2672,7 @@ class APIService {
     async getCompanyUsers(companyKey) {
         return this.callWithFallback(
             async () => {
-                const response = await this.call(`/access/companies/${companyKey}/users?limit=100&showInactive=true`, 'GET');
+                const response = await this.call(`/access/companies/${companyKey}/users?limit=1000&showInactive=true`, 'GET');
 
                 const users = Array.isArray(response) ? response : (response.data || []);
                 return {
@@ -2699,7 +2699,7 @@ class APIService {
     async getCompanySuppliers(companyKey) {
         return this.callWithFallback(
             async () => {
-                const response = await this.call(`/companies/${companyKey}/suppliers?limit=100`, 'GET');
+                const response = await this.call(`/companies/${companyKey}/suppliers?limit=1000`, 'GET');
 
                 const suppliers = Array.isArray(response) ? response : (response.data || []);
                 return {
