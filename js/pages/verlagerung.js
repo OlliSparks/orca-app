@@ -40,21 +40,21 @@ class VerlagerungPage {
 
                 <!-- FORTSCHRITTS-UEBERSICHT -->
                 <div class="progress-overview" style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: #2c4a8c;" id="statTotalVerlagerung">0</div>
-                        <div style="font-size: 0.85rem; color: #6b7280;">Gesamt</div>
+                    <div class="progress-stat-card">
+                        <div class="stat-number" style="color: #f97316;" id="statTotalVerlagerung">0</div>
+                        <div class="stat-label">Gesamt</div>
                     </div>
-                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: #f59e0b;" id="statOffenVerlagerung">0</div>
-                        <div style="font-size: 0.85rem; color: #6b7280;">Offen</div>
+                    <div class="progress-stat-card">
+                        <div class="stat-number" style="color: #f59e0b;" id="statOffenVerlagerung">0</div>
+                        <div class="stat-label">Offen</div>
                     </div>
-                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: #3b82f6;" id="statInBearbeitungVerlagerung">0</div>
-                        <div style="font-size: 0.85rem; color: #6b7280;">In Bearbeitung</div>
+                    <div class="progress-stat-card">
+                        <div class="stat-number" style="color: #3b82f6;" id="statInBearbeitungVerlagerung">0</div>
+                        <div class="stat-label">In Bearbeitung</div>
                     </div>
-                    <div style="flex: 1; min-width: 200px; background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: #22c55e;" id="statAbgeschlossenVerlagerung">0</div>
-                        <div style="font-size: 0.85rem; color: #6b7280;">Abgeschlossen</div>
+                    <div class="progress-stat-card">
+                        <div class="stat-number" style="color: #22c55e;" id="statAbgeschlossenVerlagerung">0</div>
+                        <div class="stat-label">Abgeschlossen</div>
                     </div>
                 </div>
 

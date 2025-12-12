@@ -255,7 +255,7 @@ class ABLPage {
             }
             .speedometer-progress {
                 fill: none;
-                stroke: #22c55e;
+                stroke: #f97316;
                 stroke-width: 12;
                 stroke-linecap: round;
                 stroke-dasharray: 251.2;
@@ -287,7 +287,7 @@ class ABLPage {
                 display: block;
                 font-size: 1.75rem;
                 font-weight: 700;
-                color: #1f2937;
+                color: #f97316;
             }
             .stat-label {
                 font-size: 0.875rem;
@@ -337,6 +337,7 @@ class ABLPage {
             .abl-card:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-top: 3px solid #f97316;
             }
             .abl-card-header {
                 display: flex;
@@ -370,7 +371,7 @@ class ABLPage {
             }
             .progress-bar-fill {
                 height: 100%;
-                background: #22c55e;
+                background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
                 border-radius: 4px;
                 transition: width 0.3s ease;
             }

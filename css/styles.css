@@ -382,10 +382,10 @@ body {
 }
 
 .filter-chip.active {
-    background: var(--primary-gradient);
+    background: var(--accent-gradient);
     color: white;
     border-color: transparent;
-    box-shadow: 0 4px 12px rgba(44, 74, 140, 0.3);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
 }
 
 .filter-chip.warning {
@@ -1106,7 +1106,7 @@ td {
 }
 
 .help-icon:hover {
-    background: #2c4a8c;
+    background: #f97316;
     color: white;
 }
 
@@ -1114,16 +1114,45 @@ td {
     display: none;
     margin-top: 0.75rem;
     padding: 0.75rem 1rem;
-    background: #f3f4f6;
+    background: #fff7ed;
     border-radius: 8px;
     font-size: 0.9rem;
     color: #4b5563;
     line-height: 1.5;
-    border-left: 3px solid #2c4a8c;
+    border-left: 3px solid #f97316;
 }
 
 .help-tooltip.visible {
     display: block;
+}
+
+/* Progress Overview Stat Cards */
+.progress-stat-card {
+    flex: 1;
+    min-width: 200px;
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    text-align: center;
+    border-top: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.progress-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-top-color: #f97316;
+}
+
+.progress-stat-card .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.progress-stat-card .stat-label {
+    font-size: 0.85rem;
+    color: #6b7280;
 }
 
 /* Speedometer Widget */
