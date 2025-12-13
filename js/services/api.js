@@ -672,48 +672,75 @@ class APIService {
 
         // Transform API response - each position becomes one entry
         const positions = Array.isArray(response) ? response : (response.data || []);
-        const transformedData = positions.map((pos, index) => ({
-            // Position identifiers
-            id: pos.context?.key || index,
-            positionKey: pos.context?.key || '',
-            revision: pos.revision || '',
+        console.log('Raw positions from API:', positions.length, positions[0]); // Debug
 
-            // Asset data - INVENTARNUMMER hier!
-            inventoryNumber: pos.asset?.meta?.inventoryNumber || '',
-            number: pos.asset?.meta?.inventoryNumber || '',  // Fuer Kompatibilitaet
-            name: pos.asset?.meta?.description || pos.asset?.meta?.assetName || 'Unbekannt',
-            assetKey: pos.asset?.context?.key || '',
+        const transformedData = positions.map((pos, index) => {
+            // Debug: Log first position structure
+            if (index === 0) {
+                console.log('First position structure:', JSON.stringify(pos, null, 2));
+            }
 
-            // Location from position or asset
-            location: pos.location?.meta ?
-                `${pos.location.meta.city || ''}, ${pos.location.meta.country || ''}`.replace(/^, |, $/g, '') :
-                pos.asset?.meta?.supplier || '',
-            locationKey: pos.location?.context?.key || '',  // Fuer API-Rueckmeldung benoetigt
-            locationDetails: pos.location?.meta || null,
+            // Try multiple paths for each field
+            const inventoryNum = pos.asset?.meta?.inventoryNumber
+                || pos.meta?.inventoryNumber
+                || pos.inventoryNumber
+                || pos.asset?.inventoryNumber
+                || '';
 
-            // Inventory context
-            inventoryKey: pos.inventory?.context?.key || '',
-            inventoryStatus: pos.inventory?.meta?.status || '',
-            inventoryType: pos.inventory?.meta?.type || '',
+            const assetName = pos.asset?.meta?.description
+                || pos.asset?.meta?.assetName
+                || pos.meta?.description
+                || pos.description
+                || pos.name
+                || 'Unbekannt';
 
-            // Position status and metadata
-            status: pos.meta?.status || 'P0',
-            comment: pos.meta?.comment || '',
-            dueDate: pos.meta?.dueDate || pos.inventory?.meta?.dueDate || null,
+            const locationStr = pos.location?.meta?.city
+                ? `${pos.location.meta.city}, ${pos.location.meta.country || ''}`.replace(/, $/, '')
+                : (pos.location?.city
+                    ? `${pos.location.city}, ${pos.location.country || ''}`.replace(/, $/, '')
+                    : (pos.asset?.meta?.supplier || pos.locationText || ''));
 
-            // Assignment
-            responsible: pos.assignedUser?.meta ?
-                `${pos.assignedUser.meta.firstName || ''} ${pos.assignedUser.meta.lastName || ''}`.trim() :
-                'N/A',
+            return {
+                // Position identifiers
+                id: pos.context?.key || pos.key || pos.id || index,
+                positionKey: pos.context?.key || pos.key || '',
+                revision: pos.revision || '',
 
-            // Additional asset info
-            partNumber: pos.asset?.meta?.factNumberAI || '',
-            project: pos.asset?.meta?.project || '',
-            supplier: pos.asset?.meta?.supplier || '',
+                // Asset data - INVENTARNUMMER hier!
+                inventoryNumber: inventoryNum,
+                number: inventoryNum,  // Fuer Kompatibilitaet
+                name: assetName,
+                assetKey: pos.asset?.context?.key || pos.assetKey || '',
 
-            // Original data for reference
-            originalData: pos
-        }));
+                // Location from position or asset
+                location: locationStr,
+                locationKey: pos.location?.context?.key || pos.locationKey || '',
+                locationDetails: pos.location?.meta || pos.location || null,
+
+                // Inventory context
+                inventoryKey: pos.inventory?.context?.key || pos.inventoryKey || '',
+                inventoryStatus: pos.inventory?.meta?.status || pos.inventoryStatus || '',
+                inventoryType: pos.inventory?.meta?.type || pos.inventoryType || '',
+
+                // Position status and metadata
+                status: pos.meta?.status || pos.status || 'P0',
+                comment: pos.meta?.comment || pos.comment || '',
+                dueDate: pos.meta?.dueDate || pos.dueDate || pos.inventory?.meta?.dueDate || null,
+
+                // Assignment
+                responsible: pos.assignedUser?.meta
+                    ? `${pos.assignedUser.meta.firstName || ''} ${pos.assignedUser.meta.lastName || ''}`.trim()
+                    : (pos.responsible || pos.assignedUser || 'N/A'),
+
+                // Additional asset info
+                partNumber: pos.asset?.meta?.factNumberAI || pos.partNumber || '',
+                project: pos.asset?.meta?.project || pos.project || '',
+                supplier: pos.asset?.meta?.supplier || pos.supplier || '',
+
+                // Original data for reference
+                originalData: pos
+            };
+        });
 
         return {
             success: true,

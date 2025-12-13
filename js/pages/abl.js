@@ -52,15 +52,15 @@ class ABLPage {
                         </div>
                         <div class="speedometer-stats">
                             <div class="stat-item">
-                                <span class="stat-value" id="statTotal">0</span>
+                                <span class="stat-value" id="ablStatTotal">0</span>
                                 <span class="stat-label">Gesamt</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-value" id="statDone">0</span>
+                                <span class="stat-value" id="ablStatDone">0</span>
                                 <span class="stat-label">Abgeschlossen</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-value" id="statOpen">0</span>
+                                <span class="stat-value" id="ablStatOpen">0</span>
                                 <span class="stat-label">Offen</span>
                             </div>
                         </div>
@@ -688,9 +688,9 @@ class ABLPage {
 
         console.log('ABL Stats:', { total, abgeschlossen, offen, geplant, laufend, durchgefuehrt });
 
-        const statTotalEl = document.getElementById('statTotal');
-        const statDoneEl = document.getElementById('statDone');
-        const statOpenEl = document.getElementById('statOpen');
+        const statTotalEl = document.getElementById('ablStatTotal');
+        const statDoneEl = document.getElementById('ablStatDone');
+        const statOpenEl = document.getElementById('ablStatOpen');
 
         if (statTotalEl) statTotalEl.textContent = total;
         if (statDoneEl) statDoneEl.textContent = abgeschlossen;
