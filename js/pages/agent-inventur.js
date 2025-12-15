@@ -1138,26 +1138,35 @@ Wählen Sie links eine Option und laden Sie Ihre Daten hoch.`
     }
 
     async applyToInventories() {
-        if (this.recognizedTools.length === 0) {
-            alert('Keine Werkzeuge zum Übernehmen vorhanden.');
+        // Nur zugeordnete Werkzeuge (mit inventoryId) übernehmen
+        const matchedTools = this.recognizedTools.filter(t => t.inventoryId !== null);
+
+        if (matchedTools.length === 0) {
+            alert('Keine zugeordneten Werkzeuge zum Übernehmen vorhanden.\n\nNur Werkzeuge mit erkanntem Standort können einer Inventur zugeordnet werden.');
             return;
         }
 
-        // Store results for the inventory page
+        // Store results for the inventory page - nur zugeordnete Werkzeuge
         const importData = {
             timestamp: new Date().toISOString(),
-            tools: this.recognizedTools,
-            inventories: this.matchedInventories
+            tools: matchedTools,
+            inventories: this.matchedInventories,
+            totalRecognized: this.recognizedTools.length // für Statistik
         };
 
         localStorage.setItem('agent_import_data', JSON.stringify(importData));
 
-        // Show confirmation
-        this.addAssistantMessage(
-            `Die Zuordnung wurde gespeichert. Sie werden jetzt zur Inventursicht weitergeleitet, wo Sie die importierten Daten überprüfen und bestätigen können.
+        // Show confirmation with actual matched count
+        const unmatchedCount = this.recognizedTools.length - matchedTools.length;
+        let confirmMessage = `**${matchedTools.length} Werkzeuge** werden zur Inventursicht übernommen.`;
 
-**Hinweis:** Die Werkzeuge sind Ihren Inventuren zugeordnet, aber noch nicht bestätigt. Bitte prüfen Sie jeden Eintrag.`
-        );
+        if (unmatchedCount > 0) {
+            confirmMessage += `\n\n⚠️ ${unmatchedCount} erkannte Werkzeuge konnten nicht zugeordnet werden und werden nicht übernommen.`;
+        }
+
+        confirmMessage += `\n\n**Hinweis:** Die Werkzeuge sind Ihren Inventuren zugeordnet, aber noch nicht bestätigt. Bitte prüfen Sie jeden Eintrag.`;
+
+        this.addAssistantMessage(confirmMessage);
 
         // Navigate to inventory page after short delay
         setTimeout(() => {

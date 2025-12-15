@@ -125,6 +125,11 @@ class OrcaApp {
         router.addRoute('/agent-abl', () => {
             agentABLPage.render();
         });
+
+        // Reporting-Agent
+        router.addRoute('/agent-reporting', () => {
+            agentReportingPage.render();
+        });
     }
 
     async checkAPIStatus() {

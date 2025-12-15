@@ -565,19 +565,34 @@ class InventurPage {
         const banner = document.createElement('div');
         banner.id = 'agentImportBanner';
         banner.className = 'agent-import-banner';
+
+        // Unterschiedliche Meldungen je nach Ergebnis
+        let bannerContent = '';
+        if (confirmedCount > 0 && confirmedCount === totalImported) {
+            // Alle importierten wurden zugeordnet
+            bannerContent = `<strong>${confirmedCount} Werkzeuge</strong> wurden vom Inventur-Agenten als bestätigt übernommen.`;
+        } else if (confirmedCount > 0) {
+            // Teilweise zugeordnet
+            bannerContent = `<strong>${confirmedCount} von ${totalImported} Werkzeugen</strong> wurden vom Inventur-Agenten als bestätigt übernommen.
+                <br><small>${totalImported - confirmedCount} erkannte Werkzeuge konnten keiner offenen Inventur zugeordnet werden.</small>`;
+        } else {
+            // Keine Zuordnung möglich
+            bannerContent = `<strong>Keine Übereinstimmung gefunden.</strong>
+                <br><small>${totalImported} erkannte Werkzeuge konnten keiner offenen Inventur zugeordnet werden.</small>`;
+        }
+
         banner.innerHTML = `
             <div class="banner-content">
                 <span class="banner-icon">🤖</span>
-                <div class="banner-text">
-                    <strong>${confirmedCount} Werkzeuge</strong> wurden vom Inventur-Agenten als bestätigt übernommen.
-                    ${confirmedCount < totalImported
-                        ? `<br><small>${totalImported - confirmedCount} Werkzeuge konnten nicht zugeordnet werden.</small>`
-                        : ''
-                    }
-                </div>
+                <div class="banner-text">${bannerContent}</div>
                 <button class="banner-close" onclick="this.parentElement.parentElement.remove()">×</button>
             </div>
         `;
+
+        // Banner-Klasse basierend auf Ergebnis setzen
+        if (confirmedCount === 0) {
+            banner.classList.add('warning');
+        }
 
         // Füge Banner nach dem Header ein
         const container = document.querySelector('.inventur-page') || document.querySelector('.container');
@@ -597,6 +612,10 @@ class InventurPage {
                     padding: 1rem;
                     margin-bottom: 1rem;
                 }
+                .agent-import-banner.warning {
+                    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                    border: 1px solid #fbbf24;
+                }
                 .agent-import-banner .banner-content {
                     display: flex;
                     align-items: center;
@@ -609,8 +628,14 @@ class InventurPage {
                     flex: 1;
                     color: #166534;
                 }
+                .agent-import-banner.warning .banner-text {
+                    color: #92400e;
+                }
                 .agent-import-banner .banner-text small {
                     color: #15803d;
+                }
+                .agent-import-banner.warning .banner-text small {
+                    color: #b45309;
                 }
                 .agent-import-banner .banner-close {
                     background: none;
@@ -620,8 +645,14 @@ class InventurPage {
                     cursor: pointer;
                     padding: 0 0.5rem;
                 }
+                .agent-import-banner.warning .banner-close {
+                    color: #d97706;
+                }
                 .agent-import-banner .banner-close:hover {
                     color: #166534;
+                }
+                .agent-import-banner.warning .banner-close:hover {
+                    color: #92400e;
                 }
             `;
             document.head.appendChild(styles);

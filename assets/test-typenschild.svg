@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">
+  <!-- Hintergrund Metallplatte -->
+  <rect width="400" height="250" fill="#d4d4d4" rx="8"/>
+  <rect x="5" y="5" width="390" height="240" fill="#e8e8e8" rx="6" stroke="#a0a0a0" stroke-width="2"/>
+
+  <!-- Schrauben -->
+  <circle cx="25" cy="25" r="8" fill="#888"/>
+  <circle cx="25" cy="25" r="4" fill="#666"/>
+  <circle cx="375" cy="25" r="8" fill="#888"/>
+  <circle cx="375" cy="25" r="4" fill="#666"/>
+  <circle cx="25" cy="225" r="8" fill="#888"/>
+  <circle cx="25" cy="225" r="4" fill="#666"/>
+  <circle cx="375" cy="225" r="8" fill="#888"/>
+  <circle cx="375" cy="225" r="4" fill="#666"/>
+
+  <!-- Firmenlogo Bereich -->
+  <rect x="20" y="45" width="120" height="35" fill="#2c4a8c" rx="4"/>
+  <text x="80" y="68" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">BMW GROUP</text>
+
+  <!-- Titel -->
+  <text x="200" y="70" font-family="Arial, sans-serif" font-size="12" fill="#333" text-anchor="middle">FERTIGUNGSMITTEL</text>
+
+  <!-- Inventarnummer gross -->
+  <text x="200" y="110" font-family="monospace" font-size="28" font-weight="bold" fill="#1a1a1a" text-anchor="middle">0010120920</text>
+
+  <!-- Barcode Simulation -->
+  <g transform="translate(100, 125)">
+    <rect x="0" y="0" width="2" height="40" fill="#000"/>
+    <rect x="5" y="0" width="1" height="40" fill="#000"/>
+    <rect x="8" y="0" width="3" height="40" fill="#000"/>
+    <rect x="14" y="0" width="1" height="40" fill="#000"/>
+    <rect x="18" y="0" width="2" height="40" fill="#000"/>
+    <rect x="23" y="0" width="1" height="40" fill="#000"/>
+    <rect x="27" y="0" width="3" height="40" fill="#000"/>
+    <rect x="33" y="0" width="1" height="40" fill="#000"/>
+    <rect x="37" y="0" width="2" height="40" fill="#000"/>
+    <rect x="42" y="0" width="1" height="40" fill="#000"/>
+    <rect x="46" y="0" width="3" height="40" fill="#000"/>
+    <rect x="52" y="0" width="2" height="40" fill="#000"/>
+    <rect x="57" y="0" width="1" height="40" fill="#000"/>
+    <rect x="61" y="0" width="2" height="40" fill="#000"/>
+    <rect x="66" y="0" width="3" height="40" fill="#000"/>
+    <rect x="72" y="0" width="1" height="40" fill="#000"/>
+    <rect x="76" y="0" width="2" height="40" fill="#000"/>
+    <rect x="81" y="0" width="1" height="40" fill="#000"/>
+    <rect x="85" y="0" width="3" height="40" fill="#000"/>
+    <rect x="91" y="0" width="2" height="40" fill="#000"/>
+    <rect x="96" y="0" width="1" height="40" fill="#000"/>
+    <rect x="100" y="0" width="2" height="40" fill="#000"/>
+    <rect x="105" y="0" width="1" height="40" fill="#000"/>
+    <rect x="109" y="0" width="3" height="40" fill="#000"/>
+    <rect x="115" y="0" width="2" height="40" fill="#000"/>
+    <rect x="120" y="0" width="1" height="40" fill="#000"/>
+    <rect x="124" y="0" width="2" height="40" fill="#000"/>
+    <rect x="129" y="0" width="1" height="40" fill="#000"/>
+    <rect x="133" y="0" width="3" height="40" fill="#000"/>
+    <rect x="139" y="0" width="2" height="40" fill="#000"/>
+    <rect x="144" y="0" width="1" height="40" fill="#000"/>
+    <rect x="148" y="0" width="2" height="40" fill="#000"/>
+    <rect x="153" y="0" width="3" height="40" fill="#000"/>
+    <rect x="159" y="0" width="1" height="40" fill="#000"/>
+    <rect x="163" y="0" width="2" height="40" fill="#000"/>
+    <rect x="168" y="0" width="1" height="40" fill="#000"/>
+    <rect x="172" y="0" width="3" height="40" fill="#000"/>
+    <rect x="178" y="0" width="2" height="40" fill="#000"/>
+    <rect x="183" y="0" width="1" height="40" fill="#000"/>
+    <rect x="187" y="0" width="2" height="40" fill="#000"/>
+    <rect x="192" y="0" width="1" height="40" fill="#000"/>
+    <rect x="196" y="0" width="3" height="40" fill="#000"/>
+  </g>
+
+  <!-- Details -->
+  <text x="50" y="190" font-family="Arial, sans-serif" font-size="10" fill="#555">Typ:</text>
+  <text x="100" y="190" font-family="Arial, sans-serif" font-size="10" fill="#333">Spritzgiesswerkzeug</text>
+
+  <text x="50" y="205" font-family="Arial, sans-serif" font-size="10" fill="#555">Standort:</text>
+  <text x="100" y="205" font-family="Arial, sans-serif" font-size="10" fill="#333">Hunedoara (RO)</text>
+
+  <text x="250" y="190" font-family="Arial, sans-serif" font-size="10" fill="#555">Gewicht:</text>
+  <text x="300" y="190" font-family="Arial, sans-serif" font-size="10" fill="#333">5.896 kg</text>
+
+  <text x="250" y="205" font-family="Arial, sans-serif" font-size="10" fill="#555">Baujahr:</text>
+  <text x="300" y="205" font-family="Arial, sans-serif" font-size="10" fill="#333">2024</text>
+</svg>

@@ -30,13 +30,13 @@ class AgentenPage {
                 route: null
             },
             {
-                id: 'coming-soon-2',
+                id: 'reporting',
                 name: 'Reporting-Agent',
                 icon: '📊',
-                description: 'Automatische Erstellung von Reports und Analysen aus Ihren Daten.',
-                features: ['KPI-Berechnung', 'Trend-Analyse'],
-                status: 'coming-soon',
-                route: null
+                description: 'Laden Sie Reports aus dem ORCA-System und exportieren Sie diese in verschiedenen Formaten (PDF, Excel, CSV).',
+                features: ['Inventur-Reports', 'Verschrottungs-Reports', 'PDF/Excel Export', 'Custom-Auswertungen'],
+                status: 'active',
+                route: '/agent-reporting'
             }
         ];
     }
