@@ -404,50 +404,32 @@ class AgentAPISetupPage {
                             <h4>Werkzeugliste vorbereiten</h4>
                         </div>
                         <div class="setup-step-body">
-                            <p>Exportieren Sie Ihre <strong>vollständige Werkzeugliste</strong> aus Ihrem System.</p>
-
-                            <div class="template-download">
-                                <p>Nutzen Sie unsere Vorlage für optimale Erkennung:</p>
-                                <button class="btn btn-secondary" id="downloadTemplateBtn">
-                                    📥 Excel-Vorlage herunterladen
-                                </button>
-                                <span class="template-hint">Vorlage enthält Ihre Werkzeuge mit aktuellen Adressen</span>
-                            </div>
-
-                            <div class="required-fields">
-                                <h5>Spalten in der Vorlage:</h5>
-                                <table class="fields-table">
-                                    <tr>
-                                        <td><strong>Inventarnummer</strong></td>
-                                        <td>BMW-Inventarnummer</td>
-                                        <td class="required">Pflicht</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Standort (Adresse)</strong></td>
-                                        <td>Adresse, an der sich das Werkzeug befindet</td>
-                                        <td class="required">Pflicht</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Bezeichnung</strong></td>
-                                        <td>Name des Werkzeugs</td>
-                                        <td class="optional">Optional</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Zustand</strong></td>
-                                        <td>OK, Beschädigt, In Reparatur</td>
-                                        <td class="optional">Optional</td>
-                                    </tr>
-                                </table>
-                            </div>
-
-                            <div class="alternative-option">
-                                <h5>📧 Alternative: Per E-Mail senden</h5>
-                                <p>Senden Sie Ihre Werkzeugliste direkt an:</p>
-                                <div class="email-display">
-                                    <code>inventurdaten@organizingcompanyassets.com</code>
-                                    <button class="copy-btn" id="copyStammdatenEmailBtn" title="Kopieren">📋</button>
+                            <div class="download-section">
+                                <div class="download-main">
+                                    <button class="btn btn-primary btn-lg" id="downloadTemplateBtn">
+                                        📥 Excel herunterladen
+                                    </button>
+                                    <p class="download-info">Enthält alle Ihre Werkzeuge mit aktuellen Adressen.<br>Prüfen Sie die Daten und laden Sie die Datei wieder hoch.</p>
                                 </div>
-                                <p class="email-hint">Betreff: Stammdaten ${supplierInfo.number}</p>
+                                <div class="download-columns">
+                                    <span class="column-tag">Inventarnummer</span>
+                                    <span class="column-tag">Standort (Adresse)</span>
+                                    <span class="column-tag optional">Bezeichnung</span>
+                                    <span class="column-tag optional">Zustand</span>
+                                </div>
+                            </div>
+
+                            <div class="or-divider">
+                                <span>oder</span>
+                            </div>
+
+                            <div class="email-alternative">
+                                <span class="email-icon">📧</span>
+                                <div class="email-info">
+                                    <span>Per E-Mail an:</span>
+                                    <code id="stammdatenEmail">inventurdaten@organizingcompanyassets.com</code>
+                                </div>
+                                <button class="copy-btn" id="copyStammdatenEmailBtn" title="Kopieren">📋</button>
                             </div>
                         </div>
                     </div>
@@ -1904,63 +1886,120 @@ Lieferanten-Nr.: ${supplierInfo.number}`
                 font-size: 0.75rem;
             }
 
-            /* Template download */
-            .template-download {
-                margin-bottom: 1.5rem;
-                padding: 1rem;
-                background: #eff6ff;
-                border-radius: 8px;
+            /* Download section */
+            .download-section {
+                text-align: center;
+                padding: 1.5rem;
+                background: #f8fafc;
+                border-radius: 12px;
             }
 
-            .template-download p {
-                margin-bottom: 0.75rem;
-                font-size: 0.9rem;
+            .download-main {
+                margin-bottom: 1rem;
             }
 
-            .template-hint {
-                display: block;
-                margin-top: 0.5rem;
+            .btn-lg {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+            }
+
+            .download-info {
+                margin: 0.75rem 0 0 0;
+                font-size: 0.85rem;
+                color: #6b7280;
+                line-height: 1.5;
+            }
+
+            .download-columns {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 1rem;
+            }
+
+            .column-tag {
+                background: #dbeafe;
+                color: #1e40af;
+                padding: 0.35rem 0.75rem;
+                border-radius: 20px;
                 font-size: 0.8rem;
+                font-weight: 500;
+            }
+
+            .column-tag.optional {
+                background: #f3f4f6;
                 color: #6b7280;
             }
 
-            /* Alternative option (email) */
-            .alternative-option {
-                margin-top: 1.5rem;
-                padding: 1rem;
-                background: #fef3c7;
-                border-radius: 8px;
-            }
-
-            .alternative-option h5 {
-                margin: 0 0 0.5rem 0;
-            }
-
-            .alternative-option p {
-                margin: 0 0 0.5rem 0;
-                font-size: 0.9rem;
-            }
-
-            .email-display {
+            /* Or divider */
+            .or-divider {
                 display: flex;
                 align-items: center;
-                gap: 0.5rem;
-                background: #1e293b;
-                padding: 0.5rem 0.75rem;
-                border-radius: 6px;
+                margin: 1.25rem 0;
             }
 
-            .email-display code {
+            .or-divider::before,
+            .or-divider::after {
+                content: '';
                 flex: 1;
-                color: #22c55e;
-                font-family: monospace;
+                height: 1px;
+                background: #e5e7eb;
+            }
+
+            .or-divider span {
+                padding: 0 1rem;
+                color: #9ca3af;
                 font-size: 0.85rem;
             }
 
-            .email-hint {
-                font-size: 0.8rem;
-                color: #92400e;
-                margin-top: 0.5rem;
+            /* Email alternative */
+            .email-alternative {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+                background: #fefce8;
+                border: 1px solid #fef08a;
+                border-radius: 8px;
+            }
+
+            .email-icon {
+                font-size: 1.25rem;
+            }
+
+            .email-info {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+
+            .email-info span {
+                font-size: 0.85rem;
+                color: #713f12;
+            }
+
+            .email-info code {
+                font-family: monospace;
+                font-size: 0.85rem;
+                color: #854d0e;
+                font-weight: 500;
+            }
+
+            .copy-btn {
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 0.25rem;
+                font-size: 1rem;
+                opacity: 0.7;
+                transition: opacity 0.2s;
+            }
+
+            .copy-btn:hover {
+                opacity: 1;
             }
 
             /* Existing stammdaten info */
