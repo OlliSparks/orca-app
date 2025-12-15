@@ -12,6 +12,13 @@ class AgentInventurPage {
     render() {
         const app = document.getElementById('app');
 
+        // Reset state bei jedem neuen Besuch
+        this.messages = [];
+        this.uploadedFiles = [];
+        this.recognizedTools = [];
+        this.matchedInventories = [];
+        this.isProcessing = false;
+
         // Update header
         document.getElementById('headerTitle').textContent = 'orca 2.0 - Inventur-Agent';
         document.getElementById('headerSubtitle').textContent = 'KI-gestützter Datenimport';
