@@ -67,10 +67,10 @@ class AgentenPage {
             },
             {
                 id: 'api-setup',
-                name: 'API-Anbindung',
+                name: 'Integrations-Assistent',
                 icon: '🔗',
-                description: 'Verbinden Sie Ihr Werkzeug-Management-System mit ORCA. Automatische Inventurbeantwortung ohne manuellen Aufwand.',
-                features: ['Schritt-für-Schritt Einrichtung', 'Vollautomatisch oder Prüfen & Freigeben', 'Code-Beispiele', 'Verbindungstest'],
+                description: 'Verbinden Sie Ihre Werkzeugdaten mit ORCA. Wählen Sie aus 3 einfachen Wegen – vom manuellen Upload bis zur automatischen Synchronisation.',
+                features: ['3 Integrationswege', 'Kein IT-Aufwand nötig', 'Stammdaten-Sync', 'Auto-Export'],
                 status: 'active',
                 route: '/agent-api-setup'
             },

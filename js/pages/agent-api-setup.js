@@ -1,30 +1,21 @@
-// ORCA 2.0 - API Setup Agent (Lieferanten-Anbindung)
+// ORCA 2.0 - Integrations-Assistent (3 einfache Wege)
 class AgentAPISetupPage {
     constructor() {
-        this.currentStep = 0;
+        this.selectedPath = null; // 'direct', 'stammdaten', 'auto'
+        this.currentStep = 'selection'; // 'selection', 'setup', 'test', 'complete'
         this.config = {
-            mode: null, // 'automatic' oder 'review'
-            webhookUrl: '',
-            apiKey: null,
-            systemType: null,
-            testStatus: null
+            exportFormat: 'excel',
+            syncMethod: null,
+            lastUpload: null
         };
-
-        this.steps = [
-            { id: 'intro', title: 'Einführung' },
-            { id: 'mode', title: 'Modus wählen' },
-            { id: 'connection', title: 'Verbindung einrichten' },
-            { id: 'test', title: 'Verbindung testen' },
-            { id: 'complete', title: 'Fertig' }
-        ];
     }
 
     render() {
         const app = document.getElementById('app');
 
         // Update header
-        document.getElementById('headerTitle').textContent = 'orca 2.0 - API-Setup';
-        document.getElementById('headerSubtitle').textContent = 'System-Anbindung einrichten';
+        document.getElementById('headerTitle').textContent = 'orca 2.0 - Integration';
+        document.getElementById('headerSubtitle').textContent = 'Werkzeugdaten verbinden';
         document.getElementById('headerStats').style.display = 'none';
 
         // Update navigation dropdown
@@ -34,916 +25,1060 @@ class AgentAPISetupPage {
         }
 
         app.innerHTML = `
-            <div class="container api-setup-page">
-                <div class="setup-layout">
-                    <!-- Progress Sidebar -->
-                    <div class="setup-sidebar">
-                        <div class="setup-progress">
-                            <h3>Einrichtung</h3>
-                            <div class="progress-steps">
-                                ${this.steps.map((step, idx) => `
-                                    <div class="progress-step ${idx === this.currentStep ? 'active' : ''} ${idx < this.currentStep ? 'completed' : ''}">
-                                        <div class="step-indicator">
-                                            ${idx < this.currentStep ? '✓' : idx + 1}
-                                        </div>
-                                        <div class="step-label">${step.title}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
+            <div class="container integration-page">
+                <div class="integration-header">
+                    <button class="back-btn" id="backToAgentsBtn">← Zurück zu Agenten</button>
+                </div>
 
-                        <div class="setup-help">
-                            <h4>Hilfe</h4>
-                            <p>Bei Fragen zur API-Anbindung kontaktieren Sie uns:</p>
-                            <p><strong>support@orca-software.com</strong></p>
-                        </div>
-                    </div>
-
-                    <!-- Main Content -->
-                    <div class="setup-main">
-                        <div class="setup-content" id="setupContent">
-                            <!-- Dynamic content -->
-                        </div>
-                    </div>
+                <div class="integration-content" id="integrationContent">
+                    ${this.renderCurrentStep()}
                 </div>
             </div>
         `;
 
         this.addStyles();
-        this.renderStep();
+        this.attachEventListeners();
     }
 
-    renderStep() {
-        const content = document.getElementById('setupContent');
-
-        switch (this.steps[this.currentStep].id) {
-            case 'intro':
-                content.innerHTML = this.renderIntroStep();
-                break;
-            case 'mode':
-                content.innerHTML = this.renderModeStep();
-                break;
-            case 'connection':
-                content.innerHTML = this.renderConnectionStep();
-                break;
+    renderCurrentStep() {
+        switch (this.currentStep) {
+            case 'selection':
+                return this.renderPathSelection();
+            case 'setup':
+                return this.renderSetupStep();
             case 'test':
-                content.innerHTML = this.renderTestStep();
-                break;
+                return this.renderTestStep();
             case 'complete':
-                content.innerHTML = this.renderCompleteStep();
-                break;
+                return this.renderCompleteStep();
+            default:
+                return this.renderPathSelection();
         }
-
-        this.attachStepListeners();
     }
 
-    renderIntroStep() {
+    renderPathSelection() {
         return `
-            <div class="step-card">
-                <div class="step-icon">🔗</div>
-                <h2>API-Anbindung einrichten</h2>
+            <div class="selection-intro">
+                <h1>Wie möchten Sie Ihre Werkzeugdaten mit ORCA verbinden?</h1>
+                <p class="intro-text">
+                    Wählen Sie den Weg, der am besten zu Ihrem Arbeitsalltag passt.
+                    Alle Wege führen zum Ziel – manche sind nur schneller bei der Inventur.
+                </p>
+            </div>
 
-                <div class="intro-content">
-                    <p class="intro-lead">
-                        Verbinden Sie Ihr Werkzeug-Management-System mit ORCA, um Inventuranfragen
-                        <strong>automatisch</strong> zu beantworten.
+            <div class="path-cards">
+                <!-- Weg 1: Direkt-Upload -->
+                <div class="path-card" data-path="direct">
+                    <div class="path-header">
+                        <span class="path-icon">📤</span>
+                        <div class="path-title">
+                            <h2>Direkt-Upload</h2>
+                            <span class="path-subtitle">Bei jeder Inventur</span>
+                        </div>
+                    </div>
+
+                    <div class="path-effort">
+                        <div class="effort-item">
+                            <span class="effort-label">Einrichtung:</span>
+                            <span class="effort-value good">Keine</span>
+                        </div>
+                        <div class="effort-item">
+                            <span class="effort-label">Pro Inventur:</span>
+                            <span class="effort-value neutral">10-30 Min</span>
+                        </div>
+                    </div>
+
+                    <p class="path-description">
+                        Sie exportieren Ihre Werkzeugdaten bei Bedarf und laden sie im Inventur-Agenten hoch.
+                        Der Agent ordnet die Daten automatisch zu.
                     </p>
 
-                    <div class="benefit-cards">
-                        <div class="benefit-card">
-                            <span class="benefit-icon">⏱️</span>
-                            <h4>Zeitersparnis</h4>
-                            <p>Keine manuelle Dateneingabe mehr bei Inventuren</p>
-                        </div>
-                        <div class="benefit-card">
-                            <span class="benefit-icon">✅</span>
-                            <h4>Fehlerreduzierung</h4>
-                            <p>Automatische Datenübertragung ohne Tippfehler</p>
-                        </div>
-                        <div class="benefit-card">
-                            <span class="benefit-icon">🔒</span>
-                            <h4>Sicher</h4>
-                            <p>Verschlüsselte Verbindung, nur Inventurdaten</p>
-                        </div>
+                    <div class="path-flow">
+                        <span>Inventur kommt</span>
+                        <span class="arrow">→</span>
+                        <span>Export aus Ihrem System</span>
+                        <span class="arrow">→</span>
+                        <span>Upload</span>
+                        <span class="arrow">→</span>
+                        <span>Fertig</span>
                     </div>
 
-                    <div class="info-box">
-                        <h4>📋 Was wird übertragen?</h4>
-                        <p>Die API wird <strong>ausschließlich</strong> für folgende Zwecke genutzt:</p>
-                        <ul>
-                            <li>Abfrage von Werkzeugstandorten bei Inventuren</li>
-                            <li>Übermittlung von Inventurergebnissen (Standort, Fotos)</li>
-                        </ul>
-                        <p class="info-note">Keine anderen Daten werden abgefragt oder übertragen.</p>
+                    <div class="path-for">
+                        <strong>Ideal für:</strong> Wenige Inventuren pro Jahr, kein IT-Aufwand gewünscht
                     </div>
+
+                    <button class="path-btn" data-path="direct">Diesen Weg nutzen</button>
                 </div>
 
-                <div class="step-actions">
-                    <button class="btn btn-primary btn-lg" id="startSetupBtn">
-                        Einrichtung starten →
-                    </button>
+                <!-- Weg 2: Stammdaten-Sync -->
+                <div class="path-card recommended" data-path="stammdaten">
+                    <div class="recommended-badge">Empfohlen</div>
+                    <div class="path-header">
+                        <span class="path-icon">📅</span>
+                        <div class="path-title">
+                            <h2>Stammdaten-Sync</h2>
+                            <span class="path-subtitle">1-2× pro Jahr aktualisieren</span>
+                        </div>
+                    </div>
+
+                    <div class="path-effort">
+                        <div class="effort-item">
+                            <span class="effort-label">Einrichtung:</span>
+                            <span class="effort-value neutral">1-2 Std/Jahr</span>
+                        </div>
+                        <div class="effort-item">
+                            <span class="effort-label">Pro Inventur:</span>
+                            <span class="effort-value good">2-5 Min</span>
+                        </div>
+                    </div>
+
+                    <p class="path-description">
+                        Sie laden Ihre vollständige Werkzeugliste 1-2× pro Jahr hoch.
+                        Bei Inventuren sind die Daten bereits vorausgefüllt – Sie bestätigen nur noch.
+                    </p>
+
+                    <div class="path-flow">
+                        <span>Halbjährlich: Upload</span>
+                        <span class="arrow">→</span>
+                        <span>Inventur kommt</span>
+                        <span class="arrow">→</span>
+                        <span>Daten vorausgefüllt</span>
+                        <span class="arrow">→</span>
+                        <span>Bestätigen</span>
+                    </div>
+
+                    <div class="path-for">
+                        <strong>Ideal für:</strong> Viele Werkzeuge, regelmäßige Inventuren
+                    </div>
+
+                    <button class="path-btn primary" data-path="stammdaten">Diesen Weg nutzen</button>
+                </div>
+
+                <!-- Weg 3: Auto-Export -->
+                <div class="path-card" data-path="auto">
+                    <div class="path-header">
+                        <span class="path-icon">🔄</span>
+                        <div class="path-title">
+                            <h2>Auto-Export</h2>
+                            <span class="path-subtitle">Einmal einrichten, dann automatisch</span>
+                        </div>
+                    </div>
+
+                    <div class="path-effort">
+                        <div class="effort-item">
+                            <span class="effort-label">Einrichtung:</span>
+                            <span class="effort-value neutral">2-4 Std einmalig</span>
+                        </div>
+                        <div class="effort-item">
+                            <span class="effort-label">Pro Inventur:</span>
+                            <span class="effort-value good">0 Min</span>
+                        </div>
+                    </div>
+
+                    <p class="path-description">
+                        Ihr System exportiert automatisch in einen Cloud-Ordner oder per E-Mail.
+                        ORCA holt die Daten automatisch ab – Sie müssen nichts mehr tun.
+                    </p>
+
+                    <div class="path-flow">
+                        <span>Ihr System</span>
+                        <span class="arrow">→</span>
+                        <span>Automatischer Export</span>
+                        <span class="arrow">→</span>
+                        <span>ORCA holt ab</span>
+                        <span class="arrow">→</span>
+                        <span>Immer aktuell</span>
+                    </div>
+
+                    <div class="path-for">
+                        <strong>Ideal für:</strong> IT-Export möglich (SAP, eigene DB), viele Werkzeuge
+                    </div>
+
+                    <button class="path-btn" data-path="auto">Diesen Weg nutzen</button>
                 </div>
             </div>
-        `;
-    }
 
-    renderModeStep() {
-        return `
-            <div class="step-card">
-                <div class="step-icon">⚙️</div>
-                <h2>Betriebsmodus wählen</h2>
-
-                <p class="step-description">
-                    Wie soll Ihr System auf Inventuranfragen reagieren?
-                </p>
-
-                <div class="mode-selection">
-                    <div class="mode-card ${this.config.mode === 'automatic' ? 'selected' : ''}" data-mode="automatic">
-                        <div class="mode-header">
-                            <span class="mode-icon">🤖</span>
-                            <h3>Vollautomatisch</h3>
-                            <span class="mode-badge recommended">Empfohlen</span>
-                        </div>
-                        <div class="mode-body">
-                            <p>Ihr System beantwortet Inventuranfragen <strong>sofort und automatisch</strong>.</p>
-                            <ul class="mode-features">
-                                <li>✓ Kein manueller Eingriff nötig</li>
-                                <li>✓ Schnellste Reaktionszeit</li>
-                                <li>✓ 24/7 Verfügbarkeit</li>
-                            </ul>
-                            <div class="mode-flow">
-                                <span>Anfrage</span> → <span>System prüft</span> → <span>Automatische Antwort</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mode-card ${this.config.mode === 'review' ? 'selected' : ''}" data-mode="review">
-                        <div class="mode-header">
-                            <span class="mode-icon">👁️</span>
-                            <h3>Prüfen & Freigeben</h3>
-                        </div>
-                        <div class="mode-body">
-                            <p>Ihr System bereitet Antworten vor, Sie <strong>prüfen und geben manuell frei</strong>.</p>
-                            <ul class="mode-features">
-                                <li>✓ Volle Kontrolle über jede Antwort</li>
-                                <li>✓ Korrekturmöglichkeit vor Versand</li>
-                                <li>✓ Benachrichtigung bei neuen Anfragen</li>
-                            </ul>
-                            <div class="mode-flow">
-                                <span>Anfrage</span> → <span>System bereitet vor</span> → <span class="highlight">Sie prüfen</span> → <span>Antwort</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mode-comparison">
-                    <h4>Vergleich</h4>
-                    <table class="comparison-table">
+            <div class="comparison-section">
+                <h3>Vergleich auf einen Blick</h3>
+                <table class="comparison-table">
+                    <thead>
                         <tr>
                             <th></th>
-                            <th>🤖 Vollautomatisch</th>
-                            <th>👁️ Prüfen & Freigeben</th>
+                            <th>📤 Direkt-Upload</th>
+                            <th>📅 Stammdaten-Sync</th>
+                            <th>🔄 Auto-Export</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Setup-Aufwand</td>
+                            <td><span class="badge good">Keiner</span></td>
+                            <td><span class="badge neutral">1-2 Std/Jahr</span></td>
+                            <td><span class="badge neutral">2-4 Std einmalig</span></td>
                         </tr>
                         <tr>
-                            <td>Reaktionszeit</td>
-                            <td>Sekunden</td>
-                            <td>Abhängig von Ihnen</td>
+                            <td>Aufwand pro Inventur</td>
+                            <td><span class="badge neutral">10-30 Min</span></td>
+                            <td><span class="badge good">2-5 Min</span></td>
+                            <td><span class="badge good">0 Min</span></td>
                         </tr>
                         <tr>
-                            <td>Manueller Aufwand</td>
-                            <td>Keiner</td>
-                            <td>Pro Anfrage ~1 Min</td>
+                            <td>IT-Kenntnisse nötig?</td>
+                            <td>Nein</td>
+                            <td>Nein</td>
+                            <td>Grundkenntnisse</td>
                         </tr>
                         <tr>
-                            <td>Kontrolle</td>
-                            <td>Vollständig automatisch</td>
-                            <td>Jede Antwort einzeln</td>
+                            <td>Daten-Aktualität</td>
+                            <td>Zum Zeitpunkt des Uploads</td>
+                            <td>Stand letzter Upload</td>
+                            <td>Immer aktuell</td>
                         </tr>
-                    </table>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="help-section">
+                <div class="help-card">
+                    <span class="help-icon">💡</span>
+                    <div class="help-content">
+                        <h4>Nicht sicher, welcher Weg?</h4>
+                        <p>Starten Sie mit <strong>Direkt-Upload</strong> – das funktioniert sofort ohne Vorbereitung.
+                           Wenn Sie merken, dass es zu aufwändig wird, können Sie jederzeit auf Stammdaten-Sync wechseln.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderSetupStep() {
+        switch (this.selectedPath) {
+            case 'direct':
+                return this.renderDirectSetup();
+            case 'stammdaten':
+                return this.renderStammdatenSetup();
+            case 'auto':
+                return this.renderAutoSetup();
+            default:
+                return this.renderPathSelection();
+        }
+    }
+
+    renderDirectSetup() {
+        return `
+            <div class="setup-card">
+                <div class="setup-header">
+                    <span class="setup-icon">📤</span>
+                    <div>
+                        <h2>Direkt-Upload einrichten</h2>
+                        <p>Der einfachste Weg – keine Einrichtung nötig!</p>
+                    </div>
                 </div>
 
-                <div class="step-actions">
-                    <button class="btn btn-neutral" id="backBtn">← Zurück</button>
-                    <button class="btn btn-primary" id="nextBtn" ${!this.config.mode ? 'disabled' : ''}>
-                        Weiter →
+                <div class="setup-done">
+                    <div class="done-icon">✅</div>
+                    <h3>Sie sind bereits startklar!</h3>
+                    <p>Der Direkt-Upload funktioniert sofort über den Inventur-Agenten.</p>
+                </div>
+
+                <div class="how-it-works">
+                    <h4>So funktioniert's:</h4>
+                    <ol class="steps-list">
+                        <li>
+                            <span class="step-num">1</span>
+                            <div>
+                                <strong>Inventur-Anfrage erhalten</strong>
+                                <p>Sie bekommen eine Inventur-Anfrage von BMW</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <div>
+                                <strong>Daten aus Ihrem System exportieren</strong>
+                                <p>Excel, CSV oder Screenshot aus Ihrem Werkzeug-Management</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <div>
+                                <strong>Im Inventur-Agent hochladen</strong>
+                                <p>Der Agent erkennt die Daten und ordnet sie zu</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">4</span>
+                            <div>
+                                <strong>Prüfen und absenden</strong>
+                                <p>Kurz kontrollieren und Inventur abschließen</p>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="supported-formats">
+                    <h4>Unterstützte Formate:</h4>
+                    <div class="format-tags">
+                        <span class="format-tag">📊 Excel (.xlsx)</span>
+                        <span class="format-tag">📄 CSV</span>
+                        <span class="format-tag">📷 Screenshots</span>
+                        <span class="format-tag">📋 Kopierte Tabellen</span>
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-neutral" id="backToSelectionBtn">← Andere Methode wählen</button>
+                    <button class="btn btn-primary" id="goToInventurAgentBtn">Zum Inventur-Agent →</button>
+                </div>
+            </div>
+        `;
+    }
+
+    renderStammdatenSetup() {
+        return `
+            <div class="setup-card">
+                <div class="setup-header">
+                    <span class="setup-icon">📅</span>
+                    <div>
+                        <h2>Stammdaten-Sync einrichten</h2>
+                        <p>Einmal hochladen, bei Inventuren nur noch bestätigen</p>
+                    </div>
+                </div>
+
+                <div class="setup-steps">
+                    <div class="setup-step active">
+                        <div class="setup-step-header">
+                            <span class="step-num">1</span>
+                            <h4>Werkzeugliste vorbereiten</h4>
+                        </div>
+                        <div class="setup-step-body">
+                            <p>Exportieren Sie Ihre <strong>vollständige Werkzeugliste</strong> aus Ihrem System.</p>
+
+                            <div class="template-download">
+                                <p>Optional: Nutzen Sie unsere Vorlage für optimale Erkennung:</p>
+                                <button class="btn btn-secondary" id="downloadTemplateBtn">
+                                    📥 Excel-Vorlage herunterladen
+                                </button>
+                            </div>
+
+                            <div class="required-fields">
+                                <h5>Benötigte Spalten:</h5>
+                                <ul>
+                                    <li><strong>Werkzeugnummer</strong> (BMW-Nummer oder Ihre interne Nummer)</li>
+                                    <li><strong>Standort</strong> (Halle, Gebäude, Regal etc.)</li>
+                                    <li>Optional: Bezeichnung, Zustand, letzte Prüfung</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setup-step">
+                        <div class="setup-step-header">
+                            <span class="step-num">2</span>
+                            <h4>Stammdaten hochladen</h4>
+                        </div>
+                        <div class="setup-step-body">
+                            <div class="upload-area" id="stammdatenUploadArea">
+                                <div class="upload-icon">📁</div>
+                                <p>Datei hierher ziehen oder klicken zum Auswählen</p>
+                                <span class="upload-hint">Excel oder CSV, max. 10 MB</span>
+                                <input type="file" id="stammdatenFileInput" accept=".xlsx,.xls,.csv" hidden>
+                            </div>
+
+                            <div class="upload-status" id="uploadStatus" style="display: none;">
+                                <div class="status-icon">✅</div>
+                                <div class="status-text">
+                                    <strong id="uploadFileName">datei.xlsx</strong>
+                                    <span id="uploadFileInfo">0 Werkzeuge erkannt</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setup-step">
+                        <div class="setup-step-header">
+                            <span class="step-num">3</span>
+                            <h4>Zuordnung prüfen</h4>
+                        </div>
+                        <div class="setup-step-body">
+                            <p>Nach dem Upload zeigen wir Ihnen, welche Spalten erkannt wurden.</p>
+                            <div class="mapping-preview" id="mappingPreview" style="display: none;">
+                                <!-- Wird dynamisch gefüllt -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reminder-setup">
+                    <h4>🔔 Erinnerung einrichten</h4>
+                    <p>Wir erinnern Sie, wenn es Zeit für ein Update ist:</p>
+                    <div class="reminder-options">
+                        <label class="reminder-option">
+                            <input type="radio" name="reminder" value="6" checked>
+                            <span>Alle 6 Monate</span>
+                        </label>
+                        <label class="reminder-option">
+                            <input type="radio" name="reminder" value="12">
+                            <span>Jährlich</span>
+                        </label>
+                        <label class="reminder-option">
+                            <input type="radio" name="reminder" value="0">
+                            <span>Keine Erinnerung</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-neutral" id="backToSelectionBtn">← Andere Methode wählen</button>
+                    <button class="btn btn-primary" id="saveStammdatenBtn" disabled>Stammdaten speichern</button>
+                </div>
+            </div>
+        `;
+    }
+
+    renderAutoSetup() {
+        return `
+            <div class="setup-card">
+                <div class="setup-header">
+                    <span class="setup-icon">🔄</span>
+                    <div>
+                        <h2>Auto-Export einrichten</h2>
+                        <p>Ihr System liefert automatisch – ORCA holt ab</p>
+                    </div>
+                </div>
+
+                <div class="auto-method-selection">
+                    <h4>Wie kann Ihr System Daten exportieren?</h4>
+
+                    <div class="method-cards">
+                        <div class="method-card ${this.config.syncMethod === 'cloud' ? 'selected' : ''}" data-method="cloud">
+                            <span class="method-icon">☁️</span>
+                            <h5>Cloud-Ordner</h5>
+                            <p>OneDrive, SharePoint, Google Drive, Dropbox</p>
+                        </div>
+
+                        <div class="method-card ${this.config.syncMethod === 'email' ? 'selected' : ''}" data-method="email">
+                            <span class="method-icon">📧</span>
+                            <h5>E-Mail</h5>
+                            <p>Automatischer Versand an ORCA-Adresse</p>
+                        </div>
+
+                        <div class="method-card ${this.config.syncMethod === 'sftp' ? 'selected' : ''}" data-method="sftp">
+                            <span class="method-icon">🖥️</span>
+                            <h5>SFTP/FTP</h5>
+                            <p>Klassischer Dateitransfer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="method-details" id="methodDetails">
+                    ${this.renderMethodDetails()}
+                </div>
+
+                <div class="auto-schedule">
+                    <h4>📆 Wie oft soll synchronisiert werden?</h4>
+                    <div class="schedule-options">
+                        <label class="schedule-option">
+                            <input type="radio" name="schedule" value="daily">
+                            <span>Täglich</span>
+                        </label>
+                        <label class="schedule-option">
+                            <input type="radio" name="schedule" value="weekly" checked>
+                            <span>Wöchentlich</span>
+                        </label>
+                        <label class="schedule-option">
+                            <input type="radio" name="schedule" value="monthly">
+                            <span>Monatlich</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-neutral" id="backToSelectionBtn">← Andere Methode wählen</button>
+                    <button class="btn btn-primary" id="testAutoConnectionBtn" ${!this.config.syncMethod ? 'disabled' : ''}>
+                        Verbindung testen →
                     </button>
                 </div>
             </div>
         `;
     }
 
-    renderConnectionStep() {
-        // Generate API key if not exists
-        if (!this.config.apiKey) {
-            this.config.apiKey = this.generateApiKey();
+    renderMethodDetails() {
+        if (!this.config.syncMethod) {
+            return '<p class="method-hint">Wählen Sie oben eine Methode aus.</p>';
         }
 
-        return `
-            <div class="step-card">
-                <div class="step-icon">🔧</div>
-                <h2>Verbindung einrichten</h2>
-
-                <p class="step-description">
-                    Folgen Sie dieser Anleitung, um Ihr System mit ORCA zu verbinden.
-                </p>
-
-                <div class="connection-steps">
-                    <!-- Step 1: API Key -->
-                    <div class="connection-step">
-                        <div class="connection-step-header">
-                            <span class="step-num">1</span>
-                            <h4>API-Schlüssel kopieren</h4>
+        switch (this.config.syncMethod) {
+            case 'cloud':
+                return `
+                    <div class="method-config">
+                        <h5>Cloud-Ordner einrichten</h5>
+                        <ol>
+                            <li>Erstellen Sie einen Ordner für ORCA-Exporte in Ihrem Cloud-Speicher</li>
+                            <li>Teilen Sie den Ordner mit: <code>import@orca-software.com</code></li>
+                            <li>Legen Sie Ihre Export-Datei dort ab (Excel oder CSV)</li>
+                        </ol>
+                        <div class="method-input">
+                            <label>Link zum geteilten Ordner:</label>
+                            <input type="url" placeholder="https://onedrive.com/share/..." id="cloudFolderUrl">
                         </div>
-                        <div class="connection-step-body">
-                            <p>Dieser Schlüssel authentifiziert Ihr System bei ORCA:</p>
-                            <div class="api-key-display">
-                                <code id="apiKeyCode">${this.config.apiKey}</code>
-                                <button class="copy-btn" id="copyApiKeyBtn" title="Kopieren">📋</button>
+                    </div>
+                `;
+            case 'email':
+                return `
+                    <div class="method-config">
+                        <h5>E-Mail-Export einrichten</h5>
+                        <p>Konfigurieren Sie Ihr System so, dass es Exporte an diese Adresse sendet:</p>
+                        <div class="email-address">
+                            <code>stammdaten-${this.generateSupplierCode()}@import.orca-software.com</code>
+                            <button class="copy-btn" id="copyEmailBtn">📋</button>
+                        </div>
+                        <p class="hint">Die Datei kann als Anhang oder im Body als CSV gesendet werden.</p>
+                    </div>
+                `;
+            case 'sftp':
+                return `
+                    <div class="method-config">
+                        <h5>SFTP-Verbindung einrichten</h5>
+                        <div class="sftp-credentials">
+                            <div class="credential-row">
+                                <label>Server:</label>
+                                <code>sftp.orca-software.com</code>
                             </div>
-                            <p class="security-note">⚠️ Bewahren Sie diesen Schlüssel sicher auf und teilen Sie ihn nicht.</p>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Endpoint URL -->
-                    <div class="connection-step">
-                        <div class="connection-step-header">
-                            <span class="step-num">2</span>
-                            <h4>ORCA API-Endpunkt</h4>
-                        </div>
-                        <div class="connection-step-body">
-                            <p>Ihr System muss diese URL aufrufen:</p>
-                            <div class="api-key-display">
-                                <code>https://api.orca-software.com/v1/inventory</code>
-                                <button class="copy-btn" id="copyEndpointBtn" title="Kopieren">📋</button>
+                            <div class="credential-row">
+                                <label>Port:</label>
+                                <code>22</code>
+                            </div>
+                            <div class="credential-row">
+                                <label>Benutzer:</label>
+                                <code>supplier_${this.generateSupplierCode()}</code>
+                            </div>
+                            <div class="credential-row">
+                                <label>Verzeichnis:</label>
+                                <code>/upload/</code>
                             </div>
                         </div>
+                        <div class="method-input">
+                            <label>Ihr öffentlicher SSH-Schlüssel (optional):</label>
+                            <textarea placeholder="ssh-rsa AAAA..." id="sshKey" rows="3"></textarea>
+                        </div>
+                        <button class="btn btn-secondary" id="generatePasswordBtn">🔑 Passwort generieren</button>
                     </div>
-
-                    <!-- Step 3: Webhook (optional for review mode) -->
-                    ${this.config.mode === 'automatic' ? `
-                    <div class="connection-step">
-                        <div class="connection-step-header">
-                            <span class="step-num">3</span>
-                            <h4>Webhook-URL Ihres Systems (optional)</h4>
-                        </div>
-                        <div class="connection-step-body">
-                            <p>ORCA kann Ihr System benachrichtigen, wenn neue Anfragen vorliegen:</p>
-                            <input type="url" id="webhookInput" class="webhook-input"
-                                   placeholder="https://ihr-system.de/api/orca-webhook"
-                                   value="${this.config.webhookUrl}">
-                            <p class="hint">Leer lassen, wenn Ihr System selbst regelmäßig abfragt (Polling)</p>
-                        </div>
-                    </div>
-                    ` : `
-                    <div class="connection-step">
-                        <div class="connection-step-header">
-                            <span class="step-num">3</span>
-                            <h4>Benachrichtigungs-URL</h4>
-                        </div>
-                        <div class="connection-step-body">
-                            <p>Wohin sollen Benachrichtigungen über neue Anfragen gesendet werden?</p>
-                            <input type="url" id="webhookInput" class="webhook-input"
-                                   placeholder="https://ihr-system.de/api/notify"
-                                   value="${this.config.webhookUrl}">
-                            <p class="hint">Sie erhalten eine Nachricht, sobald neue Inventuranfragen vorliegen.</p>
-                        </div>
-                    </div>
-                    `}
-
-                    <!-- Code Examples -->
-                    <div class="connection-step">
-                        <div class="connection-step-header">
-                            <span class="step-num">4</span>
-                            <h4>Integration in Ihr System</h4>
-                        </div>
-                        <div class="connection-step-body">
-                            <div class="code-tabs">
-                                <button class="code-tab active" data-lang="curl">cURL</button>
-                                <button class="code-tab" data-lang="python">Python</button>
-                                <button class="code-tab" data-lang="javascript">JavaScript</button>
-                            </div>
-                            <div class="code-examples">
-                                <pre class="code-block active" data-lang="curl"># Offene Inventuranfragen abrufen
-curl -X GET "https://api.orca-software.com/v1/inventory/requests" \\
-  -H "Authorization: Bearer ${this.config.apiKey}" \\
-  -H "Content-Type: application/json"
-
-# Inventurantwort senden
-curl -X POST "https://api.orca-software.com/v1/inventory/responses" \\
-  -H "Authorization: Bearer ${this.config.apiKey}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "requestId": "INV-2025-001",
-    "toolNumber": "WZ-123456",
-    "location": "Halle B, Regal 4",
-    "status": "found"
-  }'</pre>
-                                <pre class="code-block" data-lang="python"># Python Beispiel
-import requests
-
-API_KEY = "${this.config.apiKey}"
-BASE_URL = "https://api.orca-software.com/v1/inventory"
-
-# Offene Anfragen abrufen
-response = requests.get(
-    f"{BASE_URL}/requests",
-    headers={"Authorization": f"Bearer {API_KEY}"}
-)
-requests_list = response.json()
-
-# Antwort senden
-for req in requests_list:
-    tool_data = your_system.get_tool(req["toolNumber"])
-
-    requests.post(
-        f"{BASE_URL}/responses",
-        headers={"Authorization": f"Bearer {API_KEY}"},
-        json={
-            "requestId": req["id"],
-            "toolNumber": req["toolNumber"],
-            "location": tool_data["location"],
-            "status": "found" if tool_data else "not_found"
+                `;
+            default:
+                return '';
         }
-    )</pre>
-                                <pre class="code-block" data-lang="javascript">// JavaScript/Node.js Beispiel
-const API_KEY = "${this.config.apiKey}";
-const BASE_URL = "https://api.orca-software.com/v1/inventory";
-
-// Offene Anfragen abrufen
-async function getRequests() {
-  const response = await fetch(\`\${BASE_URL}/requests\`, {
-    headers: { "Authorization": \`Bearer \${API_KEY}\` }
-  });
-  return response.json();
-}
-
-// Antwort senden
-async function sendResponse(requestId, toolNumber, location) {
-  await fetch(\`\${BASE_URL}/responses\`, {
-    method: "POST",
-    headers: {
-      "Authorization": \`Bearer \${API_KEY}\`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      requestId,
-      toolNumber,
-      location,
-      status: "found"
-    })
-  });
-}</pre>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="step-actions">
-                    <button class="btn btn-neutral" id="backBtn">← Zurück</button>
-                    <button class="btn btn-primary" id="nextBtn">Verbindung testen →</button>
-                </div>
-            </div>
-        `;
     }
 
     renderTestStep() {
         return `
-            <div class="step-card">
-                <div class="step-icon">🧪</div>
-                <h2>Verbindung testen</h2>
-
-                <p class="step-description">
-                    Prüfen Sie, ob Ihr System korrekt mit ORCA kommunizieren kann.
-                </p>
-
-                <div class="test-section">
-                    <div class="test-card" id="testCard">
-                        <div class="test-status ${this.config.testStatus || 'pending'}">
-                            ${this.getTestStatusIcon()}
-                        </div>
-                        <h4>${this.getTestStatusText()}</h4>
-                        <p>${this.getTestStatusDescription()}</p>
-                    </div>
-
-                    <div class="test-actions">
-                        <button class="btn btn-secondary" id="runTestBtn">
-                            🔄 Verbindungstest starten
-                        </button>
-                    </div>
-
-                    <div class="test-checklist">
-                        <h4>Checkliste</h4>
-                        <div class="checklist-item ${this.config.testStatus === 'success' ? 'checked' : ''}">
-                            <span class="check-icon">○</span>
-                            <span>API-Schlüssel ist gültig</span>
-                        </div>
-                        <div class="checklist-item ${this.config.testStatus === 'success' ? 'checked' : ''}">
-                            <span class="check-icon">○</span>
-                            <span>Endpunkt ist erreichbar</span>
-                        </div>
-                        <div class="checklist-item ${this.config.testStatus === 'success' && this.config.webhookUrl ? 'checked' : ''}">
-                            <span class="check-icon">○</span>
-                            <span>Webhook empfängt Nachrichten</span>
-                        </div>
+            <div class="setup-card">
+                <div class="setup-header">
+                    <span class="setup-icon">🧪</span>
+                    <div>
+                        <h2>Verbindung testen</h2>
+                        <p>Wir prüfen, ob alles funktioniert</p>
                     </div>
                 </div>
 
-                <div class="step-actions">
-                    <button class="btn btn-neutral" id="backBtn">← Zurück</button>
-                    <button class="btn btn-primary" id="nextBtn" ${this.config.testStatus !== 'success' ? 'disabled' : ''}>
-                        Abschließen →
-                    </button>
-                    <button class="btn btn-link" id="skipTestBtn">
-                        Test überspringen
-                    </button>
+                <div class="test-progress">
+                    <div class="test-item" id="testConnection">
+                        <span class="test-status pending">○</span>
+                        <span class="test-label">Verbindung prüfen</span>
+                    </div>
+                    <div class="test-item" id="testFile">
+                        <span class="test-status pending">○</span>
+                        <span class="test-label">Datei gefunden</span>
+                    </div>
+                    <div class="test-item" id="testFormat">
+                        <span class="test-status pending">○</span>
+                        <span class="test-label">Format erkannt</span>
+                    </div>
+                    <div class="test-item" id="testMapping">
+                        <span class="test-status pending">○</span>
+                        <span class="test-label">Daten zugeordnet</span>
+                    </div>
+                </div>
+
+                <div class="test-result" id="testResult" style="display: none;">
+                    <!-- Wird nach Test gefüllt -->
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-neutral" id="backToSetupBtn">← Zurück</button>
+                    <button class="btn btn-primary" id="runTestBtn">Test starten</button>
                 </div>
             </div>
         `;
     }
 
     renderCompleteStep() {
-        const modeText = this.config.mode === 'automatic' ? 'Vollautomatisch' : 'Prüfen & Freigeben';
-        const modeIcon = this.config.mode === 'automatic' ? '🤖' : '👁️';
+        const pathNames = {
+            'direct': 'Direkt-Upload',
+            'stammdaten': 'Stammdaten-Sync',
+            'auto': 'Auto-Export'
+        };
+        const pathIcons = {
+            'direct': '📤',
+            'stammdaten': '📅',
+            'auto': '🔄'
+        };
 
         return `
-            <div class="step-card complete-card">
-                <div class="step-icon success">✅</div>
+            <div class="setup-card complete">
+                <div class="complete-icon">✅</div>
                 <h2>Einrichtung abgeschlossen!</h2>
-
-                <p class="step-description">
-                    Ihr System ist jetzt mit ORCA verbunden.
+                <p class="complete-text">
+                    Sie nutzen jetzt <strong>${pathIcons[this.selectedPath]} ${pathNames[this.selectedPath]}</strong>
                 </p>
 
-                <div class="complete-summary">
-                    <div class="summary-item">
-                        <span class="summary-label">Modus:</span>
-                        <span class="summary-value">${modeIcon} ${modeText}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">API-Schlüssel:</span>
-                        <span class="summary-value"><code>${this.config.apiKey.substring(0, 12)}...</code></span>
-                    </div>
-                    ${this.config.webhookUrl ? `
-                    <div class="summary-item">
-                        <span class="summary-label">Webhook:</span>
-                        <span class="summary-value">${this.config.webhookUrl}</span>
-                    </div>
-                    ` : ''}
+                <div class="next-steps-card">
+                    <h4>Nächste Schritte:</h4>
+                    ${this.getNextStepsForPath()}
                 </div>
 
-                <div class="next-steps">
-                    <h4>Nächste Schritte</h4>
-                    <ol>
-                        <li>Integrieren Sie den Code in Ihr System</li>
-                        <li>Testen Sie mit einer echten Inventuranfrage</li>
-                        ${this.config.mode === 'review' ? '<li>Richten Sie Benachrichtigungen ein</li>' : ''}
-                    </ol>
-                </div>
-
-                <div class="help-resources">
-                    <h4>Dokumentation & Hilfe</h4>
-                    <div class="resource-links">
-                        <a href="#" class="resource-link">
-                            <span>📚</span> API-Dokumentation
-                        </a>
-                        <a href="#" class="resource-link">
-                            <span>💬</span> Support kontaktieren
-                        </a>
-                        <a href="#" class="resource-link">
-                            <span>📋</span> Häufige Fragen (FAQ)
-                        </a>
-                    </div>
-                </div>
-
-                <div class="step-actions">
-                    <button class="btn btn-primary btn-lg" id="finishBtn">
-                        Zur Übersicht →
-                    </button>
+                <div class="setup-actions">
+                    <button class="btn btn-neutral" id="backToAgentsBtn2">Zur Agenten-Übersicht</button>
+                    ${this.selectedPath === 'direct' ?
+                        '<button class="btn btn-primary" id="goToInventurAgentBtn2">Zum Inventur-Agent →</button>' :
+                        '<button class="btn btn-primary" id="viewStatusBtn">Status anzeigen →</button>'
+                    }
                 </div>
             </div>
         `;
     }
 
-    attachStepListeners() {
-        // Navigation buttons
-        document.getElementById('startSetupBtn')?.addEventListener('click', () => this.nextStep());
-        document.getElementById('nextBtn')?.addEventListener('click', () => this.nextStep());
-        document.getElementById('backBtn')?.addEventListener('click', () => this.prevStep());
-        document.getElementById('finishBtn')?.addEventListener('click', () => router.navigate('/agenten'));
-        document.getElementById('skipTestBtn')?.addEventListener('click', () => {
-            this.config.testStatus = 'skipped';
-            this.nextStep();
-        });
-
-        // Mode selection
-        document.querySelectorAll('.mode-card').forEach(card => {
-            card.addEventListener('click', () => {
-                this.config.mode = card.dataset.mode;
-                document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                document.getElementById('nextBtn').disabled = false;
-            });
-        });
-
-        // Copy buttons
-        document.getElementById('copyApiKeyBtn')?.addEventListener('click', () => {
-            navigator.clipboard.writeText(this.config.apiKey);
-            this.showCopyFeedback('copyApiKeyBtn');
-        });
-        document.getElementById('copyEndpointBtn')?.addEventListener('click', () => {
-            navigator.clipboard.writeText('https://api.orca-software.com/v1/inventory');
-            this.showCopyFeedback('copyEndpointBtn');
-        });
-
-        // Webhook input
-        document.getElementById('webhookInput')?.addEventListener('input', (e) => {
-            this.config.webhookUrl = e.target.value;
-        });
-
-        // Code tabs
-        document.querySelectorAll('.code-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const lang = tab.dataset.lang;
-                document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.code-block').forEach(b => b.classList.remove('active'));
-                tab.classList.add('active');
-                document.querySelector(`.code-block[data-lang="${lang}"]`)?.classList.add('active');
-            });
-        });
-
-        // Test button
-        document.getElementById('runTestBtn')?.addEventListener('click', () => this.runConnectionTest());
+    getNextStepsForPath() {
+        switch (this.selectedPath) {
+            case 'direct':
+                return `
+                    <ol>
+                        <li>Wenn eine Inventur-Anfrage kommt, öffnen Sie den <strong>Inventur-Agent</strong></li>
+                        <li>Exportieren Sie Ihre Werkzeugdaten aus Ihrem System</li>
+                        <li>Laden Sie die Datei hoch – der Agent erledigt den Rest</li>
+                    </ol>
+                `;
+            case 'stammdaten':
+                return `
+                    <ol>
+                        <li>Ihre Stammdaten wurden gespeichert</li>
+                        <li>Bei der nächsten Inventur sind die Daten <strong>vorausgefüllt</strong></li>
+                        <li>In 6 Monaten erinnern wir Sie an ein Update</li>
+                    </ol>
+                `;
+            case 'auto':
+                return `
+                    <ol>
+                        <li>Die automatische Synchronisation ist aktiv</li>
+                        <li>Ihre Daten werden ${this.config.schedule === 'daily' ? 'täglich' : this.config.schedule === 'weekly' ? 'wöchentlich' : 'monatlich'} abgeholt</li>
+                        <li>Bei Inventuren sind die Daten immer aktuell</li>
+                    </ol>
+                `;
+            default:
+                return '';
+        }
     }
 
-    showCopyFeedback(btnId) {
-        const btn = document.getElementById(btnId);
-        const original = btn.textContent;
-        btn.textContent = '✓';
-        btn.classList.add('copied');
+    generateSupplierCode() {
+        // In reality, this would be the actual supplier ID
+        return 'DRX133188';
+    }
+
+    attachEventListeners() {
+        // Back to agents
+        document.getElementById('backToAgentsBtn')?.addEventListener('click', () => {
+            router.navigate('/agenten');
+        });
+        document.getElementById('backToAgentsBtn2')?.addEventListener('click', () => {
+            router.navigate('/agenten');
+        });
+
+        // Path selection
+        document.querySelectorAll('.path-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectedPath = btn.dataset.path;
+                this.currentStep = 'setup';
+                this.render();
+            });
+        });
+
+        document.querySelectorAll('.path-card').forEach(card => {
+            card.addEventListener('click', () => {
+                this.selectedPath = card.dataset.path;
+                this.currentStep = 'setup';
+                this.render();
+            });
+        });
+
+        // Back to selection
+        document.getElementById('backToSelectionBtn')?.addEventListener('click', () => {
+            this.currentStep = 'selection';
+            this.selectedPath = null;
+            this.render();
+        });
+
+        // Direct path - go to inventur agent
+        document.getElementById('goToInventurAgentBtn')?.addEventListener('click', () => {
+            router.navigate('/agent-inventur');
+        });
+        document.getElementById('goToInventurAgentBtn2')?.addEventListener('click', () => {
+            router.navigate('/agent-inventur');
+        });
+
+        // Stammdaten upload
+        const uploadArea = document.getElementById('stammdatenUploadArea');
+        const fileInput = document.getElementById('stammdatenFileInput');
+
+        if (uploadArea && fileInput) {
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    this.handleStammdatenFile(e.dataTransfer.files[0]);
+                }
+            });
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    this.handleStammdatenFile(fileInput.files[0]);
+                }
+            });
+        }
+
+        // Save stammdaten
+        document.getElementById('saveStammdatenBtn')?.addEventListener('click', () => {
+            this.currentStep = 'complete';
+            this.render();
+        });
+
+        // Auto method selection
+        document.querySelectorAll('.method-card').forEach(card => {
+            card.addEventListener('click', () => {
+                this.config.syncMethod = card.dataset.method;
+                document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                document.getElementById('methodDetails').innerHTML = this.renderMethodDetails();
+                document.getElementById('testAutoConnectionBtn').disabled = false;
+                this.attachMethodListeners();
+            });
+        });
+
+        // Test connection
+        document.getElementById('testAutoConnectionBtn')?.addEventListener('click', () => {
+            this.currentStep = 'test';
+            this.render();
+        });
+
+        document.getElementById('runTestBtn')?.addEventListener('click', () => {
+            this.runConnectionTest();
+        });
+
+        document.getElementById('backToSetupBtn')?.addEventListener('click', () => {
+            this.currentStep = 'setup';
+            this.render();
+        });
+
+        // View status
+        document.getElementById('viewStatusBtn')?.addEventListener('click', () => {
+            router.navigate('/agent-api-monitor');
+        });
+
+        // Template download
+        document.getElementById('downloadTemplateBtn')?.addEventListener('click', () => {
+            this.downloadTemplate();
+        });
+
+        this.attachMethodListeners();
+    }
+
+    attachMethodListeners() {
+        // Copy email button
+        document.getElementById('copyEmailBtn')?.addEventListener('click', () => {
+            const email = `stammdaten-${this.generateSupplierCode()}@import.orca-software.com`;
+            navigator.clipboard.writeText(email);
+            const btn = document.getElementById('copyEmailBtn');
+            btn.textContent = '✓';
+            setTimeout(() => btn.textContent = '📋', 2000);
+        });
+
+        // Generate password
+        document.getElementById('generatePasswordBtn')?.addEventListener('click', () => {
+            alert('Passwort wurde an Ihre E-Mail gesendet.');
+        });
+    }
+
+    handleStammdatenFile(file) {
+        const statusEl = document.getElementById('uploadStatus');
+        const saveBtn = document.getElementById('saveStammdatenBtn');
+
+        document.getElementById('uploadFileName').textContent = file.name;
+        document.getElementById('uploadFileInfo').textContent = 'Wird analysiert...';
+        statusEl.style.display = 'flex';
+
+        // Simulate processing
         setTimeout(() => {
-            btn.textContent = original;
-            btn.classList.remove('copied');
-        }, 2000);
+            const toolCount = Math.floor(Math.random() * 200) + 50;
+            document.getElementById('uploadFileInfo').textContent = `${toolCount} Werkzeuge erkannt`;
+            saveBtn.disabled = false;
+        }, 1500);
     }
 
     async runConnectionTest() {
-        const testCard = document.getElementById('testCard');
-        const testBtn = document.getElementById('runTestBtn');
+        const steps = ['testConnection', 'testFile', 'testFormat', 'testMapping'];
+        const resultEl = document.getElementById('testResult');
 
-        testBtn.disabled = true;
-        testBtn.textContent = '⏳ Teste...';
-        this.config.testStatus = 'testing';
+        for (const stepId of steps) {
+            const stepEl = document.getElementById(stepId);
+            const statusEl = stepEl.querySelector('.test-status');
 
-        // Simulate test (in reality, this would make actual API calls)
-        await new Promise(resolve => setTimeout(resolve, 2000));
+            statusEl.textContent = '⏳';
+            statusEl.classList.remove('pending');
+            statusEl.classList.add('testing');
 
-        // For demo, always succeed
-        this.config.testStatus = 'success';
-        this.renderStep();
-    }
+            await new Promise(resolve => setTimeout(resolve, 800));
 
-    getTestStatusIcon() {
-        switch (this.config.testStatus) {
-            case 'success': return '✅';
-            case 'error': return '❌';
-            case 'testing': return '⏳';
-            default: return '○';
+            statusEl.textContent = '✅';
+            statusEl.classList.remove('testing');
+            statusEl.classList.add('success');
         }
-    }
 
-    getTestStatusText() {
-        switch (this.config.testStatus) {
-            case 'success': return 'Verbindung erfolgreich!';
-            case 'error': return 'Verbindung fehlgeschlagen';
-            case 'testing': return 'Teste Verbindung...';
-            default: return 'Noch nicht getestet';
-        }
-    }
+        // Show result
+        resultEl.innerHTML = `
+            <div class="test-success">
+                <h4>✅ Alle Tests erfolgreich!</h4>
+                <p>Die Verbindung funktioniert. Ihre Daten werden automatisch synchronisiert.</p>
+                <button class="btn btn-primary" id="finishSetupBtn">Einrichtung abschließen</button>
+            </div>
+        `;
+        resultEl.style.display = 'block';
 
-    getTestStatusDescription() {
-        switch (this.config.testStatus) {
-            case 'success': return 'Ihr System ist korrekt mit ORCA verbunden.';
-            case 'error': return 'Bitte überprüfen Sie Ihre Einstellungen.';
-            case 'testing': return 'Bitte warten...';
-            default: return 'Klicken Sie auf den Button, um die Verbindung zu testen.';
-        }
-    }
-
-    generateApiKey() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let key = 'orca_';
-        for (let i = 0; i < 32; i++) {
-            key += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return key;
-    }
-
-    nextStep() {
-        if (this.currentStep < this.steps.length - 1) {
-            this.currentStep++;
-            this.updateProgress();
-            this.renderStep();
-        }
-    }
-
-    prevStep() {
-        if (this.currentStep > 0) {
-            this.currentStep--;
-            this.updateProgress();
-            this.renderStep();
-        }
-    }
-
-    updateProgress() {
-        document.querySelectorAll('.progress-step').forEach((step, idx) => {
-            step.classList.remove('active', 'completed');
-            if (idx === this.currentStep) {
-                step.classList.add('active');
-            } else if (idx < this.currentStep) {
-                step.classList.add('completed');
-            }
+        document.getElementById('finishSetupBtn')?.addEventListener('click', () => {
+            this.currentStep = 'complete';
+            this.render();
         });
     }
 
+    downloadTemplate() {
+        // In reality, this would download an actual Excel template
+        alert('Excel-Vorlage wird heruntergeladen...\n\n(Demo: In der echten Version würde hier eine Datei heruntergeladen)');
+    }
+
     addStyles() {
-        if (document.getElementById('api-setup-styles')) return;
+        if (document.getElementById('integration-styles')) return;
 
         const styles = document.createElement('style');
-        styles.id = 'api-setup-styles';
+        styles.id = 'integration-styles';
         styles.textContent = `
-            .api-setup-page {
+            .integration-page {
                 padding: 1.5rem;
                 max-width: 1200px;
                 margin: 0 auto;
             }
 
-            .setup-layout {
-                display: grid;
-                grid-template-columns: 250px 1fr;
-                gap: 2rem;
-                min-height: calc(100vh - 200px);
+            .integration-header {
+                margin-bottom: 1.5rem;
             }
 
-            /* Sidebar */
-            .setup-sidebar {
-                display: flex;
-                flex-direction: column;
-                gap: 1.5rem;
+            .back-btn {
+                background: none;
+                border: none;
+                color: #6b7280;
+                cursor: pointer;
+                font-size: 0.9rem;
+                padding: 0.5rem 0;
             }
 
-            .setup-progress {
-                background: white;
-                border-radius: 12px;
-                padding: 1.5rem;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            }
-
-            .setup-progress h3 {
-                margin: 0 0 1rem 0;
-                font-size: 1rem;
+            .back-btn:hover {
                 color: #374151;
             }
 
-            .progress-steps {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
+            /* Selection Intro */
+            .selection-intro {
+                text-align: center;
+                margin-bottom: 2.5rem;
             }
 
-            .progress-step {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.5rem;
-                border-radius: 8px;
-                transition: all 0.2s;
+            .selection-intro h1 {
+                font-size: 1.75rem;
+                color: #1f2937;
+                margin-bottom: 0.75rem;
             }
 
-            .progress-step.active {
-                background: #eff6ff;
-            }
-
-            .step-indicator {
-                width: 28px;
-                height: 28px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.8rem;
-                font-weight: 600;
-                background: #e5e7eb;
+            .intro-text {
                 color: #6b7280;
+                max-width: 600px;
+                margin: 0 auto;
+                line-height: 1.6;
             }
 
-            .progress-step.active .step-indicator {
+            /* Path Cards */
+            .path-cards {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.5rem;
+                margin-bottom: 2.5rem;
+            }
+
+            .path-card {
+                background: white;
+                border: 2px solid #e5e7eb;
+                border-radius: 16px;
+                padding: 1.75rem;
+                cursor: pointer;
+                transition: all 0.2s;
+                position: relative;
+            }
+
+            .path-card:hover {
+                border-color: #3b82f6;
+                box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+                transform: translateY(-4px);
+            }
+
+            .path-card.recommended {
+                border-color: #3b82f6;
+            }
+
+            .recommended-badge {
+                position: absolute;
+                top: -10px;
+                right: 20px;
                 background: #3b82f6;
                 color: white;
+                font-size: 0.75rem;
+                font-weight: 600;
+                padding: 0.25rem 0.75rem;
+                border-radius: 4px;
             }
 
-            .progress-step.completed .step-indicator {
-                background: #22c55e;
-                color: white;
-            }
-
-            .step-label {
-                font-size: 0.9rem;
-                color: #6b7280;
-            }
-
-            .progress-step.active .step-label {
-                color: #1e40af;
-                font-weight: 500;
-            }
-
-            .setup-help {
-                background: #fef3c7;
-                border-radius: 12px;
-                padding: 1rem;
-            }
-
-            .setup-help h4 {
-                margin: 0 0 0.5rem 0;
-                font-size: 0.9rem;
-            }
-
-            .setup-help p {
-                margin: 0;
-                font-size: 0.8rem;
-                color: #92400e;
-            }
-
-            /* Main Content */
-            .setup-main {
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                overflow: hidden;
-            }
-
-            .step-card {
-                padding: 2rem;
-            }
-
-            .step-icon {
-                font-size: 3rem;
+            .path-header {
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
                 margin-bottom: 1rem;
             }
 
-            .step-icon.success {
-                color: #22c55e;
-            }
-
-            .step-card h2 {
-                margin: 0 0 0.5rem 0;
-                font-size: 1.5rem;
-            }
-
-            .step-description {
-                color: #6b7280;
-                margin-bottom: 2rem;
-            }
-
-            /* Intro Step */
-            .intro-lead {
-                font-size: 1.1rem;
-                line-height: 1.6;
-                margin-bottom: 2rem;
-            }
-
-            .benefit-cards {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1rem;
-                margin-bottom: 2rem;
-            }
-
-            .benefit-card {
-                background: #f8fafc;
-                border-radius: 12px;
-                padding: 1.5rem;
-                text-align: center;
-            }
-
-            .benefit-icon {
+            .path-icon {
                 font-size: 2rem;
-                display: block;
-                margin-bottom: 0.5rem;
             }
 
-            .benefit-card h4 {
-                margin: 0 0 0.5rem 0;
-                font-size: 1rem;
-            }
-
-            .benefit-card p {
+            .path-title h2 {
                 margin: 0;
+                font-size: 1.25rem;
+            }
+
+            .path-subtitle {
                 font-size: 0.85rem;
                 color: #6b7280;
             }
 
-            .info-box {
-                background: #eff6ff;
-                border-left: 4px solid #3b82f6;
-                padding: 1.5rem;
-                border-radius: 0 8px 8px 0;
-            }
-
-            .info-box h4 {
-                margin: 0 0 0.75rem 0;
-            }
-
-            .info-box ul {
-                margin: 0.5rem 0;
-                padding-left: 1.5rem;
-            }
-
-            .info-note {
-                margin: 0.75rem 0 0 0;
-                font-style: italic;
-                color: #1e40af;
-            }
-
-            /* Mode Selection */
-            .mode-selection {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1.5rem;
-                margin-bottom: 2rem;
-            }
-
-            .mode-card {
-                border: 2px solid #e5e7eb;
-                border-radius: 12px;
-                padding: 1.5rem;
-                cursor: pointer;
-                transition: all 0.2s;
-            }
-
-            .mode-card:hover {
-                border-color: #3b82f6;
-                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-            }
-
-            .mode-card.selected {
-                border-color: #3b82f6;
-                background: #eff6ff;
-            }
-
-            .mode-header {
+            .path-effort {
                 display: flex;
-                align-items: center;
-                gap: 0.75rem;
+                gap: 1rem;
                 margin-bottom: 1rem;
-            }
-
-            .mode-icon {
-                font-size: 1.5rem;
-            }
-
-            .mode-header h3 {
-                margin: 0;
-                flex: 1;
-            }
-
-            .mode-badge {
-                font-size: 0.7rem;
-                padding: 0.25rem 0.5rem;
-                border-radius: 4px;
-                background: #dcfce7;
-                color: #15803d;
-            }
-
-            .mode-features {
-                list-style: none;
-                padding: 0;
-                margin: 1rem 0;
-            }
-
-            .mode-features li {
-                padding: 0.25rem 0;
-                font-size: 0.9rem;
-            }
-
-            .mode-flow {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-size: 0.8rem;
-                color: #6b7280;
                 padding: 0.75rem;
                 background: #f8fafc;
                 border-radius: 8px;
             }
 
-            .mode-flow .highlight {
-                background: #fef3c7;
-                padding: 0.25rem 0.5rem;
-                border-radius: 4px;
+            .effort-item {
+                flex: 1;
             }
 
-            .mode-comparison {
-                margin-top: 2rem;
+            .effort-label {
+                display: block;
+                font-size: 0.75rem;
+                color: #6b7280;
+                margin-bottom: 0.25rem;
+            }
+
+            .effort-value {
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+
+            .effort-value.good {
+                color: #15803d;
+            }
+
+            .effort-value.neutral {
+                color: #92400e;
+            }
+
+            .path-description {
+                color: #4b5563;
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 1rem;
+            }
+
+            .path-flow {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                font-size: 0.8rem;
+                color: #6b7280;
+                padding: 0.75rem;
+                background: #f0f9ff;
+                border-radius: 8px;
+                margin-bottom: 1rem;
+            }
+
+            .path-flow .arrow {
+                color: #3b82f6;
+            }
+
+            .path-for {
+                font-size: 0.85rem;
+                color: #6b7280;
+                margin-bottom: 1.25rem;
+            }
+
+            .path-btn {
+                width: 100%;
+                padding: 0.75rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                background: white;
+                font-size: 0.9rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .path-btn:hover {
+                border-color: #3b82f6;
+                color: #3b82f6;
+            }
+
+            .path-btn.primary {
+                background: #3b82f6;
+                border-color: #3b82f6;
+                color: white;
+            }
+
+            .path-btn.primary:hover {
+                background: #2563eb;
+            }
+
+            /* Comparison Table */
+            .comparison-section {
+                background: white;
+                border-radius: 12px;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .comparison-section h3 {
+                margin: 0 0 1rem 0;
+                font-size: 1rem;
             }
 
             .comparison-table {
@@ -961,30 +1096,213 @@ async function sendResponse(requestId, toolNumber, location) {
 
             .comparison-table th {
                 background: #f8fafc;
+                font-weight: 600;
             }
 
-            /* Connection Step */
-            .connection-steps {
+            .badge {
+                display: inline-block;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+
+            .badge.good {
+                background: #dcfce7;
+                color: #15803d;
+            }
+
+            .badge.neutral {
+                background: #fef3c7;
+                color: #92400e;
+            }
+
+            /* Help Section */
+            .help-section {
+                margin-top: 2rem;
+            }
+
+            .help-card {
                 display: flex;
-                flex-direction: column;
-                gap: 1.5rem;
+                align-items: flex-start;
+                gap: 1rem;
+                background: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 12px;
+                padding: 1.25rem;
             }
 
-            .connection-step {
+            .help-icon {
+                font-size: 1.5rem;
+            }
+
+            .help-content h4 {
+                margin: 0 0 0.5rem 0;
+                color: #1e40af;
+            }
+
+            .help-content p {
+                margin: 0;
+                color: #1e40af;
+                font-size: 0.9rem;
+            }
+
+            /* Setup Card */
+            .setup-card {
+                background: white;
+                border-radius: 16px;
+                padding: 2rem;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            }
+
+            .setup-header {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 2rem;
+                padding-bottom: 1.5rem;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .setup-icon {
+                font-size: 2.5rem;
+            }
+
+            .setup-header h2 {
+                margin: 0;
+            }
+
+            .setup-header p {
+                margin: 0.25rem 0 0 0;
+                color: #6b7280;
+            }
+
+            /* Direct Setup - Done State */
+            .setup-done {
+                text-align: center;
+                padding: 2rem;
+                background: #f0fdf4;
+                border-radius: 12px;
+                margin-bottom: 2rem;
+            }
+
+            .done-icon {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+            }
+
+            .setup-done h3 {
+                margin: 0 0 0.5rem 0;
+                color: #15803d;
+            }
+
+            .setup-done p {
+                margin: 0;
+                color: #166534;
+            }
+
+            /* How it works */
+            .how-it-works {
+                margin-bottom: 2rem;
+            }
+
+            .how-it-works h4 {
+                margin: 0 0 1rem 0;
+            }
+
+            .steps-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .steps-list li {
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1rem;
+                border-left: 2px solid #e5e7eb;
+                margin-left: 14px;
+            }
+
+            .steps-list li:last-child {
+                border-left-color: transparent;
+            }
+
+            .steps-list .step-num {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: #3b82f6;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                font-size: 0.85rem;
+                flex-shrink: 0;
+                margin-left: -15px;
+            }
+
+            .steps-list li strong {
+                display: block;
+                margin-bottom: 0.25rem;
+            }
+
+            .steps-list li p {
+                margin: 0;
+                color: #6b7280;
+                font-size: 0.9rem;
+            }
+
+            /* Supported formats */
+            .supported-formats {
+                background: #f8fafc;
+                padding: 1.25rem;
+                border-radius: 8px;
+                margin-bottom: 2rem;
+            }
+
+            .supported-formats h4 {
+                margin: 0 0 0.75rem 0;
+                font-size: 0.9rem;
+            }
+
+            .format-tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .format-tag {
+                background: white;
+                border: 1px solid #e5e7eb;
+                padding: 0.5rem 0.75rem;
+                border-radius: 6px;
+                font-size: 0.85rem;
+            }
+
+            /* Setup Steps (Stammdaten) */
+            .setup-steps {
+                margin-bottom: 2rem;
+            }
+
+            .setup-step {
                 border: 1px solid #e5e7eb;
                 border-radius: 12px;
+                margin-bottom: 1rem;
                 overflow: hidden;
             }
 
-            .connection-step-header {
+            .setup-step-header {
                 display: flex;
                 align-items: center;
                 gap: 0.75rem;
-                padding: 1rem 1.5rem;
+                padding: 1rem;
                 background: #f8fafc;
             }
 
-            .step-num {
+            .setup-step-header .step-num {
                 width: 28px;
                 height: 28px;
                 border-radius: 50%;
@@ -997,15 +1315,226 @@ async function sendResponse(requestId, toolNumber, location) {
                 font-size: 0.85rem;
             }
 
-            .connection-step-header h4 {
+            .setup-step-header h4 {
                 margin: 0;
             }
 
-            .connection-step-body {
-                padding: 1.5rem;
+            .setup-step-body {
+                padding: 1.25rem;
             }
 
-            .api-key-display {
+            /* Upload Area */
+            .upload-area {
+                border: 2px dashed #d1d5db;
+                border-radius: 12px;
+                padding: 2rem;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .upload-area:hover,
+            .upload-area.dragover {
+                border-color: #3b82f6;
+                background: #eff6ff;
+            }
+
+            .upload-icon {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .upload-hint {
+                font-size: 0.8rem;
+                color: #9ca3af;
+            }
+
+            .upload-status {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-top: 1rem;
+                padding: 1rem;
+                background: #f0fdf4;
+                border-radius: 8px;
+            }
+
+            .upload-status .status-icon {
+                font-size: 1.5rem;
+            }
+
+            .upload-status .status-text strong {
+                display: block;
+            }
+
+            .upload-status .status-text span {
+                font-size: 0.85rem;
+                color: #15803d;
+            }
+
+            /* Required fields */
+            .required-fields {
+                margin-top: 1rem;
+                padding: 1rem;
+                background: #fffbeb;
+                border-radius: 8px;
+            }
+
+            .required-fields h5 {
+                margin: 0 0 0.5rem 0;
+                font-size: 0.9rem;
+            }
+
+            .required-fields ul {
+                margin: 0;
+                padding-left: 1.25rem;
+            }
+
+            .required-fields li {
+                font-size: 0.85rem;
+                margin: 0.25rem 0;
+            }
+
+            /* Template download */
+            .template-download {
+                margin-bottom: 1rem;
+            }
+
+            .template-download p {
+                margin-bottom: 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            /* Reminder setup */
+            .reminder-setup {
+                background: #f8fafc;
+                padding: 1.25rem;
+                border-radius: 12px;
+                margin-bottom: 2rem;
+            }
+
+            .reminder-setup h4 {
+                margin: 0 0 0.5rem 0;
+            }
+
+            .reminder-setup > p {
+                margin: 0 0 1rem 0;
+                font-size: 0.9rem;
+                color: #6b7280;
+            }
+
+            .reminder-options {
+                display: flex;
+                gap: 1rem;
+            }
+
+            .reminder-option {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                cursor: pointer;
+            }
+
+            /* Auto method selection */
+            .auto-method-selection {
+                margin-bottom: 2rem;
+            }
+
+            .auto-method-selection h4 {
+                margin: 0 0 1rem 0;
+            }
+
+            .method-cards {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+
+            .method-card {
+                border: 2px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 1.25rem;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .method-card:hover {
+                border-color: #3b82f6;
+            }
+
+            .method-card.selected {
+                border-color: #3b82f6;
+                background: #eff6ff;
+            }
+
+            .method-icon {
+                font-size: 2rem;
+                display: block;
+                margin-bottom: 0.5rem;
+            }
+
+            .method-card h5 {
+                margin: 0 0 0.25rem 0;
+            }
+
+            .method-card p {
+                margin: 0;
+                font-size: 0.8rem;
+                color: #6b7280;
+            }
+
+            /* Method details */
+            .method-details {
+                margin-bottom: 2rem;
+            }
+
+            .method-hint {
+                color: #6b7280;
+                font-style: italic;
+                text-align: center;
+                padding: 2rem;
+            }
+
+            .method-config {
+                background: #f8fafc;
+                padding: 1.5rem;
+                border-radius: 12px;
+            }
+
+            .method-config h5 {
+                margin: 0 0 1rem 0;
+            }
+
+            .method-config ol {
+                margin: 0 0 1rem 0;
+                padding-left: 1.25rem;
+            }
+
+            .method-config li {
+                margin: 0.5rem 0;
+            }
+
+            .method-input {
+                margin-top: 1rem;
+            }
+
+            .method-input label {
+                display: block;
+                font-size: 0.85rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .method-input input,
+            .method-input textarea {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                font-size: 0.9rem;
+            }
+
+            .email-address {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
@@ -1015,261 +1544,223 @@ async function sendResponse(requestId, toolNumber, location) {
                 margin: 0.5rem 0;
             }
 
-            .api-key-display code {
+            .email-address code {
                 flex: 1;
                 color: #22c55e;
                 font-family: monospace;
-                font-size: 0.9rem;
-                word-break: break-all;
+                font-size: 0.85rem;
             }
 
             .copy-btn {
                 background: none;
                 border: none;
                 cursor: pointer;
-                padding: 0.5rem;
-                border-radius: 4px;
-                transition: background 0.2s;
+                padding: 0.25rem;
             }
 
-            .copy-btn:hover {
-                background: rgba(255,255,255,0.1);
-            }
-
-            .copy-btn.copied {
-                color: #22c55e;
-            }
-
-            .security-note {
-                font-size: 0.85rem;
-                color: #dc2626;
-            }
-
-            .webhook-input {
-                width: 100%;
-                padding: 0.75rem;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                font-size: 0.9rem;
-            }
-
-            .hint {
-                font-size: 0.8rem;
-                color: #6b7280;
-                margin-top: 0.5rem;
-            }
-
-            /* Code Examples */
-            .code-tabs {
-                display: flex;
-                gap: 0.5rem;
-                margin-bottom: 1rem;
-            }
-
-            .code-tab {
-                padding: 0.5rem 1rem;
-                border: 1px solid #e5e7eb;
-                background: white;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 0.85rem;
-            }
-
-            .code-tab.active {
-                background: #3b82f6;
-                color: white;
-                border-color: #3b82f6;
-            }
-
-            .code-block {
-                display: none;
+            .sftp-credentials {
                 background: #1e293b;
-                color: #e2e8f0;
                 padding: 1rem;
                 border-radius: 8px;
-                overflow-x: auto;
-                font-size: 0.8rem;
-                line-height: 1.5;
-            }
-
-            .code-block.active {
-                display: block;
-            }
-
-            /* Test Step */
-            .test-section {
-                text-align: center;
-            }
-
-            .test-card {
-                background: #f8fafc;
-                border-radius: 12px;
-                padding: 2rem;
-                margin-bottom: 1.5rem;
-            }
-
-            .test-status {
-                font-size: 3rem;
                 margin-bottom: 1rem;
             }
 
-            .test-card h4 {
-                margin: 0 0 0.5rem 0;
-            }
-
-            .test-card p {
-                margin: 0;
-                color: #6b7280;
-            }
-
-            .test-actions {
-                margin-bottom: 2rem;
-            }
-
-            .test-checklist {
-                text-align: left;
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                padding: 1.5rem;
-            }
-
-            .test-checklist h4 {
-                margin: 0 0 1rem 0;
-            }
-
-            .checklist-item {
+            .credential-row {
                 display: flex;
-                align-items: center;
-                gap: 0.75rem;
                 padding: 0.5rem 0;
+                border-bottom: 1px solid #374151;
             }
 
-            .check-icon {
-                width: 20px;
-                text-align: center;
-            }
-
-            .checklist-item.checked .check-icon {
-                color: #22c55e;
-            }
-
-            .checklist-item.checked .check-icon::before {
-                content: '✓';
-            }
-
-            /* Complete Step */
-            .complete-card {
-                text-align: center;
-            }
-
-            .complete-summary {
-                background: #f8fafc;
-                border-radius: 12px;
-                padding: 1.5rem;
-                margin: 2rem auto;
-                max-width: 400px;
-                text-align: left;
-            }
-
-            .summary-item {
-                display: flex;
-                justify-content: space-between;
-                padding: 0.5rem 0;
-                border-bottom: 1px solid #e5e7eb;
-            }
-
-            .summary-item:last-child {
+            .credential-row:last-child {
                 border-bottom: none;
             }
 
-            .summary-label {
-                color: #6b7280;
+            .credential-row label {
+                width: 100px;
+                color: #9ca3af;
+                font-size: 0.85rem;
             }
 
-            .summary-value code {
-                background: #e5e7eb;
-                padding: 0.25rem 0.5rem;
-                border-radius: 4px;
-                font-size: 0.8rem;
+            .credential-row code {
+                color: #22c55e;
+                font-family: monospace;
+                font-size: 0.85rem;
             }
 
-            .next-steps {
-                text-align: left;
-                max-width: 400px;
-                margin: 2rem auto;
+            /* Auto schedule */
+            .auto-schedule {
+                background: #f8fafc;
+                padding: 1.25rem;
+                border-radius: 12px;
+                margin-bottom: 2rem;
             }
 
-            .next-steps ol {
-                padding-left: 1.5rem;
+            .auto-schedule h4 {
+                margin: 0 0 0.75rem 0;
             }
 
-            .next-steps li {
-                margin: 0.5rem 0;
-            }
-
-            .help-resources {
-                margin-top: 2rem;
-            }
-
-            .resource-links {
+            .schedule-options {
                 display: flex;
-                justify-content: center;
-                gap: 1rem;
-                margin-top: 1rem;
+                gap: 1.5rem;
             }
 
-            .resource-link {
+            .schedule-option {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
-                padding: 0.75rem 1rem;
+                cursor: pointer;
+            }
+
+            /* Test Step */
+            .test-progress {
                 background: #f8fafc;
-                border-radius: 8px;
-                text-decoration: none;
-                color: #374151;
-                transition: all 0.2s;
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin-bottom: 1.5rem;
             }
 
-            .resource-link:hover {
-                background: #e5e7eb;
+            .test-item {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.75rem 0;
+                border-bottom: 1px solid #e5e7eb;
             }
 
-            /* Actions */
-            .step-actions {
+            .test-item:last-child {
+                border-bottom: none;
+            }
+
+            .test-status {
+                width: 24px;
+                text-align: center;
+                font-size: 1rem;
+            }
+
+            .test-status.testing {
+                animation: pulse 1s infinite;
+            }
+
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+
+            .test-result {
+                padding: 1.5rem;
+                background: #f0fdf4;
+                border-radius: 12px;
+                text-align: center;
+            }
+
+            .test-success h4 {
+                margin: 0 0 0.5rem 0;
+                color: #15803d;
+            }
+
+            .test-success p {
+                margin: 0 0 1rem 0;
+                color: #166534;
+            }
+
+            /* Complete State */
+            .setup-card.complete {
+                text-align: center;
+            }
+
+            .complete-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+            }
+
+            .complete-text {
+                font-size: 1.1rem;
+                color: #6b7280;
+                margin-bottom: 2rem;
+            }
+
+            .next-steps-card {
+                background: #f8fafc;
+                padding: 1.5rem;
+                border-radius: 12px;
+                text-align: left;
+                max-width: 500px;
+                margin: 0 auto 2rem;
+            }
+
+            .next-steps-card h4 {
+                margin: 0 0 1rem 0;
+            }
+
+            .next-steps-card ol {
+                margin: 0;
+                padding-left: 1.25rem;
+            }
+
+            .next-steps-card li {
+                margin: 0.5rem 0;
+            }
+
+            /* Setup Actions */
+            .setup-actions {
                 display: flex;
                 justify-content: flex-end;
                 gap: 1rem;
-                margin-top: 2rem;
                 padding-top: 1.5rem;
                 border-top: 1px solid #e5e7eb;
             }
 
-            .btn-lg {
-                padding: 0.875rem 2rem;
-                font-size: 1rem;
-            }
-
-            .btn-link {
-                background: none;
-                border: none;
-                color: #6b7280;
-                cursor: pointer;
+            .btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: 8px;
                 font-size: 0.9rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
             }
 
-            .btn-link:hover {
+            .btn-neutral {
+                background: white;
+                border: 1px solid #d1d5db;
                 color: #374151;
-                text-decoration: underline;
+            }
+
+            .btn-neutral:hover {
+                background: #f3f4f6;
+            }
+
+            .btn-primary {
+                background: #3b82f6;
+                border: 1px solid #3b82f6;
+                color: white;
+            }
+
+            .btn-primary:hover {
+                background: #2563eb;
+            }
+
+            .btn-primary:disabled {
+                background: #9ca3af;
+                border-color: #9ca3af;
+                cursor: not-allowed;
+            }
+
+            .btn-secondary {
+                background: #f3f4f6;
+                border: 1px solid #d1d5db;
+                color: #374151;
+            }
+
+            .btn-secondary:hover {
+                background: #e5e7eb;
             }
 
             @media (max-width: 900px) {
-                .setup-layout {
+                .path-cards {
                     grid-template-columns: 1fr;
                 }
 
-                .benefit-cards,
-                .mode-selection {
+                .method-cards {
                     grid-template-columns: 1fr;
                 }
             }
