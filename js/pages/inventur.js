@@ -1524,15 +1524,18 @@ class InventurPage {
 
     // Photo upload methods
     addPhoto(toolId) {
-        this.currentTool = this.tools.find(t => t.id === toolId);
+        // Suche mit == statt === fuer flexibleren Vergleich (String vs Number)
+        this.currentTool = this.tools.find(t => t.id == toolId || t.positionKey == toolId);
         if (this.currentTool) {
-            document.getElementById('photoModalToolName').textContent = this.currentTool.name;
-            document.getElementById('photoModalToolNumber').textContent = this.currentTool.number;
+            document.getElementById('photoModalToolName').textContent = this.currentTool.name || this.currentTool.assetName || 'Unbekannt';
+            document.getElementById('photoModalToolNumber').textContent = this.currentTool.number || this.currentTool.inventoryNumber || this.currentTool.toolNumber || '';
             document.getElementById('photoPreview').style.display = 'none';
             document.getElementById('photoPlaceholder').style.display = 'block';
             document.getElementById('photoInput').value = '';
             document.getElementById('confirmPhoto').disabled = true;
             document.getElementById('photoModal').classList.add('active');
+        } else {
+            console.error('Tool nicht gefunden:', toolId, 'Verfuegbare IDs:', this.tools.map(t => t.id));
         }
     }
 
