@@ -1368,8 +1368,11 @@ class KPIPage {
             }
 
             // First, load all inventories
-            const inventories = await api.getInventoryList({ limit: 10000 });
-            console.log('KPI Inventur raw data:', inventories);
+            const response = await api.getInventoryList({ limit: 10000 });
+            console.log('KPI Inventur raw data:', response);
+
+            // Handle both array and {data: array} formats
+            const inventories = Array.isArray(response) ? response : (response?.data || []);
 
             if (!inventories || !inventories.length) {
                 console.log('KPI Inventur: No inventories found');
@@ -1378,7 +1381,7 @@ class KPIPage {
 
             // Collect all positions from all inventories
             let allPositions = [];
-            const inventoryKeys = inventories.map(inv => inv.key || inv.inventoryKey).filter(k => k);
+            const inventoryKeys = inventories.map(inv => inv.key || inv.inventoryKey || inv.context?.key).filter(k => k);
 
             // Load positions from up to 10 most recent inventories to avoid too many API calls
             const keysToLoad = inventoryKeys.slice(0, 10);
@@ -1508,8 +1511,11 @@ class KPIPage {
     async loadVerlagerungKPIs() {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
-            const data = await api.getVerlagerungList({ limit: 10000 });
-            console.log('KPI Verlagerung raw data:', data);
+            const response = await api.getVerlagerungList({ limit: 10000 });
+            console.log('KPI Verlagerung raw data:', response);
+
+            // Handle both array and {data: array} formats
+            const data = Array.isArray(response) ? response : (response?.data || []);
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1542,8 +1548,11 @@ class KPIPage {
     async loadVPWKPIs() {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
-            const data = await api.getPartnerwechselList({ limit: 10000 });
-            console.log('KPI VPW raw data:', data);
+            const response = await api.getPartnerwechselList({ limit: 10000 });
+            console.log('KPI VPW raw data:', response);
+
+            // Handle both array and {data: array} formats
+            const data = Array.isArray(response) ? response : (response?.data || []);
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1575,8 +1584,11 @@ class KPIPage {
     async loadABLKPIs() {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
-            const data = await api.getABLList({ limit: 10000 });
-            console.log('KPI ABL raw data:', data);
+            const response = await api.getABLList({ limit: 10000 });
+            console.log('KPI ABL raw data:', response);
+
+            // Handle both array and {data: array} formats
+            const data = Array.isArray(response) ? response : (response?.data || []);
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1609,8 +1621,11 @@ class KPIPage {
     async loadVerschrottungKPIs() {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
-            const data = await api.getVerschrottungList({ limit: 10000 });
-            console.log('KPI Verschrottung raw data:', data);
+            const response = await api.getVerschrottungList({ limit: 10000 });
+            console.log('KPI Verschrottung raw data:', response);
+
+            // Handle both array and {data: array} formats
+            const data = Array.isArray(response) ? response : (response?.data || []);
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1620,7 +1635,7 @@ class KPIPage {
             let offen = 0;
 
             data.forEach(item => {
-                const status = item.status || item.processStatus;
+                const status = item.meta?.p_status || item.status || item.processStatus;
                 if (['COMPLETED', 'DONE', 'CLOSED', 'S4', 'S5'].includes(status)) {
                     abgeschlossen++;
                 } else {
