@@ -118,7 +118,7 @@ class AgentenPage {
                 </div>
 
                 <div class="agents-grid">
-                    ${this.agents.map(agent => this.renderAgentCard(agent)).join('')}
+                    ${this.getSortedAgents().map(agent => this.renderAgentCard(agent)).join('')}
                 </div>
 
                 <div class="agents-info">
