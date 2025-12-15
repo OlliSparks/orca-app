@@ -54,8 +54,8 @@ class AgentABLPage {
         const app = document.getElementById('app');
 
         // Prüfe ob Edit-Modus (Daten aus Detail-Seite)
-        const urlParams = new URLSearchParams(window.location.search);
-        const editId = urlParams.get('edit');
+        // Query-Parameter sind im Hash, nutze router.getQueryParam
+        const editId = router.getQueryParam('edit');
         this.isEditMode = !!editId;
         this.editId = editId;
 

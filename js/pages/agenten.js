@@ -86,6 +86,15 @@ class AgentenPage {
         ];
     }
 
+    // Sortierte Agenten: Verfügbar zuerst, dann Demnächst
+    getSortedAgents() {
+        return [...this.agents].sort((a, b) => {
+            if (a.status === 'active' && b.status !== 'active') return -1;
+            if (a.status !== 'active' && b.status === 'active') return 1;
+            return 0;
+        });
+    }
+
     render() {
         const app = document.getElementById('app');
 

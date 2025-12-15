@@ -16,8 +16,12 @@ class Router {
 
     // Handle route changes
     handleRouteChange() {
-        const hash = window.location.hash.slice(1) || '/';
+        const fullHash = window.location.hash.slice(1) || '/';
+
+        // Split hash into path and query string
+        const [hash, queryString] = fullHash.split('?');
         this.currentRoute = hash;
+        this.queryParams = this.parseQueryString(queryString);
 
         // Update active nav links
         this.updateActiveNavLinks();
@@ -39,6 +43,24 @@ class Router {
 
         // Scroll to top on route change
         window.scrollTo(0, 0);
+    }
+
+    // Parse query string into object
+    parseQueryString(queryString) {
+        if (!queryString) return {};
+        const params = {};
+        queryString.split('&').forEach(pair => {
+            const [key, value] = pair.split('=');
+            if (key) {
+                params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+            }
+        });
+        return params;
+    }
+
+    // Get query parameter
+    getQueryParam(key) {
+        return this.queryParams ? this.queryParams[key] : null;
     }
 
     // Match dynamic routes
