@@ -179,6 +179,12 @@ class AgentInventurPage {
     }
 
     showGreeting() {
+        // Nur anzeigen wenn noch keine Nachrichten existieren
+        if (this.messages.length > 0) {
+            this.renderMessages();
+            return;
+        }
+
         const greeting = {
             role: 'assistant',
             content: `Willkommen beim Inventur-Agenten! 👋
