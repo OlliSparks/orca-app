@@ -369,14 +369,12 @@ class InventurPage {
             this.updateSupplierHeader();
         }
 
-        console.log('Loaded inventories:', inventoryResponse.data.length);
 
         // Schritt 2: Fuer jede Inventur die Positionen laden
         const allPositions = [];
 
         for (const inventory of inventoryResponse.data) {
             const inventoryKey = inventory.inventoryKey || inventory.id;
-            console.log('Loading positions for inventory:', inventoryKey);
 
             try {
                 const positionsResponse = await api.getInventoryPositions(inventoryKey);
@@ -394,24 +392,10 @@ class InventurPage {
                         }
                     }));
                     allPositions.push(...enrichedPositions);
-                    console.log(`Inventory ${inventoryKey}: ${positionsResponse.data.length} positions`);
                 }
             } catch (error) {
                 console.error(`Error loading positions for ${inventoryKey}:`, error);
             }
-        }
-
-        console.log('Total positions loaded:', allPositions.length);
-
-        // Debug: Zeige erstes Position-Objekt nach Transformation
-        if (allPositions.length > 0) {
-            console.log('First transformed position:', {
-                number: allPositions[0].number,
-                name: allPositions[0].name,
-                location: allPositions[0].location,
-                dueDate: allPositions[0].dueDate,
-                responsible: allPositions[0].responsible
-            });
         }
 
         // Schritt 3: Positionen als tools speichern
@@ -438,7 +422,6 @@ class InventurPage {
                 const usersResponse = await api.getCompanyUsers(companyResponse.companyKey);
                 if (usersResponse.success) {
                     this.companyUsers = usersResponse.data || [];
-                    console.log('Loaded company users:', this.companyUsers.length, this.companyUsers);
                 }
             }
         } catch (error) {
@@ -471,7 +454,6 @@ class InventurPage {
         this.locations = Array.from(locationSet.values())
             .sort((a, b) => a.name.localeCompare(b.name));
 
-        console.log('Extracted locations:', this.locations.length, this.locations);
 
         // Aktualisiere die Standort-Dropdowns
         this.populateLocationSelects();
@@ -500,7 +482,6 @@ class InventurPage {
         this.responsibles = Array.from(responsibleSet.values())
             .sort((a, b) => a.name.localeCompare(b.name));
 
-        console.log('Extracted responsibles:', this.responsibles.length, this.responsibles);
 
         // Aktualisiere die Verantwortlichen-Dropdown
         this.populateResponsibleSelect();

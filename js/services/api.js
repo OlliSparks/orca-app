@@ -672,14 +672,8 @@ class APIService {
 
         // Transform API response - each position becomes one entry
         const positions = Array.isArray(response) ? response : (response.data || []);
-        console.log('Raw positions from API:', positions.length, positions[0]); // Debug
 
         const transformedData = positions.map((pos, index) => {
-            // Debug: Log first position structure
-            if (index === 0) {
-                console.log('First position structure:', JSON.stringify(pos, null, 2));
-            }
-
             // Try multiple paths for each field
             const inventoryNum = pos.asset?.meta?.inventoryNumber
                 || pos.meta?.inventoryNumber
@@ -1038,11 +1032,6 @@ class APIService {
 
                 // Transform API response
                 const items = Array.isArray(response) ? response : (response.data || []);
-
-                // Debug: Zeige erste Response zum Mapping
-                if (items.length > 0) {
-                    console.log('ABL API Response (erstes Item):', JSON.stringify(items[0], null, 2));
-                }
 
                 const transformedData = items.map((item, index) => {
                     const meta = item.meta || {};
