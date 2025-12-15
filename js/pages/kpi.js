@@ -1369,8 +1369,10 @@ class KPIPage {
 
             // First, load all inventories
             const inventories = await api.getInventoryList({ limit: 10000 });
+            console.log('KPI Inventur raw data:', inventories);
 
             if (!inventories || !inventories.length) {
+                console.log('KPI Inventur: No inventories found');
                 return null;
             }
 
@@ -1507,6 +1509,7 @@ class KPIPage {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
             const data = await api.getVerlagerungList({ limit: 10000 });
+            console.log('KPI Verlagerung raw data:', data);
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1540,6 +1543,7 @@ class KPIPage {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
             const data = await api.getPartnerwechselList({ limit: 10000 });
+            console.log('KPI VPW raw data:', data);
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1572,6 +1576,7 @@ class KPIPage {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
             const data = await api.getABLList({ limit: 10000 });
+            console.log('KPI ABL raw data:', data);
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1605,6 +1610,7 @@ class KPIPage {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
             const data = await api.getVerschrottungList({ limit: 10000 });
+            console.log('KPI Verschrottung raw data:', data);
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
