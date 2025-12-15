@@ -5,9 +5,12 @@ class AgentABLPage {
         this.currentStep = 'start';
         this.tools = []; // Mehrere Werkzeuge pro ABL
         this.currentTool = null;
+        this.companyData = null; // Eigene Company aus API
+        this.locations = []; // Standorte aus API
         this.ablData = {
             // Bestellbezug
             supplier: null,
+            supplierKey: null,
             owner: null,
             purchaseOrder: null,
             wet: null,
@@ -16,6 +19,7 @@ class AgentABLPage {
             department: null,
             recipient: null,
             location: null,
+            locationKey: null,
             // Weitere Angaben
             vatId: null,
             comment: null,
@@ -113,6 +117,26 @@ class AgentABLPage {
 
         this.addStyles();
         this.attachEventListeners();
+        this.loadCompanyData();
+    }
+
+    async loadCompanyData() {
+        try {
+            // Lade eigene Company aus API
+            const companyResult = await window.orcaAPI.getCompanyBySupplier();
+            if (companyResult.success && companyResult.data) {
+                this.companyData = companyResult.data;
+
+                // Lade Standorte der Company
+                const locationsResult = await window.orcaAPI.getCompanyLocations(companyResult.companyKey);
+                if (locationsResult.success && locationsResult.data) {
+                    this.locations = locationsResult.data;
+                }
+            }
+        } catch (error) {
+            console.error('Fehler beim Laden der Company-Daten:', error);
+        }
+
         this.showGreeting();
     }
 
@@ -286,26 +310,44 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
         }
 
         this.reattachInputListeners();
+        this.focusCurrentInput();
+    }
+
+    focusCurrentInput() {
+        // Auto-Focus auf das aktuelle Eingabefeld
+        setTimeout(() => {
+            const input = document.getElementById('chatInput');
+            const dateInput = document.getElementById('dateInput');
+            const select = document.getElementById('locationSelect') || document.getElementById('supplierSelect');
+            const confirmBtn = document.getElementById('confirmSupplierBtn');
+
+            if (input) {
+                input.focus();
+            } else if (dateInput) {
+                dateInput.focus();
+            } else if (select) {
+                select.focus();
+            } else if (confirmBtn) {
+                confirmBtn.focus();
+            }
+        }, 100);
     }
 
     getSupplierInputHtml() {
-        // Mock supplier list - in real app from API
-        const suppliers = [
-            'FAURECIA', 'BENTELER', 'GESTAMP', 'KIRCHHOFF', 'MAGNA',
-            'PLASTIC OMNIUM', 'VALEO', 'CONTINENTAL', 'BOSCH'
-        ];
+        // Eigene Company aus API - keine Auswahl, nur Bestätigung
+        const companyName = this.companyData?.name || 'Unbekannt';
+        const companyNumber = this.companyData?.number || '';
 
         return `
-            <div class="supplier-input">
-                <select id="supplierSelect" class="abl-select">
-                    <option value="">-- Lieferant auswählen --</option>
-                    ${suppliers.map(s => `<option value="${s}">${s}</option>`).join('')}
-                </select>
-                <div class="input-or">oder</div>
-                <div class="input-container">
-                    <input type="text" id="chatInput" placeholder="Anderen Lieferanten eingeben..." autocomplete="off">
-                    <button class="send-btn" id="sendBtn">Weiter →</button>
+            <div class="supplier-display">
+                <div class="supplier-card">
+                    <div class="supplier-label">Ihr Unternehmen:</div>
+                    <div class="supplier-name">${companyName}</div>
+                    ${companyNumber ? `<div class="supplier-number">LNR: ${companyNumber}</div>` : ''}
                 </div>
+                <button class="confirm-supplier-btn" id="confirmSupplierBtn">
+                    ✓ Bestätigen und weiter
+                </button>
             </div>
         `;
     }
@@ -337,24 +379,22 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
     }
 
     getLocationInputHtml(canSkip) {
-        const locations = [
-            'Hunedoara (RO)', 'Zrenjanin (RS)', 'Györ (HU)', 'Gyál (HU)',
-            'Hornstein (AT)', 'Braunau (AT)', 'Bad Salzuflen (DE)',
-            'Stahringen (DE)', 'Dornstetten (DE)', 'Coburg (DE)',
-            'Sousse (TN)', 'Balti (MD)', 'Chemor/Ipoh (MY)'
-        ];
+        // Standorte aus API verwenden
+        const locationOptions = this.locations.map(loc => {
+            const name = loc.name || loc.meta?.name || 'Unbekannt';
+            const country = loc.country || loc.meta?.country || '';
+            const displayName = country ? `${name} (${country})` : name;
+            const key = loc.key || loc.context?.key || '';
+            return { key, displayName, name };
+        });
 
         return `
             <div class="location-input">
                 <select id="locationSelect" class="abl-select">
                     <option value="">-- Standort auswählen --</option>
-                    ${locations.map(l => `<option value="${l}">${l}</option>`).join('')}
+                    ${locationOptions.map(l => `<option value="${l.key}" data-name="${l.displayName}">${l.displayName}</option>`).join('')}
                 </select>
-                <div class="input-or">oder</div>
-                <div class="input-container">
-                    <input type="text" id="chatInput" placeholder="Anderen Standort eingeben..." autocomplete="off">
-                    <button class="send-btn" id="sendBtn">Weiter →</button>
-                </div>
+                <div class="input-hint">Wählen Sie einen Ihrer Standorte</div>
                 ${canSkip ? '<button class="skip-btn" id="skipBtn">Überspringen →</button>' : ''}
             </div>
         `;
@@ -493,14 +533,10 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
             sendBtn.addEventListener('click', () => this.handleUserInput());
         }
 
-        // Supplier select
-        const supplierSelect = document.getElementById('supplierSelect');
-        if (supplierSelect) {
-            supplierSelect.addEventListener('change', (e) => {
-                if (e.target.value) {
-                    this.processSupplier(e.target.value);
-                }
-            });
+        // Supplier confirm button
+        const confirmSupplierBtn = document.getElementById('confirmSupplierBtn');
+        if (confirmSupplierBtn) {
+            confirmSupplierBtn.addEventListener('click', () => this.confirmSupplier());
         }
 
         // Location select
@@ -508,7 +544,9 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
         if (locationSelect) {
             locationSelect.addEventListener('change', (e) => {
                 if (e.target.value) {
-                    this.processLocation(e.target.value);
+                    const selectedOption = e.target.options[e.target.selectedIndex];
+                    const locationName = selectedOption.dataset.name || e.target.value;
+                    this.processLocation(e.target.value, locationName);
                 }
             });
         }
@@ -604,9 +642,6 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
 
     processCurrentStep(value) {
         switch (this.currentStep) {
-            case 'supplier':
-                this.processSupplier(value);
-                break;
             case 'owner':
                 this.processOwner(value);
                 break;
@@ -615,9 +650,6 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                 break;
             case 'project':
                 this.processProject(value);
-                break;
-            case 'location':
-                this.processLocation(value);
                 break;
             case 'recipient':
                 this.processRecipient(value);
@@ -670,9 +702,16 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
     }
 
     // Processing functions for each step
-    processSupplier(value) {
-        this.ablData.supplier = value;
-        this.addAssistantMessage(`✓ Lieferant: **${value}**`);
+    confirmSupplier() {
+        // Eigene Company aus API bestätigen
+        const companyName = this.companyData?.name || 'Unbekannt';
+        const companyKey = this.companyData?.key || '';
+
+        this.ablData.supplier = companyName;
+        this.ablData.supplierKey = companyKey;
+
+        this.addUserMessage(companyName);
+        this.addAssistantMessage(`✓ Lieferant bestätigt: **${companyName}**`);
         this.nextStep();
     }
 
@@ -702,9 +741,11 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
         this.nextStep();
     }
 
-    processLocation(value) {
-        this.ablData.location = value;
-        this.addAssistantMessage(`✓ Standort: **${value}**`);
+    processLocation(locationKey, locationName) {
+        this.ablData.locationKey = locationKey;
+        this.ablData.location = locationName;
+        this.addUserMessage(locationName);
+        this.addAssistantMessage(`✓ Standort: **${locationName}**`);
         this.nextStep();
     }
 
@@ -714,7 +755,7 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
         this.nextStep();
     }
 
-    processToolNumber(value) {
+    async processToolNumber(value) {
         const cleanNumber = value.replace(/\s/g, '');
 
         if (!/^\d{7,10}$/.test(cleanNumber)) {
@@ -731,21 +772,53 @@ Bitte geben Sie eine gültige Inventarnummer ein (7-10 Ziffern).`
         }
 
         this.currentTool.number = normalized;
-        this.currentTool.name = this.mockGetToolName(normalized);
 
-        this.addAssistantMessage(
-            `✓ Werkzeug erkannt:
+        // Werkzeugdaten aus API laden
+        this.addAssistantMessage(`Suche Werkzeug **${normalized}**...`);
+
+        try {
+            const assetResult = await window.orcaAPI.getAssetByNumber(normalized);
+            if (assetResult.success && assetResult.data) {
+                const asset = assetResult.data;
+                this.currentTool.name = asset.description || asset.name || 'Werkzeug';
+                this.currentTool.assetKey = asset.key;
+                this.currentTool.assetData = asset;
+
+                // Übernehme vorhandene Daten aus dem Asset
+                if (asset.width) this.currentTool.width = asset.width;
+                if (asset.length) this.currentTool.length = asset.length;
+                if (asset.height) this.currentTool.height = asset.height;
+                if (asset.weight) this.currentTool.weight = asset.weight;
+                if (asset.material) this.currentTool.material = asset.material;
+
+                this.messages.pop(); // Entferne "Suche..."-Nachricht
+                this.addAssistantMessage(
+                    `✓ Werkzeug gefunden:
 **Inventarnummer:** ${normalized}
-**Bezeichnung:** ${this.currentTool.name}`
-        );
-        this.nextStep();
-    }
+**Bezeichnung:** ${this.currentTool.name}
+${asset.location ? `**Standort:** ${asset.location}` : ''}`
+                );
+            } else {
+                // Werkzeug nicht in API gefunden - trotzdem fortfahren
+                this.currentTool.name = 'Werkzeug (nicht im System)';
+                this.messages.pop();
+                this.addAssistantMessage(
+                    `⚠️ Werkzeug nicht im System gefunden:
+**Inventarnummer:** ${normalized}
+Das Werkzeug wird trotzdem erfasst.`
+                );
+            }
+        } catch (error) {
+            console.error('Fehler beim Laden des Werkzeugs:', error);
+            this.currentTool.name = 'Werkzeug';
+            this.messages.pop();
+            this.addAssistantMessage(
+                `✓ Werkzeug erfasst:
+**Inventarnummer:** ${normalized}`
+            );
+        }
 
-    mockGetToolName(number) {
-        if (number.startsWith('001')) return 'Spritzgießwerkzeug';
-        if (number.startsWith('901')) return 'Schäumform';
-        if (number.startsWith('100')) return 'Presswerkzeug';
-        return 'Fertigungsmittel';
+        this.nextStep();
     }
 
     handlePhotoUpload(event) {
@@ -1107,6 +1180,53 @@ Sie werden zur ABL-Übersicht weitergeleitet...`
                 color: #9ca3af;
                 font-size: 0.85rem;
                 margin: 0.5rem 0;
+            }
+
+            .supplier-display {
+                text-align: center;
+            }
+
+            .supplier-card {
+                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                border: 2px solid #2c4a8c;
+                border-radius: 12px;
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+            }
+
+            .supplier-label {
+                font-size: 0.8rem;
+                color: #6b7280;
+                margin-bottom: 0.25rem;
+            }
+
+            .supplier-name {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: #2c4a8c;
+            }
+
+            .supplier-number {
+                font-size: 0.85rem;
+                color: #64748b;
+                margin-top: 0.25rem;
+            }
+
+            .confirm-supplier-btn {
+                width: 100%;
+                padding: 0.9rem;
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+
+            .confirm-supplier-btn:hover {
+                transform: translateY(-1px);
             }
 
             .send-btn {

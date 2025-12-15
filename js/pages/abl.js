@@ -512,6 +512,27 @@ class ABLPage {
             const response = await api.getABLList();
             if (response.success) {
                 this.allABL = response.data;
+
+                // Lade auch lokal erstellte ABLs aus dem Agent
+                const pendingABLs = JSON.parse(localStorage.getItem('pending_abls') || '[]');
+                if (pendingABLs.length > 0) {
+                    const localABLs = pendingABLs.map(abl => ({
+                        key: abl.id,
+                        identifier: abl.primaryToolNumber || abl.id,
+                        title: `ABL - ${abl.supplier || 'Entwurf'}`,
+                        status: abl.status === 'sent' ? 'P2' : 'P0',
+                        statusText: abl.status === 'sent' ? 'Versendet' : 'Im Vorrat',
+                        location: abl.location || '',
+                        supplier: abl.supplier || '',
+                        toolCount: abl.toolCount || 0,
+                        createdAt: abl.createdAt,
+                        isLocal: true, // Markierung für lokale ABLs
+                        localData: abl // Original-Daten für Detail-Ansicht
+                    }));
+                    // Lokale ABLs an den Anfang stellen
+                    this.allABL = [...localABLs, ...this.allABL];
+                }
+
                 this.filteredABL = [...this.allABL];
 
                 // Check for filter from sessionStorage (from dashboard navigation)
@@ -869,7 +890,12 @@ class ABLPage {
             'laufend': 'Laufend',
             'durchgefuehrt': 'Durchgefuehrt',
             'akzeptiert': 'Akzeptiert',
-            'abgeschlossen': 'Abgeschlossen'
+            'abgeschlossen': 'Abgeschlossen',
+            // Lokale ABL-Status
+            'P0': 'Im Vorrat',
+            'P2': 'Versendet',
+            'draft': 'Entwurf',
+            'sent': 'Versendet'
         };
         return labels[status] || status || 'Unbekannt';
     }
@@ -906,6 +932,12 @@ class ABLPage {
     }
 
     openDetail(key) {
+        // Prüfe ob es eine lokale ABL ist
+        const localABL = this.allABL.find(a => a.key === key && a.isLocal);
+        if (localABL && localABL.localData) {
+            // Speichere lokale ABL-Daten für Detail-Seite
+            sessionStorage.setItem('localABLDetail', JSON.stringify(localABL.localData));
+        }
         // Navigation zur Detail-Seite
         router.navigate('/abl-detail/' + key);
     }

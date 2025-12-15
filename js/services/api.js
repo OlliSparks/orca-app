@@ -468,6 +468,54 @@ class APIService {
         return 'offen';
     }
 
+    // Get single asset by inventory number
+    async getAssetByNumber(inventoryNumber) {
+        return this.callWithFallback(
+            async () => {
+                // Suche Asset über asset-list mit Filter
+                const params = new URLSearchParams();
+                params.append('supplier', this.supplierNumber);
+                params.append('inventoryNumber', inventoryNumber);
+                params.append('limit', 1);
+
+                const endpoint = `/asset-list?${params.toString()}`;
+                const response = await this.call(endpoint, 'GET');
+
+                const items = Array.isArray(response) ? response : (response.data || []);
+
+                if (items.length === 0) {
+                    return { success: false, error: 'Asset not found' };
+                }
+
+                const item = items[0];
+                return {
+                    success: true,
+                    data: {
+                        key: item.context?.key || '',
+                        inventoryNumber: item.meta?.inventoryNumber || inventoryNumber,
+                        description: item.meta?.inventoryText || item.meta?.partNumberText || '',
+                        name: item.meta?.inventoryText || '',
+                        supplier: item.meta?.supplier || '',
+                        location: `${item.meta?.assetCity || ''}, ${item.meta?.assetCountry || ''}`.replace(/^, |, $/g, ''),
+                        city: item.meta?.assetCity || '',
+                        country: item.meta?.assetCountry || '',
+                        width: item.meta?.width || null,
+                        length: item.meta?.length || null,
+                        height: item.meta?.height || null,
+                        weight: item.meta?.weight || null,
+                        material: item.meta?.material || '',
+                        status: item.meta?.status || '',
+                        processStatus: item.meta?.processStatus || '',
+                        project: item.meta?.project || '',
+                        client: item.meta?.client || '',
+                        originalData: item
+                    }
+                };
+            },
+            () => ({ success: false, error: 'Mock mode - no asset data' })
+        );
+    }
+
     // Get single FM item
     async getFMDetail(id) {
         return this.callWithFallback(
@@ -3004,6 +3052,170 @@ class APIService {
             this.isConnected = false;
             return false;
         }
+    }
+
+    // === Report Endpoints ===
+    // GET /report/{key}?format=PDF|HTML|CSV|XLSX
+    // GET /report/inventories/result/{inventoryKey}
+    // GET /report/scrappings/result/{scrappingKey}
+
+    /**
+     * Generischer Report-Abruf
+     * @param {string} reportKey - Report-Schlüssel
+     * @param {string} format - Format: PDF, HTML, CSV, XLSX (default: HTML)
+     * @returns {Promise<Blob|Object>} Report-Daten
+     */
+    async getReport(reportKey, format = 'HTML') {
+        if (this.mode === 'mock') {
+            return this.getMockReportData(reportKey, format);
+        }
+
+        try {
+            const endpoint = `/report/${reportKey}?format=${format}`;
+
+            // Für Binärformate (PDF, XLSX) brauchen wir Blob-Response
+            if (format === 'PDF' || format === 'XLSX') {
+                return await this.callBinary(endpoint);
+            }
+
+            return await this.call(endpoint);
+        } catch (error) {
+            console.error('Error fetching report:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Inventur-Ergebnis-Report abrufen
+     * @param {string} inventoryKey - Inventur-Schlüssel
+     * @param {string} format - Format: PDF, HTML, CSV, XLSX (default: HTML)
+     * @returns {Promise<Blob|Object>} Report-Daten
+     */
+    async getInventoryReport(inventoryKey, format = 'HTML') {
+        if (this.mode === 'mock') {
+            return this.getMockInventoryReportData(inventoryKey, format);
+        }
+
+        try {
+            const endpoint = `/report/inventories/result/${inventoryKey}?format=${format}`;
+
+            // Für Binärformate (PDF, XLSX) brauchen wir Blob-Response
+            if (format === 'PDF' || format === 'XLSX') {
+                return await this.callBinary(endpoint);
+            }
+
+            return await this.call(endpoint);
+        } catch (error) {
+            console.error('Error fetching inventory report:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Verschrottungs-Ergebnis-Report abrufen
+     * @param {string} scrappingKey - Verschrottungs-Schlüssel
+     * @param {string} format - Format: PDF, HTML, CSV, XLSX (default: HTML)
+     * @returns {Promise<Blob|Object>} Report-Daten
+     */
+    async getScrappingReport(scrappingKey, format = 'HTML') {
+        if (this.mode === 'mock') {
+            return this.getMockScrappingReportData(scrappingKey, format);
+        }
+
+        try {
+            const endpoint = `/report/scrappings/result/${scrappingKey}?format=${format}`;
+
+            // Für Binärformate (PDF, XLSX) brauchen wir Blob-Response
+            if (format === 'PDF' || format === 'XLSX') {
+                return await this.callBinary(endpoint);
+            }
+
+            return await this.call(endpoint);
+        } catch (error) {
+            console.error('Error fetching scrapping report:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Binärer API-Call für PDF/XLSX Downloads
+     */
+    async callBinary(endpoint) {
+        const options = {
+            method: 'GET',
+            headers: {}
+        };
+
+        if (this.bearerToken) {
+            const token = this.bearerToken.startsWith('Bearer ')
+                ? this.bearerToken.substring(7)
+                : this.bearerToken;
+            options.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
+        const response = await fetch(url, options);
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
+
+        return await response.blob();
+    }
+
+    // Mock-Daten für Reports
+    getMockReportData(reportKey, format) {
+        return {
+            success: true,
+            reportKey: reportKey,
+            format: format,
+            generatedAt: new Date().toISOString(),
+            content: '<html><body><h1>Mock Report</h1><p>Dies ist ein Test-Report.</p></body></html>'
+        };
+    }
+
+    getMockInventoryReportData(inventoryKey, format) {
+        return {
+            success: true,
+            inventoryKey: inventoryKey,
+            format: format,
+            generatedAt: new Date().toISOString(),
+            title: `Inventur-Report ${inventoryKey}`,
+            summary: {
+                totalPositions: 125,
+                completed: 98,
+                pending: 20,
+                missing: 7,
+                completionRate: 78.4
+            },
+            positions: [
+                { number: 'WZ-2024-001', status: 'P2', location: 'Hunedoara, RO' },
+                { number: 'WZ-2024-002', status: 'P3', location: 'Hunedoara, RO' },
+                { number: 'WZ-2024-003', status: 'P6', location: 'Nicht gefunden' }
+            ],
+            content: format === 'HTML'
+                ? `<html><body><h1>Inventur-Report ${inventoryKey}</h1><p>Abschlussquote: 78.4%</p></body></html>`
+                : null
+        };
+    }
+
+    getMockScrappingReportData(scrappingKey, format) {
+        return {
+            success: true,
+            scrappingKey: scrappingKey,
+            format: format,
+            generatedAt: new Date().toISOString(),
+            title: `Verschrottungs-Report ${scrappingKey}`,
+            summary: {
+                totalAssets: 12,
+                approved: 10,
+                pending: 2,
+                totalValue: 245000
+            },
+            content: format === 'HTML'
+                ? `<html><body><h1>Verschrottungs-Report ${scrappingKey}</h1><p>12 Assets zur Verschrottung</p></body></html>`
+                : null
+        };
     }
 }
 

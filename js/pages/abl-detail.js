@@ -43,7 +43,48 @@ class ABLDetailPage {
         this.isLoading = true;
 
         try {
-            // Load inventory details
+            // Prüfe ob es eine lokale ABL ist (aus dem Agent erstellt)
+            const localABLData = sessionStorage.getItem('localABLDetail');
+            if (localABLData && this.inventoryKey.startsWith('ABL-')) {
+                sessionStorage.removeItem('localABLDetail');
+                const localABL = JSON.parse(localABLData);
+                this.isLocalABL = true;
+                this.localABLData = localABL;
+
+                this.inventory = {
+                    inventoryStatus: localABL.status === 'sent' ? 'I1' : 'I0',
+                    title: `ABL - ${localABL.supplier || 'Entwurf'}`,
+                    identifier: localABL.primaryToolNumber || localABL.id,
+                    supplier: localABL.supplier || '',
+                    location: localABL.location || '',
+                    owner: localABL.owner || '',
+                    purchaseOrder: localABL.purchaseOrder || '',
+                    project: localABL.project || '',
+                    created: localABL.createdAt,
+                    type: 'LOCAL',
+                    toolCount: localABL.toolCount || 0
+                };
+
+                // Werkzeuge als Positionen
+                this.positions = (localABL.tools || []).map((tool, idx) => ({
+                    key: `local-${idx}`,
+                    inventoryNumber: tool.number,
+                    name: tool.name || 'Werkzeug',
+                    status: 'P0',
+                    inventoryPhoto: tool.inventoryPhoto,
+                    toolPhoto: tool.toolPhoto,
+                    width: tool.width,
+                    length: tool.length,
+                    height: tool.height,
+                    weight: tool.weight,
+                    material: tool.material
+                }));
+
+                this.renderLocalDetail();
+                return;
+            }
+
+            // Load inventory details from API
             const detailResult = await api.getInventoryDetails(this.inventoryKey);
             console.log('ABL Detail Response:', detailResult);
 
@@ -222,6 +263,231 @@ class ABLDetailPage {
 
         // Inject styles
         this.injectStyles();
+    }
+
+    renderLocalDetail() {
+        const app = document.getElementById('app');
+        const inv = this.inventory;
+        const localData = this.localABLData;
+
+        // Status für lokale ABLs
+        const statusInfo = localData.status === 'sent'
+            ? { class: 'status-laufend', text: 'Versendet' }
+            : { class: 'status-geplant', text: 'Im Vorrat' };
+
+        app.innerHTML = `
+            <div class="container">
+                <!-- Back Navigation -->
+                <div style="margin-bottom: 1rem;">
+                    <button class="btn btn-neutral" onclick="router.navigate('/abl')" style="padding: 0.5rem 1rem;">
+                        &larr; Zurueck zur Liste
+                    </button>
+                </div>
+
+                <!-- Header Card -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">${inv.title}</h1>
+                            <p style="color: #6b7280; margin-bottom: 0.5rem;">Erstellt mit ABL-Agent</p>
+                            <span class="status-badge ${statusInfo.class}" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">
+                                ${statusInfo.text}
+                            </span>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="color: #6b7280; font-size: 0.9rem;">Erstellt am</p>
+                            <p style="font-size: 1.2rem; font-weight: 600;">${inv.created ? this.formatDateTime(inv.created) : '-'}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Lieferant</p>
+                        <p style="font-weight: 500;">${inv.supplier || '-'}</p>
+                    </div>
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Auftraggeber</p>
+                        <p style="font-weight: 500;">${inv.owner || '-'}</p>
+                    </div>
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Bestellnummer</p>
+                        <p style="font-weight: 500;">${inv.purchaseOrder || '-'}</p>
+                    </div>
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Standort</p>
+                        <p style="font-weight: 500;">${inv.location || '-'}</p>
+                    </div>
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Projekt</p>
+                        <p style="font-weight: 500;">${inv.project || '-'}</p>
+                    </div>
+                    <div class="card">
+                        <p style="color: #6b7280; font-size: 0.85rem;">Anzahl Werkzeuge</p>
+                        <p style="font-weight: 500;">${inv.toolCount || 0}</p>
+                    </div>
+                </div>
+
+                <!-- Werkzeuge -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 style="font-size: 1.2rem;">Werkzeuge in dieser ABL</h2>
+                        <span style="color: #6b7280;">${this.positions.length} Werkzeug(e)</span>
+                    </div>
+
+                    <div class="local-tools-grid">
+                        ${this.positions.map((tool, idx) => `
+                            <div class="local-tool-card">
+                                <div class="tool-header">
+                                    <span class="tool-number">${tool.inventoryNumber || '-'}</span>
+                                    <span class="tool-name">${tool.name || 'Werkzeug'}</span>
+                                </div>
+                                <div class="tool-photos">
+                                    ${tool.inventoryPhoto ? `
+                                        <div class="photo-thumb">
+                                            <img src="${tool.inventoryPhoto}" alt="Inventarschild">
+                                            <span>Inventarschild</span>
+                                        </div>
+                                    ` : '<div class="photo-placeholder">Kein Inventarschild</div>'}
+                                    ${tool.toolPhoto ? `
+                                        <div class="photo-thumb">
+                                            <img src="${tool.toolPhoto}" alt="Werkzeugfoto">
+                                            <span>Werkzeugfoto</span>
+                                        </div>
+                                    ` : '<div class="photo-placeholder">Kein Werkzeugfoto</div>'}
+                                </div>
+                                <div class="tool-dimensions">
+                                    ${tool.width || tool.length || tool.height ? `
+                                        <span>Maße: ${tool.width || '-'} × ${tool.length || '-'} × ${tool.height || '-'} mm</span>
+                                    ` : ''}
+                                    ${tool.weight ? `<span>Gewicht: ${tool.weight} kg</span>` : ''}
+                                    ${tool.material ? `<span>Material: ${tool.material}</span>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${localData.comment ? `
+                <!-- Kommentar -->
+                <div class="card" style="margin-top: 1.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Kommentar</h3>
+                    <p style="color: #374151;">${localData.comment}</p>
+                </div>
+                ` : ''}
+
+                <!-- Actions -->
+                ${localData.status !== 'sent' ? `
+                <div class="card" style="margin-top: 1.5rem; background: #fef3c7; border: 1px solid #f59e0b;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span style="font-size: 1.5rem;">⚠️</span>
+                        <div>
+                            <p style="font-weight: 500; color: #92400e;">ABL noch nicht versendet</p>
+                            <p style="font-size: 0.9rem; color: #a16207;">Diese ABL befindet sich im Vorrat. Vervollständigen Sie die Daten und senden Sie sie an den OEM.</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="router.navigate('/agent-abl')">
+                        Im ABL-Agent bearbeiten
+                    </button>
+                </div>
+                ` : ''}
+            </div>
+        `;
+
+        // Update footer
+        document.getElementById('footerActions').innerHTML = `
+            <button class="btn btn-neutral" onclick="router.navigate('/abl')">Zurueck</button>
+            ${localData.status !== 'sent' ? `
+            <button class="btn btn-danger" onclick="ablDetailPage.deleteLocalABL('${this.inventoryKey}')">Löschen</button>
+            ` : ''}
+        `;
+
+        // Inject styles
+        this.injectStyles();
+        this.injectLocalStyles();
+    }
+
+    injectLocalStyles() {
+        if (document.getElementById('abl-local-styles')) return;
+        const styles = document.createElement('style');
+        styles.id = 'abl-local-styles';
+        styles.textContent = `
+            .local-tools-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1rem;
+            }
+            .local-tool-card {
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 1rem;
+                background: #f9fafb;
+            }
+            .tool-header {
+                margin-bottom: 0.75rem;
+            }
+            .tool-number {
+                font-family: monospace;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #2c4a8c;
+            }
+            .tool-name {
+                display: block;
+                font-size: 0.9rem;
+                color: #6b7280;
+            }
+            .tool-photos {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+            .photo-thumb {
+                flex: 1;
+                text-align: center;
+            }
+            .photo-thumb img {
+                width: 100%;
+                max-height: 80px;
+                object-fit: cover;
+                border-radius: 4px;
+                border: 1px solid #d1d5db;
+            }
+            .photo-thumb span {
+                display: block;
+                font-size: 0.7rem;
+                color: #9ca3af;
+                margin-top: 0.25rem;
+            }
+            .photo-placeholder {
+                flex: 1;
+                background: #e5e7eb;
+                border-radius: 4px;
+                padding: 1rem 0.5rem;
+                text-align: center;
+                font-size: 0.75rem;
+                color: #9ca3af;
+            }
+            .tool-dimensions {
+                font-size: 0.8rem;
+                color: #6b7280;
+            }
+            .tool-dimensions span {
+                display: block;
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+
+    deleteLocalABL(key) {
+        if (!confirm('Möchten Sie diese ABL wirklich löschen?')) return;
+
+        const pendingABLs = JSON.parse(localStorage.getItem('pending_abls') || '[]');
+        const filtered = pendingABLs.filter(abl => abl.id !== key);
+        localStorage.setItem('pending_abls', JSON.stringify(filtered));
+
+        router.navigate('/abl');
     }
 
     renderPositionsRows() {
