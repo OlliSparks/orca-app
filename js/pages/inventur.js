@@ -663,6 +663,9 @@ class InventurPage {
         const newLocationSelect = document.getElementById('newLocationSelect');
         const bulkLocationSelect = document.getElementById('bulkLocationSelect');
 
+        // Safety check - elements may not exist yet
+        if (!newLocationSelect || !bulkLocationSelect) return;
+
         // Vorherige Optionen loeschen (ausser der ersten "-- Standort waehlen --" Option)
         while (newLocationSelect.options.length > 1) {
             newLocationSelect.remove(1);
