@@ -105,6 +105,11 @@ class OrcaApp {
         router.addRoute('/unternehmen', () => {
             unternehmenPage.render();
         });
+
+        // KPI Dashboard
+        router.addRoute('/kpi', () => {
+            kpiPage.render();
+        });
     }
 
     async checkAPIStatus() {
