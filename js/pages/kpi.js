@@ -1643,21 +1643,32 @@ class KPIPage {
 
     updateDisplay() {
         const data = this.kpiData;
+        if (!data) return;
+
         const isLiveMode = typeof apiService !== 'undefined' && apiService.mode === 'live';
 
+        // Safety check - ensure elements exist
+        const quoteEl = document.getElementById('kpiInventurQuote');
+        if (!quoteEl) return; // Dashboard not rendered yet
+
         // Update main KPIs
-        document.getElementById('kpiInventurQuote').textContent = data.inventurQuote + '%';
+        quoteEl.textContent = data.inventurQuote + '%';
 
         // Bearbeitungszeit - nur im Mock-Modus verfügbar
         const bearbeitungEl = document.getElementById('kpiBearbeitungszeit');
-        if (data.bearbeitungszeit !== null) {
-            bearbeitungEl.innerHTML = data.bearbeitungszeit + ' <span class="kpi-unit">Tage</span>';
-        } else {
-            bearbeitungEl.innerHTML = '<span class="kpi-na">n/a</span>';
+        if (bearbeitungEl) {
+            if (data.bearbeitungszeit !== null) {
+                bearbeitungEl.innerHTML = data.bearbeitungszeit + ' <span class="kpi-unit">Tage</span>';
+            } else {
+                bearbeitungEl.innerHTML = '<span class="kpi-na">n/a</span>';
+            }
         }
 
-        document.getElementById('kpiUeberfaellig').textContent = data.ueberfaellig;
-        document.getElementById('kpiWerkzeuge').textContent = data.werkzeuge.toLocaleString('de-DE');
+        const ueberfaelligEl = document.getElementById('kpiUeberfaellig');
+        if (ueberfaelligEl) ueberfaelligEl.textContent = data.ueberfaellig;
+
+        const werkzeugeEl = document.getElementById('kpiWerkzeuge');
+        if (werkzeugeEl) werkzeugeEl.textContent = data.werkzeuge.toLocaleString('de-DE');
 
         // Update process counts
         const proz = data.prozesse;
