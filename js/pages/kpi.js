@@ -1369,13 +1369,11 @@ class KPIPage {
 
             // First, load all inventories
             const response = await api.getInventoryList({ limit: 10000 });
-            console.log('KPI Inventur raw data:', response);
 
             // Handle both array and {data: array} formats
             const inventories = Array.isArray(response) ? response : (response?.data || []);
 
             if (!inventories || !inventories.length) {
-                console.log('KPI Inventur: No inventories found');
                 return null;
             }
 
@@ -1512,7 +1510,6 @@ class KPIPage {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
             const response = await api.getVerlagerungList({ limit: 10000 });
-            console.log('KPI Verlagerung raw data:', response);
 
             // Handle both array and {data: array} formats
             const data = Array.isArray(response) ? response : (response?.data || []);
@@ -1549,7 +1546,6 @@ class KPIPage {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
             const response = await api.getPartnerwechselList({ limit: 10000 });
-            console.log('KPI VPW raw data:', response);
 
             // Handle both array and {data: array} formats
             const data = Array.isArray(response) ? response : (response?.data || []);
@@ -1585,7 +1581,6 @@ class KPIPage {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
             const response = await api.getABLList({ limit: 10000 });
-            console.log('KPI ABL raw data:', response);
 
             // Handle both array and {data: array} formats
             const data = Array.isArray(response) ? response : (response?.data || []);
@@ -1622,7 +1617,6 @@ class KPIPage {
         try {
             if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
             const response = await api.getVerschrottungList({ limit: 10000 });
-            console.log('KPI Verschrottung raw data:', response);
 
             // Handle both array and {data: array} formats
             const data = Array.isArray(response) ? response : (response?.data || []);
