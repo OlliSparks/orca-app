@@ -1188,8 +1188,6 @@ td {
     display: flex;
     align-items: center;
     gap: 2rem;
-    justify-content: space-between;
-    flex-direction: row-reverse;
 }
 
 .speedometer-text {
