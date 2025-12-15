@@ -162,10 +162,23 @@ class OrcaApp {
                 // Im Live-Modus: Status ausblenden
                 statusElement.style.display = 'none';
             } else {
-                // Im Mock-Modus: Hinweis anzeigen
+                // Im Mock-Modus: Hinweis anzeigen mit Quelle
                 statusElement.style.display = '';
-                statusElement.innerHTML = '⚠️ Mock-Daten aktiv';
+
+                // Prüfe ob importierte Mock-Daten vorhanden sind
+                let mockInfo = '⚠️ Mock-Daten aktiv';
+                if (typeof api !== 'undefined' && api.mockDataInfo) {
+                    const count = api.mockDataInfo.count || 0;
+                    const source = api.mockDataInfo.source || 'Import';
+                    mockInfo = `📊 Mock-Daten (${count} Assets aus ${source})`;
+                }
+
+                statusElement.innerHTML = mockInfo;
                 statusElement.style.color = '#f97316';
+                statusElement.style.background = '#fef3c7';
+                statusElement.style.padding = '0.25rem 0.5rem';
+                statusElement.style.borderRadius = '4px';
+                statusElement.style.fontSize = '0.75rem';
             }
         }
     }

@@ -51,8 +51,95 @@ class APIService {
     // Initialisiere Mock-Daten EINMAL beim Start
     initializeMockData() {
         if (this.mockToolsCache === null) {
+            // Sofort generierte Daten als Fallback setzen
             this.mockToolsCache = this.generateFixedTestData();
+            this.mockDataInfo = null;
+
+            // Async importierte Mock-Daten laden (überschreibt generierte wenn erfolgreich)
+            this.loadImportedMockData();
         }
+    }
+
+    // Lade importierte Mock-Daten aus JSON-Datei
+    async loadImportedMockData() {
+        try {
+            const response = await fetch('js/data/mock-assets.json');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.assets && data.assets.length > 0) {
+                    this.mockToolsCache = this.transformImportedAssets(data.assets);
+                    this.mockDataInfo = data._mockDataInfo;
+                    console.log(`✅ Mock-Daten geladen: ${this.mockToolsCache.length} Assets aus ${data._mockDataInfo.source}`);
+
+                    // Aktualisiere API-Status im Footer falls bereits gerendert
+                    if (typeof orcaApp !== 'undefined' && orcaApp.checkAPIStatus) {
+                        orcaApp.checkAPIStatus();
+                    }
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('Importierte Mock-Daten nicht verfügbar, nutze generierte Daten');
+        }
+    }
+
+    // Transformiere importierte Asset-Daten in internes Format
+    transformImportedAssets(assets) {
+        return assets.map((asset, idx) => {
+            // Mapping von Excel-Format auf internes Format
+            const id = asset.id || idx + 1;
+            const inventoryNumber = String(asset.inventoryNumber || '');
+
+            // Status-Mapping
+            let status = 'offen';
+            if (asset.processStatus) {
+                const ps = asset.processStatus.toLowerCase();
+                if (ps.includes('inventur') || ps.includes('in bearbeitung')) {
+                    status = 'in-inventur';
+                } else if (ps.includes('geplant') || ps.includes('planung')) {
+                    status = 'feinplanung';
+                }
+            }
+
+            return {
+                id: id,
+                number: `FM-${String(id).padStart(4, '0')}`,
+                toolNumber: inventoryNumber,
+                inventoryNumber: inventoryNumber,
+                name: asset.toolName || `Werkzeug ${id}`,
+                supplier: asset.supplierName || 'Unbekannt',
+                supplierNumber: asset.supplierNumber,
+                location: asset.city ? `${asset.city}, ${asset.country || 'DE'}` : 'Unbekannt',
+                locationDetail: asset.street ? `${asset.street}, ${asset.postalCode} ${asset.city}` : '',
+                status: status,
+                lastInventory: null,
+                dueDate: asset.dueDate || null,
+                startDate: null,
+                inventoryType: asset.planInventoryType || 'IA',
+                assetNumber: inventoryNumber,
+                supplierAssetNumber: asset.supplierInfo1 || '',
+                lifecycleStatus: asset.lifecycleStatus || 'Aktiv',
+                processStatus: asset.processStatus || 'Unbekannt',
+                // Zusätzliche importierte Felder
+                owner: asset.owner,
+                department: asset.department,
+                partNumber: asset.partNumber,
+                partName: asset.partName,
+                fek: asset.fek,
+                commodity: asset.commodity,
+                acquisitionValue: asset.acquisitionValue,
+                operator: asset.operatorName || asset.operator,
+                processId: asset.processId,
+                processName: asset.processName,
+                processType: asset.processType,
+                processStatusText: asset.processStatusText,
+                assignedUser: asset.assignedUser,
+                locationResult: asset.locationResult,
+                positionProcessStatus: asset.positionProcessStatus,
+                // Flag für Mock-Daten
+                _isMockData: true
+            };
+        });
     }
 
     // Generic API call method with authentication
@@ -3249,6 +3336,50 @@ class APIService {
     }
 
     getMockAssetsGridData() {
+        // Nutze importierte Mock-Daten wenn vorhanden
+        if (this.mockToolsCache && this.mockToolsCache.length > 0 && this.mockToolsCache[0]._isMockData) {
+            const gridData = this.mockToolsCache.map(tool => ({
+                // Fertigungsmittel
+                'Eigentümer': tool.owner || '-',
+                'Inventarnummer': tool.inventoryNumber || tool.toolNumber || '-',
+                'Werkzeugbezeichnung': tool.name || '-',
+                'Abteilung': tool.department || '-',
+                'Teilenummer': tool.partNumber || '-',
+                'Teilenummerbezeichnung': tool.partName || '-',
+                'Lieferant': tool.supplierNumber || '-',
+                'Lieferantenname': tool.supplier || '-',
+                'Facheinkäufer': tool.fek || '-',
+                'Commodity': tool.commodity || '-',
+                'Fertigungsmittel-Lifecyclestatus': tool.lifecycleStatus || '-',
+                'Fertigungsmittel-Prozessstatus': tool.processStatus || '-',
+                'Anschaffungswert • EUR': tool.acquisitionValue || '-',
+                'Betreiber Name': tool.operator || '-',
+                'Land': tool.location?.split(', ')[1] || 'DE',
+                'Stadt': tool.location?.split(', ')[0] || '-',
+                'Straße': tool.locationDetail?.split(', ')[0] || '-',
+                // Prozess
+                'Prozess ID': tool.processId || '-',
+                'Prozessname': tool.processName || '-',
+                'Fälligkeitsdatum': tool.dueDate || '-',
+                'Prozesstyp': tool.processType || '-',
+                'Prozessstatus': tool.processStatusText || '-',
+                'Zugewiesener Benutzer': tool.assignedUser || '-',
+                // Prozessposition
+                'Standortergebnis': tool.locationResult || '-',
+                'Prozessstatus der Position': tool.positionProcessStatus || '-',
+                // Meta
+                '_isMockData': true
+            }));
+
+            return {
+                gridData: gridData,
+                totalCount: gridData.length,
+                generatedAt: new Date().toISOString(),
+                _mockDataInfo: this.mockDataInfo
+            };
+        }
+
+        // Fallback auf alte Mock-Daten
         return {
             gridData: [
                 {
