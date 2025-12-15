@@ -381,22 +381,40 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
     }
 
     getLocationInputHtml(canSkip) {
-        // Standorte aus API verwenden
+        // Standorte aus API verwenden (Format von getCompanyLocations)
         const locationOptions = this.locations.map(loc => {
-            const name = loc.name || loc.meta?.name || 'Unbekannt';
-            const country = loc.country || loc.meta?.country || '';
-            const displayName = country ? `${name} (${country})` : name;
-            const key = loc.key || loc.context?.key || '';
+            // API gibt: { key, name, country, city, street, ... }
+            const name = loc.name || 'Unbekannt';
+            const city = loc.city || '';
+            const country = loc.country || '';
+            let displayName = name;
+            if (city && country) {
+                displayName = `${name}, ${city} (${country})`;
+            } else if (city) {
+                displayName = `${name}, ${city}`;
+            } else if (country) {
+                displayName = `${name} (${country})`;
+            }
+            const key = loc.key || '';
             return { key, displayName, name };
         });
 
+        const hasLocations = locationOptions.length > 0;
+
         return `
             <div class="location-input">
-                <select id="locationSelect" class="abl-select">
-                    <option value="">-- Standort auswählen --</option>
-                    ${locationOptions.map(l => `<option value="${l.key}" data-name="${l.displayName}">${l.displayName}</option>`).join('')}
-                </select>
-                <div class="input-hint">Wählen Sie einen Ihrer Standorte</div>
+                ${hasLocations ? `
+                    <select id="locationSelect" class="abl-select">
+                        <option value="">-- Standort auswählen --</option>
+                        ${locationOptions.map(l => `<option value="${l.key}" data-name="${l.displayName}">${l.displayName}</option>`).join('')}
+                    </select>
+                    <div class="input-hint">Wählen Sie einen Ihrer Standorte aus der Unternehmensverwaltung</div>
+                ` : `
+                    <div class="no-locations-warning">
+                        <p>⚠️ Keine Standorte gefunden.</p>
+                        <p class="input-hint">Bitte fügen Sie Standorte unter Unternehmen → Standorte hinzu.</p>
+                    </div>
+                `}
                 ${canSkip ? '<button class="skip-btn" id="skipBtn">Überspringen →</button>' : ''}
             </div>
         `;
@@ -1418,6 +1436,23 @@ Sie werden zur ABL-Übersicht weitergeleitet...`
                 border-radius: 8px;
                 color: #166534;
                 font-weight: 500;
+            }
+
+            .no-locations-warning {
+                padding: 1rem;
+                background: #fef3c7;
+                border: 1px solid #fcd34d;
+                border-radius: 8px;
+                text-align: center;
+            }
+
+            .no-locations-warning p {
+                margin: 0 0 0.5rem 0;
+                color: #92400e;
+            }
+
+            .no-locations-warning p:last-child {
+                margin-bottom: 0;
             }
         `;
         document.head.appendChild(styles);
