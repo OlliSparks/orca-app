@@ -131,12 +131,12 @@ class AgentInventurPage {
             this.updateAiStatus('ready');
         } else {
             this.claudeApiKey = null;
-            this.updateAiStatus('no-key');
+            // Enable mock mode - still allow uploads
+            this.updateAiStatus('mock');
         }
     }
 
     updateAiStatus(status) {
-        const statusSection = document.getElementById('aiStatusSection');
         const statusDisplay = document.getElementById('aiStatusDisplay');
         const statusText = document.getElementById('aiStatusText');
         const uploadArea = document.getElementById('uploadArea');
@@ -146,6 +146,14 @@ class AgentInventurPage {
             case 'ready':
                 statusDisplay.className = 'ai-status-display ready';
                 statusText.textContent = 'KI-Analyse bereit';
+                uploadArea.classList.remove('disabled');
+                uploadText.innerHTML = 'Datei hierher ziehen<br>oder <span class="upload-link">durchsuchen</span>';
+                document.querySelector('.upload-icon').textContent = '📁';
+                break;
+
+            case 'mock':
+                statusDisplay.className = 'ai-status-display mock';
+                statusText.innerHTML = 'Muster-Erkennung aktiv<br><small>Excel/CSV werden analysiert</small>';
                 uploadArea.classList.remove('disabled');
                 uploadText.innerHTML = 'Datei hierher ziehen<br>oder <span class="upload-link">durchsuchen</span>';
                 document.querySelector('.upload-icon').textContent = '📁';
@@ -280,19 +288,18 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
         const fileInput = document.getElementById('fileInput');
 
         uploadArea.addEventListener('click', () => {
-            if (!this.claudeApiKey) {
-                // Show warning - AI not configured
+            // Allow uploads in mock mode and with API key
+            if (uploadArea.classList.contains('disabled')) {
                 const statusSection = document.getElementById('aiStatusSection');
                 statusSection.classList.add('shake');
                 setTimeout(() => statusSection.classList.remove('shake'), 500);
-                this.addAssistantMessage('Die KI-Analyse ist nicht konfiguriert. Bitte kontaktieren Sie Ihren Administrator, um die KI-Funktion zu aktivieren.');
                 return;
             }
             fileInput.click();
         });
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            if (!this.claudeApiKey) return;
+            if (uploadArea.classList.contains('disabled')) return;
             uploadArea.classList.add('drag-over');
         });
         uploadArea.addEventListener('dragleave', () => {
@@ -301,17 +308,11 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
-            if (!this.claudeApiKey) {
-                const statusSection = document.getElementById('aiStatusSection');
-                statusSection.classList.add('shake');
-                setTimeout(() => statusSection.classList.remove('shake'), 500);
-                return;
-            }
+            if (uploadArea.classList.contains('disabled')) return;
             this.handleFiles(e.dataTransfer.files);
         });
 
         fileInput.addEventListener('change', (e) => {
-            if (!this.claudeApiKey) return;
             this.handleFiles(e.target.files);
         });
 
@@ -518,14 +519,6 @@ Bitte stellen Sie sicher, dass:
     }
 
     async analyzeFiles() {
-        // Check for API key
-        if (!this.claudeApiKey) {
-            return {
-                success: false,
-                error: 'Bitte geben Sie Ihren Claude API Key ein.'
-            };
-        }
-
         // Read file contents
         const fileContents = [];
         for (const fileObj of this.uploadedFiles) {
@@ -535,6 +528,11 @@ Bitte stellen Sie sicher, dass:
                 type: fileObj.type,
                 content: content
             });
+        }
+
+        // If no API key, use mock analysis
+        if (!this.claudeApiKey) {
+            return await this.mockAnalyzeFiles(fileContents);
         }
 
         // Call Claude API for analysis
@@ -685,6 +683,159 @@ Falls keine Werkzeuge gefunden werden können:
         }
     }
 
+    // ========================================
+    // MOCK ANALYSIS (when no API key available)
+    // ========================================
+    async mockAnalyzeFiles(fileContents) {
+        // Simulate processing delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        const extractedTools = [];
+
+        for (const file of fileContents) {
+            if (file.content.type === 'image') {
+                // For images, we can't analyze without AI - return helpful message
+                return {
+                    success: false,
+                    error: 'Screenshot-Analyse benötigt KI-Funktion. Bitte laden Sie eine Excel/CSV-Datei hoch oder kontaktieren Sie den Administrator für KI-Aktivierung.'
+                };
+            }
+
+            // Extract tool numbers from text content
+            const text = file.content.data;
+            const tools = this.extractToolsFromText(text, file.name);
+            extractedTools.push(...tools);
+        }
+
+        if (extractedTools.length === 0) {
+            return {
+                success: false,
+                error: 'Keine Werkzeugnummern gefunden. Bitte stellen Sie sicher, dass die Datei Werkzeugdaten enthält.'
+            };
+        }
+
+        // Match with inventories
+        const matchResult = await this.matchWithInventories(extractedTools);
+
+        return {
+            success: true,
+            tools: matchResult.tools,
+            inventories: matchResult.inventories,
+            unmatchedCount: matchResult.unmatchedCount
+        };
+    }
+
+    extractToolsFromText(text, filename) {
+        const tools = [];
+        const lines = text.split(/[\n\r]+/);
+
+        // Patterns for tool numbers (DRAEXLMAIER format)
+        const toolPatterns = [
+            /\b(0{0,3}10\d{6})\b/g,       // 0010120920, 10120920, etc.
+            /\b(90100\d{5})\b/g,           // 9010067965, etc.
+            /\b(1\d{8})\b/g,               // 100281121, 152350370, etc.
+            /\b(\d{7,10})\b/g              // Generic 7-10 digit numbers
+        ];
+
+        // Known tool types
+        const toolTypes = {
+            'spritzgie': 'Spritzgießwerkzeug',
+            'sgw': 'Spritzgießwerkzeug',
+            'schäum': 'Schäumform',
+            'schaum': 'Schäumform',
+            'sf': 'Schäumform',
+            'sfm': 'Schäumform',
+            'hinterschäum': 'Hinterschäumwerkzeuge / -form',
+            'vulkan': 'Vulkanisationswerkzeug',
+            'stanz': 'Stanzwerkzeug',
+            'press': 'Presswerkzeug'
+        };
+
+        // Known locations (DRAEXLMAIER)
+        const locationPatterns = {
+            'hunedoara': 'Hunedoara, RO',
+            'hu-ro': 'Hunedoara, RO',
+            'hu': 'Hunedoara, RO',
+            'zrenjanin': 'Zrenjanin, RS',
+            'zr': 'Zrenjanin, RS',
+            'sousse': 'Sousse, TN',
+            'tn': 'Sousse, TN',
+            'györ': 'Györ, HU',
+            'gyor': 'Györ, HU',
+            'gyál': 'Gyál, HU',
+            'gyal': 'Gyál, HU',
+            'hornstein': 'Hornstein, AT',
+            'braunau': 'Braunau, AT',
+            'bad salzuflen': 'Bad Salzuflen, DE',
+            'stahringen': 'Stahringen, DE',
+            'neustadt': 'Neustadt a. Rbge., DE',
+            'dornstetten': 'Dornstetten, DE',
+            'coburg': 'Coburg, DE',
+            'radolfzell': 'Radolfzell am Bodensee, DE',
+            'bostanj': 'Bostanj, SL',
+            'balti': 'Balti, MD',
+            'chemor': 'Chemor (Ipoh), MY',
+            'taipeh': 'Taipeh, TW',
+            'taiwan': 'Taipeh, TW'
+        };
+
+        const seenNumbers = new Set();
+
+        for (const line of lines) {
+            const lineLower = line.toLowerCase();
+
+            // Try each pattern
+            for (const pattern of toolPatterns) {
+                const matches = line.matchAll(pattern);
+                for (const match of matches) {
+                    let number = match[1];
+
+                    // Skip if already seen or too short
+                    if (seenNumbers.has(number) || number.length < 7) continue;
+
+                    // Skip common non-tool numbers
+                    if (/^(2024|2025|1970|0000)/.test(number)) continue;
+
+                    seenNumbers.add(number);
+
+                    // Normalize number (ensure leading zeros for 10-digit format)
+                    if (number.length === 8 && number.startsWith('10')) {
+                        number = '00' + number;
+                    }
+
+                    // Detect tool type
+                    let toolType = 'Werkzeug';
+                    for (const [key, value] of Object.entries(toolTypes)) {
+                        if (lineLower.includes(key)) {
+                            toolType = value;
+                            break;
+                        }
+                    }
+
+                    // Detect location
+                    let location = null;
+                    for (const [key, value] of Object.entries(locationPatterns)) {
+                        if (lineLower.includes(key)) {
+                            location = value;
+                            break;
+                        }
+                    }
+
+                    tools.push({
+                        number: number,
+                        name: toolType,
+                        location: location,
+                        condition: null,
+                        serialNumber: null,
+                        sourceLine: line.trim().substring(0, 100)
+                    });
+                }
+            }
+        }
+
+        return tools;
+    }
+
     async matchWithInventories(tools) {
         // Load open inventories from API
         let openInventories = [];
@@ -743,33 +894,63 @@ Falls keine Werkzeuge gefunden werden können:
     }
 
     toolBelongsToInventory(tool, inventory) {
-        // Simple matching logic - in production this would be more sophisticated
-        // Check if tool number format matches inventory's expected tools
+        // Match by location if available
+        if (tool.location && inventory.locationKeywords) {
+            const locationLower = tool.location.toLowerCase();
+            for (const keyword of inventory.locationKeywords) {
+                if (locationLower.includes(keyword.toLowerCase())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Legacy: Check if tool number format matches inventory's expected tools
         if (tool.number && inventory.toolPattern) {
             return tool.number.match(new RegExp(inventory.toolPattern));
         }
-        // Default: assign to first available inventory
-        return true;
+
+        // No location info - don't auto-assign
+        return false;
     }
 
     getMockInventories() {
+        // Realistic DRAEXLMAIER inventories by location
         return [
             {
-                id: 'inv-001',
-                name: 'Inventur Q4/2024 - Werk München',
-                toolPattern: 'FM-1.*',
+                id: 'inv-hunedoara',
+                name: 'Inventur Q4/2024 - Hunedoara (RO)',
+                locationKeywords: ['hunedoara', 'hu-ro', 'ro'],
                 dueDate: '2024-12-31'
             },
             {
-                id: 'inv-002',
-                name: 'Inventur Q4/2024 - Werk Berlin',
-                toolPattern: 'FM-2.*',
+                id: 'inv-zrenjanin',
+                name: 'Inventur Q4/2024 - Zrenjanin (RS)',
+                locationKeywords: ['zrenjanin', 'zr', 'rs'],
                 dueDate: '2024-12-31'
             },
             {
-                id: 'inv-003',
-                name: 'Inventur Q4/2024 - Werk Hamburg',
-                toolPattern: 'FM-3.*',
+                id: 'inv-sousse',
+                name: 'Inventur Q4/2024 - Sousse (TN)',
+                locationKeywords: ['sousse', 'tn'],
+                dueDate: '2024-12-31'
+            },
+            {
+                id: 'inv-ungarn',
+                name: 'Inventur Q4/2024 - Ungarn (HU)',
+                locationKeywords: ['györ', 'gyor', 'gyál', 'gyal', 'hu'],
+                dueDate: '2024-12-31'
+            },
+            {
+                id: 'inv-deutschland',
+                name: 'Inventur Q4/2024 - Deutschland',
+                locationKeywords: ['bad salzuflen', 'stahringen', 'neustadt', 'dornstetten', 'coburg', 'radolfzell', 'de'],
+                dueDate: '2024-12-31'
+            },
+            {
+                id: 'inv-oesterreich',
+                name: 'Inventur Q4/2024 - Österreich',
+                locationKeywords: ['hornstein', 'braunau', 'at'],
                 dueDate: '2024-12-31'
             }
         ];
@@ -956,6 +1137,15 @@ Wählen Sie links eine Option und laden Sie Ihre Daten hoch.`
 
             .ai-status-display.ready .ai-icon {
                 color: #16a34a;
+            }
+
+            .ai-status-display.mock {
+                background: #dbeafe;
+                border-color: #93c5fd;
+            }
+
+            .ai-status-display.mock .ai-icon {
+                color: #2563eb;
             }
 
             .ai-status-display.warning {
