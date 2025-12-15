@@ -110,6 +110,16 @@ class OrcaApp {
         router.addRoute('/kpi', () => {
             kpiPage.render();
         });
+
+        // Agenten Übersicht
+        router.addRoute('/agenten', () => {
+            agentenPage.render();
+        });
+
+        // Inventur-Agent
+        router.addRoute('/agent-inventur', () => {
+            agentInventurPage.render();
+        });
     }
 
     async checkAPIStatus() {
