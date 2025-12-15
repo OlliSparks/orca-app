@@ -82,8 +82,12 @@ class InventurPage {
                 </div>
 
                 <div class="view-controls">
-                    <button class="bulk-btn api-load" id="apiLoadBtn">
-                        📥 Daten aus Lieferantensystem importieren
+                    <button class="agent-btn" id="agentImportBtn">
+                        <span class="agent-btn-icon">🤖</span>
+                        <span class="agent-btn-text">
+                            <strong>KI-Agent starten</strong>
+                            <small>Daten automatisch importieren</small>
+                        </span>
                     </button>
                     <div style="display: flex; gap: 0.5rem; margin-left: auto;">
                         <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
@@ -684,7 +688,7 @@ class InventurPage {
         document.getElementById('filterLocationBtn').addEventListener('click', () => this.openLocationFilterModal());
         document.getElementById('filterResponsibleBtn').addEventListener('click', () => this.openResponsibleFilterModal());
         document.getElementById('resetFiltersBtn').addEventListener('click', () => this.resetAllFilters());
-        document.getElementById('apiLoadBtn').addEventListener('click', () => this.loadFromAPI());
+        document.getElementById('agentImportBtn').addEventListener('click', () => router.navigate('/agent-inventur'));
         document.getElementById('confirmAllBtn').addEventListener('click', () => this.confirmAllFiltered());
         document.getElementById('submitBtn').addEventListener('click', () => this.submitInventory());
 
