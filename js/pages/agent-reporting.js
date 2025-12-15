@@ -71,20 +71,71 @@ class AgentReportingPage {
                             <div class="report-placeholder" id="reportPlaceholder">
                                 <div class="placeholder-icon">📊</div>
                                 <h2>Reporting-Agent</h2>
-                                <p>Wählen Sie einen Report-Typ und laden Sie verfügbare Reports.</p>
-                                <div class="placeholder-features">
-                                    <div class="feature">
-                                        <span class="feature-icon">📋</span>
-                                        <span>Inventur-Reports</span>
+                                <p>Wählen Sie einen Report-Typ oder nutzen Sie einen der vordefinierten Reports.</p>
+
+                                <!-- Report Examples -->
+                                <div class="report-categories">
+                                    <div class="report-category">
+                                        <h3>⚙️ Operative Reports</h3>
+                                        <div class="report-examples">
+                                            <button class="report-example" data-report="process-progress">
+                                                <span class="example-title">Prozess-Fortschritt</span>
+                                                <span class="example-desc">Status aller laufenden Inventuren/Verlagerungen</span>
+                                            </button>
+                                            <button class="report-example" data-report="overdue">
+                                                <span class="example-title">Überfällige Prozesse</span>
+                                                <span class="example-desc">Prozesse die nie abgeschlossen wurden</span>
+                                            </button>
+                                            <button class="report-example" data-report="location-discrepancy">
+                                                <span class="example-title">Standort-Diskrepanzen</span>
+                                                <span class="example-desc">"Anderer Standort" / "Standort unbekannt"</span>
+                                            </button>
+                                            <button class="report-example" data-report="image-status">
+                                                <span class="example-title">Bildstatus-Tracking</span>
+                                                <span class="example-desc">Assets die noch Fotos brauchen</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="feature">
-                                        <span class="feature-icon">🗑️</span>
-                                        <span>Verschrottungs-Reports</span>
+
+                                    <div class="report-category">
+                                        <h3>📈 Strategische Reports</h3>
+                                        <div class="report-examples">
+                                            <button class="report-example" data-report="geo-distribution">
+                                                <span class="example-title">Asset-Verteilung nach Land</span>
+                                                <span class="example-desc">Geografische Risikoanalyse</span>
+                                            </button>
+                                            <button class="report-example" data-report="value-by-owner">
+                                                <span class="example-title">Wertanalyse pro Eigentümer</span>
+                                                <span class="example-desc">Portfolio-Übersicht nach Besitzer</span>
+                                            </button>
+                                            <button class="report-example" data-report="lifecycle-status">
+                                                <span class="example-title">Lifecycle-Status</span>
+                                                <span class="example-desc">Bestätigt vs. Unbestätigt</span>
+                                            </button>
+                                            <button class="report-example" data-report="inventory-calendar">
+                                                <span class="example-title">Inventurfrist-Kalender</span>
+                                                <span class="example-desc">Anstehende Inventuren 2025/2026</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="feature">
-                                        <span class="feature-icon">📥</span>
-                                        <span>PDF/XLSX Export</span>
+
+                                    <div class="report-category">
+                                        <h3>✅ Compliance Reports</h3>
+                                        <div class="report-examples">
+                                            <button class="report-example" data-report="abl-status">
+                                                <span class="example-title">ABL-Status</span>
+                                                <span class="example-desc">ABL erforderlich / ABL vorhanden</span>
+                                            </button>
+                                            <button class="report-example" data-report="unconfirmed">
+                                                <span class="example-title">Unbestätigte Assets</span>
+                                                <span class="example-desc">Assets ohne Bestätigung</span>
+                                            </button>
+                                        </div>
                                     </div>
+                                </div>
+
+                                <div class="placeholder-hint">
+                                    <p>💡 <strong>Tipp:</strong> Laden Sie zuerst die Fertigungsmittel über die Seitenleiste, um die Reports zu befüllen.</p>
                                 </div>
                             </div>
 
@@ -163,6 +214,61 @@ class AgentReportingPage {
         // Analysis buttons
         document.getElementById('summaryBtn')?.addEventListener('click', () => this.showSummary());
         document.getElementById('compareBtn')?.addEventListener('click', () => this.compareReports());
+
+        // Report example buttons
+        document.querySelectorAll('.report-example').forEach(btn => {
+            btn.addEventListener('click', () => this.loadPresetReport(btn.dataset.report));
+        });
+    }
+
+    // Load preset report from example buttons
+    async loadPresetReport(reportType) {
+        // First load assets if not already loaded
+        if (!this.reportData || !this.reportData.gridData) {
+            await this.loadAssetsGrid();
+        }
+
+        if (!this.reportData || !this.reportData.gridData) {
+            alert('Bitte laden Sie zuerst die Fertigungsmittel.');
+            return;
+        }
+
+        const gridData = this.reportData.gridData;
+
+        switch (reportType) {
+            case 'process-progress':
+                this.renderProcessProgressReport(gridData);
+                break;
+            case 'overdue':
+                this.renderOverdueReport(gridData);
+                break;
+            case 'location-discrepancy':
+                this.renderLocationDiscrepancyReport(gridData);
+                break;
+            case 'image-status':
+                this.renderImageStatusReport(gridData);
+                break;
+            case 'geo-distribution':
+                this.renderGeoDistributionReport(gridData);
+                break;
+            case 'value-by-owner':
+                this.renderValueByOwnerReport(gridData);
+                break;
+            case 'lifecycle-status':
+                this.renderLifecycleStatusReport(gridData);
+                break;
+            case 'inventory-calendar':
+                this.renderInventoryCalendarReport(gridData);
+                break;
+            case 'abl-status':
+                this.renderABLStatusReport(gridData);
+                break;
+            case 'unconfirmed':
+                this.renderUnconfirmedReport(gridData);
+                break;
+            default:
+                console.warn('Unknown report type:', reportType);
+        }
     }
 
     selectReportType(btn) {
@@ -1437,8 +1543,298 @@ class AgentReportingPage {
                 margin-bottom: 1rem;
                 line-height: 1.4;
             }
+
+            /* Report Categories */
+            .report-categories {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.5rem;
+                margin: 2rem 0;
+                text-align: left;
+            }
+
+            .report-category h3 {
+                font-size: 0.9rem;
+                margin-bottom: 0.75rem;
+                color: #374151;
+            }
+
+            .report-examples {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .report-example {
+                display: flex;
+                flex-direction: column;
+                padding: 0.75rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                background: white;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                text-align: left;
+            }
+
+            .report-example:hover {
+                border-color: #3b82f6;
+                background: #eff6ff;
+                transform: translateX(4px);
+            }
+
+            .example-title {
+                font-weight: 500;
+                font-size: 0.85rem;
+                color: #1f2937;
+            }
+
+            .example-desc {
+                font-size: 0.7rem;
+                color: #6b7280;
+                margin-top: 0.25rem;
+            }
+
+            .placeholder-hint {
+                margin-top: 1.5rem;
+                padding: 1rem;
+                background: #fef3c7;
+                border-radius: 8px;
+                font-size: 0.85rem;
+            }
+
+            .placeholder-hint p {
+                margin: 0;
+                color: #92400e;
+            }
+
+            /* Aggregated Report Styles */
+            .agg-report {
+                padding: 1.5rem;
+            }
+
+            .agg-report h2 {
+                margin-bottom: 1rem;
+                font-size: 1.3rem;
+            }
+
+            .agg-summary {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .summary-card {
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+
+            .summary-value {
+                font-size: 1.8rem;
+                font-weight: bold;
+                color: #2563eb;
+            }
+
+            .summary-label {
+                font-size: 0.8rem;
+                color: #6b7280;
+                margin-top: 0.25rem;
+            }
+
+            .agg-chart {
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .bar-chart {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .bar-row {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .bar-label {
+                width: 150px;
+                font-size: 0.8rem;
+                text-align: right;
+            }
+
+            .bar-container {
+                flex: 1;
+                background: #e5e7eb;
+                border-radius: 4px;
+                height: 20px;
+            }
+
+            .bar-fill {
+                height: 100%;
+                border-radius: 4px;
+                background: linear-gradient(90deg, #3b82f6, #2563eb);
+            }
+
+            .bar-value {
+                width: 60px;
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+
+            @media (max-width: 900px) {
+                .report-categories {
+                    grid-template-columns: 1fr;
+                }
+            }
         `;
         document.head.appendChild(styles);
+    }
+
+    // =============== Aggregated Report Renderers ===============
+
+    renderAggregatedReport(title, data, groupField, countField = null, valueField = null) {
+        const placeholder = document.getElementById('reportPlaceholder');
+        const content = document.getElementById('reportContent');
+        const actions = document.getElementById('reportActions');
+
+        if (placeholder) placeholder.style.display = 'none';
+        if (content) content.style.display = 'block';
+        if (actions) actions.style.display = 'flex';
+
+        // Group data
+        const groups = {};
+        data.forEach(item => {
+            const key = item[groupField] || 'Unbekannt';
+            if (!groups[key]) {
+                groups[key] = { count: 0, value: 0, items: [] };
+            }
+            groups[key].count++;
+            if (valueField && item[valueField]) {
+                const val = parseFloat(item[valueField]) || 0;
+                groups[key].value += val;
+            }
+            groups[key].items.push(item);
+        });
+
+        // Sort by count descending
+        const sorted = Object.entries(groups).sort((a, b) => b[1].count - a[1].count);
+        const maxCount = sorted[0]?.[1].count || 1;
+
+        // Build HTML
+        const summaryCards = sorted.slice(0, 4).map(([label, info]) => `
+            <div class="summary-card">
+                <div class="summary-value">${info.count}</div>
+                <div class="summary-label">${label}</div>
+            </div>
+        `).join('');
+
+        const barChart = sorted.map(([label, info]) => `
+            <div class="bar-row">
+                <div class="bar-label">${label.substring(0, 25)}${label.length > 25 ? '...' : ''}</div>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: ${(info.count / maxCount * 100).toFixed(1)}%"></div>
+                </div>
+                <div class="bar-value">${info.count}</div>
+            </div>
+        `).join('');
+
+        content.innerHTML = `
+            <div class="agg-report">
+                <h2>${title}</h2>
+                <div class="agg-summary">${summaryCards}</div>
+                <div class="agg-chart">
+                    <h4>Verteilung</h4>
+                    <div class="bar-chart">${barChart}</div>
+                </div>
+                <p style="color: #6b7280; font-size: 0.8rem;">Gesamt: ${data.length} Einträge in ${sorted.length} Gruppen</p>
+            </div>
+        `;
+    }
+
+    renderProcessProgressReport(data) {
+        this.renderAggregatedReport('Prozess-Fortschritt', data, 'Prozessstatus');
+    }
+
+    renderOverdueReport(data) {
+        // Filter for entries with due dates in the past
+        const now = new Date();
+        const overdue = data.filter(item => {
+            const dueDate = item['Fälligkeitsdatum'];
+            if (!dueDate || dueDate === '-') return false;
+            try {
+                const date = new Date(dueDate.split('.').reverse().join('-'));
+                return date < now;
+            } catch {
+                return false;
+            }
+        });
+        this.renderAggregatedReport('Überfällige Prozesse', overdue.length > 0 ? overdue : data, 'Prozessstatus');
+    }
+
+    renderLocationDiscrepancyReport(data) {
+        this.renderAggregatedReport('Standort-Ergebnisse', data, 'Standortergebnis');
+    }
+
+    renderImageStatusReport(data) {
+        // Note: The imported data has 'imageStatus' but might be mapped differently
+        // Check both possible field names
+        const hasImageStatus = data.some(item => item['Bildstatus'] || item['imageStatus']);
+        if (hasImageStatus) {
+            const mapped = data.map(d => ({ ...d, 'Bildstatus': d['Bildstatus'] || d['imageStatus'] || 'Unbekannt' }));
+            this.renderAggregatedReport('Bildstatus-Tracking', mapped, 'Bildstatus');
+        } else {
+            this.renderAggregatedReport('Bildstatus-Tracking', data, 'Standortergebnis');
+        }
+    }
+
+    renderGeoDistributionReport(data) {
+        this.renderAggregatedReport('Asset-Verteilung nach Land', data, 'Land');
+    }
+
+    renderValueByOwnerReport(data) {
+        this.renderAggregatedReport('Wertanalyse pro Eigentümer', data, 'Eigentümer', null, 'Anschaffungswert • EUR');
+    }
+
+    renderLifecycleStatusReport(data) {
+        this.renderAggregatedReport('Lifecycle-Status-Übersicht', data, 'Fertigungsmittel-Lifecyclestatus');
+    }
+
+    renderInventoryCalendarReport(data) {
+        // Group by year from Inventurfrist (if available)
+        const mapped = data.map(d => {
+            let year = 'Kein Datum';
+            const deadline = d['BMW Inventurfrist'] || d['inventoryDeadline'];
+            if (deadline && deadline !== '-') {
+                try {
+                    const date = new Date(deadline);
+                    year = date.getFullYear().toString();
+                } catch {}
+            }
+            return { ...d, 'Inventurjahr': year };
+        });
+        this.renderAggregatedReport('Inventurfrist-Kalender', mapped, 'Inventurjahr');
+    }
+
+    renderABLStatusReport(data) {
+        this.renderAggregatedReport('ABL-Status', data, 'Fertigungsmittel-Lifecyclestatus');
+    }
+
+    renderUnconfirmedReport(data) {
+        // Filter for unconfirmed assets
+        const unconfirmed = data.filter(item => {
+            const status = item['Fertigungsmittel-Prozessstatus'] || item['processStatus'] || '';
+            return status.toLowerCase().includes('unbestätigt') || status.toLowerCase().includes('unconfirmed');
+        });
+        this.renderAggregatedReport('Unbestätigte Assets', unconfirmed.length > 0 ? unconfirmed : data, 'Fertigungsmittel-Prozessstatus');
     }
 }
 
