@@ -3544,7 +3544,7 @@ table td input[type="text"] {
     cursor: pointer;
     transition: all var(--transition-normal);
     box-shadow: 0 4px 12px rgba(44, 74, 140, 0.25);
-    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .agent-btn-integrated:hover {
@@ -3603,20 +3603,22 @@ table td input[type="text"] {
     align-items: center;
     gap: 0.4rem;
     padding: 0.5rem 1rem;
-    border: 1px solid var(--border);
+    border: none;
     border-radius: 8px;
-    background: white;
-    color: var(--text-primary);
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast);
 }
 
-.action-btn:hover {
-    background: #f8fafc;
-    border-color: var(--primary);
-    color: var(--primary);
+.action-btn.filter {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.action-btn.filter:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
 
 .action-btn.filter span {
