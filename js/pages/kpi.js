@@ -19,8 +19,16 @@ class KPIPage {
             headerStats.style.display = 'none';
         }
 
+        const isLiveMode = apiService.mode === 'live';
+
         app.innerHTML = `
             <div class="container">
+                <!-- API Mode Indicator -->
+                <div class="kpi-api-indicator ${isLiveMode ? 'live' : 'mock'}">
+                    <span class="indicator-dot"></span>
+                    <span>${isLiveMode ? 'Live-Daten aus API' : 'Demo-Modus (Mock-Daten)'}</span>
+                </div>
+
                 <!-- Header mit Titel und Zeitraum-Auswahl -->
                 <div class="kpi-header">
                     <div class="kpi-title-section">
@@ -432,6 +440,41 @@ class KPIPage {
         const styles = document.createElement('style');
         styles.id = 'kpi-page-styles';
         styles.textContent = `
+            /* API Mode Indicator */
+            .kpi-api-indicator {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.5rem 1rem;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                font-weight: 500;
+                margin-bottom: 1rem;
+            }
+
+            .kpi-api-indicator.live {
+                background: #dcfce7;
+                color: #166534;
+            }
+
+            .kpi-api-indicator.mock {
+                background: #fef3c7;
+                color: #92400e;
+            }
+
+            .kpi-api-indicator .indicator-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: currentColor;
+                animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+
             /* KPI Header */
             .kpi-header {
                 display: flex;
@@ -884,6 +927,54 @@ class KPIPage {
                 color: #92400e;
             }
 
+            /* Not Available Badges */
+            .kpi-na {
+                font-size: 1.25rem;
+                color: #9ca3af;
+                font-weight: 500;
+            }
+
+            .kpi-na-badge {
+                display: inline-block;
+                padding: 0.25rem 0.5rem;
+                background: #f3f4f6;
+                border: 1px dashed #d1d5db;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                color: #6b7280;
+                font-weight: 500;
+            }
+
+            .kpi-na-small {
+                color: #9ca3af;
+                font-size: 0.85rem;
+                font-style: italic;
+            }
+
+            /* Loading indicator */
+            .kpi-loading {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 3rem;
+                color: #6b7280;
+            }
+
+            .kpi-loading::before {
+                content: '';
+                width: 24px;
+                height: 24px;
+                border: 3px solid #e5e7eb;
+                border-top-color: #f97316;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-right: 0.75rem;
+            }
+
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+
             /* Responsive */
             @media (max-width: 768px) {
                 .kpi-header {
@@ -920,9 +1011,355 @@ class KPIPage {
     }
 
     async loadData() {
-        // Mock data for now - will be replaced with API calls later
-        this.kpiData = this.getMockKPIData();
+        // Check API mode
+        const isLiveMode = apiService.mode === 'live';
+
+        if (isLiveMode) {
+            // Load real data from APIs
+            this.kpiData = await this.loadLiveKPIData();
+        } else {
+            // Use mock data
+            this.kpiData = this.getMockKPIData();
+        }
+
         this.updateDisplay();
+    }
+
+    async loadLiveKPIData() {
+        const data = {
+            inventurQuote: 0,
+            bearbeitungszeit: null, // Nicht aus API berechenbar
+            ueberfaellig: 0,
+            werkzeuge: 0,
+            nichtGefunden: 0,
+            standortAbweichung: 0,
+            prozesse: {
+                inventur: { gesamt: 0, abgeschlossen: 0, offen: 0 },
+                verlagerung: { gesamt: 0, abgeschlossen: 0, offen: 0 },
+                vpw: { gesamt: 0, abgeschlossen: 0, offen: 0 },
+                abl: { gesamt: 0, abgeschlossen: 0, offen: 0 },
+                verschrottung: { gesamt: 0, abgeschlossen: 0, offen: 0 }
+            },
+            standorte: []
+        };
+
+        try {
+            // Parallel API calls for better performance
+            const [
+                inventurResult,
+                verlagerungResult,
+                vpwResult,
+                ablResult,
+                verschrottungResult
+            ] = await Promise.allSettled([
+                this.loadInventurKPIs(),
+                this.loadVerlagerungKPIs(),
+                this.loadVPWKPIs(),
+                this.loadABLKPIs(),
+                this.loadVerschrottungKPIs()
+            ]);
+
+            // Inventur KPIs
+            if (inventurResult.status === 'fulfilled' && inventurResult.value) {
+                const inv = inventurResult.value;
+                data.prozesse.inventur = inv.prozess;
+                data.inventurQuote = inv.quote;
+                data.ueberfaellig = inv.ueberfaellig;
+                data.werkzeuge = inv.werkzeuge;
+                data.nichtGefunden = inv.nichtGefunden;
+                data.standortAbweichung = inv.standortAbweichung;
+                data.standorte = inv.standorte || [];
+            }
+
+            // Verlagerung KPIs
+            if (verlagerungResult.status === 'fulfilled' && verlagerungResult.value) {
+                data.prozesse.verlagerung = verlagerungResult.value;
+            }
+
+            // VPW KPIs
+            if (vpwResult.status === 'fulfilled' && vpwResult.value) {
+                data.prozesse.vpw = vpwResult.value;
+            }
+
+            // ABL KPIs
+            if (ablResult.status === 'fulfilled' && ablResult.value) {
+                data.prozesse.abl = ablResult.value;
+            }
+
+            // Verschrottung KPIs
+            if (verschrottungResult.status === 'fulfilled' && verschrottungResult.value) {
+                data.prozesse.verschrottung = verschrottungResult.value;
+            }
+
+        } catch (error) {
+            console.error('Error loading KPI data:', error);
+        }
+
+        return data;
+    }
+
+    async loadInventurKPIs() {
+        try {
+            // First, load all inventories
+            const inventories = await apiService.getInventoryList({ limit: 10000 });
+
+            if (!inventories || !inventories.length) {
+                return null;
+            }
+
+            // Collect all positions from all inventories
+            let allPositions = [];
+            const inventoryKeys = inventories.map(inv => inv.key || inv.inventoryKey).filter(k => k);
+
+            // Load positions from up to 10 most recent inventories to avoid too many API calls
+            const keysToLoad = inventoryKeys.slice(0, 10);
+
+            for (const invKey of keysToLoad) {
+                try {
+                    const result = await apiService.getInventoryPositions(invKey, { limit: 10000 });
+                    if (result && result.data) {
+                        allPositions = allPositions.concat(result.data);
+                    }
+                } catch (e) {
+                    console.warn('Could not load positions for inventory', invKey);
+                }
+            }
+
+            // If no positions loaded, fallback to inventory-level stats
+            if (allPositions.length === 0) {
+                // Calculate from inventory level
+                let invAbgeschlossen = 0;
+                let invOffen = 0;
+
+                inventories.forEach(inv => {
+                    const status = inv.status || inv.inventoryStatus;
+                    if (['I3', 'I4'].includes(status)) {
+                        invAbgeschlossen++;
+                    } else {
+                        invOffen++;
+                    }
+                });
+
+                const quote = inventories.length > 0 ? Math.round((invAbgeschlossen / inventories.length) * 100) : 0;
+
+                return {
+                    prozess: {
+                        gesamt: inventories.length,
+                        abgeschlossen: invAbgeschlossen,
+                        offen: invOffen
+                    },
+                    quote,
+                    ueberfaellig: 0,
+                    werkzeuge: inventories.length,
+                    nichtGefunden: 0,
+                    standortAbweichung: 0,
+                    standorte: []
+                };
+            }
+
+            const total = allPositions.length;
+            let confirmed = 0;
+            let pending = 0;
+            let overdue = 0;
+            let nichtGefunden = 0;
+            let standortAbweichung = 0;
+            const now = new Date();
+            const standortMap = {};
+
+            allPositions.forEach(pos => {
+                const status = pos.status || pos.positionStatus;
+
+                // P2-P5 = bearbeitet/bestätigt, P0-P1 = offen
+                if (['P2', 'P3', 'P4', 'P5'].includes(status)) {
+                    confirmed++;
+                } else if (['P0', 'P1'].includes(status)) {
+                    pending++;
+                }
+
+                // P6 = nicht gefunden
+                if (status === 'P6') {
+                    nichtGefunden++;
+                }
+
+                // P4, P5 = anderer Standort
+                if (['P4', 'P5'].includes(status)) {
+                    standortAbweichung++;
+                }
+
+                // Check overdue
+                const dueDate = pos.dueDate ? new Date(pos.dueDate) : null;
+                if (dueDate && dueDate < now && ['P0', 'P1'].includes(status)) {
+                    overdue++;
+                }
+
+                // Collect location stats
+                const location = pos.location || pos.locationTitle || 'Unbekannt';
+                if (location && location !== 'Unbekannt') {
+                    if (!standortMap[location]) {
+                        standortMap[location] = { total: 0, confirmed: 0 };
+                    }
+                    standortMap[location].total++;
+                    if (['P2', 'P3', 'P4', 'P5'].includes(status)) {
+                        standortMap[location].confirmed++;
+                    }
+                }
+            });
+
+            // Convert standortMap to sorted array
+            const standorte = Object.entries(standortMap)
+                .map(([name, stats]) => ({
+                    name,
+                    werkzeuge: stats.total,
+                    quote: stats.total > 0 ? Math.round((stats.confirmed / stats.total) * 100) : 0
+                }))
+                .sort((a, b) => b.quote - a.quote)
+                .slice(0, 5);
+
+            const quote = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+
+            return {
+                prozess: {
+                    gesamt: total,
+                    abgeschlossen: confirmed,
+                    offen: pending
+                },
+                quote,
+                ueberfaellig: overdue,
+                werkzeuge: total,
+                nichtGefunden: total > 0 ? Math.round((nichtGefunden / total) * 100 * 10) / 10 : 0,
+                standortAbweichung: total > 0 ? Math.round((standortAbweichung / total) * 100 * 10) / 10 : 0,
+                standorte
+            };
+        } catch (error) {
+            console.error('Error loading Inventur KPIs:', error);
+            return null;
+        }
+    }
+
+    async loadVerlagerungKPIs() {
+        try {
+            const data = await apiService.getVerlagerungList({ limit: 10000 });
+
+            if (!data || !data.length) {
+                return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+            }
+
+            let abgeschlossen = 0;
+            let offen = 0;
+
+            data.forEach(item => {
+                const status = item.status || item.processStatus;
+                // Typical completed statuses
+                if (['COMPLETED', 'DONE', 'CLOSED', 'R4', 'R5'].includes(status)) {
+                    abgeschlossen++;
+                } else {
+                    offen++;
+                }
+            });
+
+            return {
+                gesamt: data.length,
+                abgeschlossen,
+                offen
+            };
+        } catch (error) {
+            console.error('Error loading Verlagerung KPIs:', error);
+            return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+        }
+    }
+
+    async loadVPWKPIs() {
+        try {
+            const data = await apiService.getPartnerwechselList({ limit: 10000 });
+
+            if (!data || !data.length) {
+                return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+            }
+
+            let abgeschlossen = 0;
+            let offen = 0;
+
+            data.forEach(item => {
+                const status = item.status || item.processStatus;
+                if (['COMPLETED', 'DONE', 'CLOSED'].includes(status)) {
+                    abgeschlossen++;
+                } else {
+                    offen++;
+                }
+            });
+
+            return {
+                gesamt: data.length,
+                abgeschlossen,
+                offen
+            };
+        } catch (error) {
+            console.error('Error loading VPW KPIs:', error);
+            return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+        }
+    }
+
+    async loadABLKPIs() {
+        try {
+            const data = await apiService.getABLList({ limit: 10000 });
+
+            if (!data || !data.length) {
+                return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+            }
+
+            let abgeschlossen = 0;
+            let offen = 0;
+
+            data.forEach(item => {
+                const status = item.status || item.inventoryStatus;
+                // I3, I4 = completed
+                if (['I3', 'I4', 'COMPLETED', 'DONE'].includes(status)) {
+                    abgeschlossen++;
+                } else {
+                    offen++;
+                }
+            });
+
+            return {
+                gesamt: data.length,
+                abgeschlossen,
+                offen
+            };
+        } catch (error) {
+            console.error('Error loading ABL KPIs:', error);
+            return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+        }
+    }
+
+    async loadVerschrottungKPIs() {
+        try {
+            const data = await apiService.getVerschrottungList({ limit: 10000 });
+
+            if (!data || !data.length) {
+                return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+            }
+
+            let abgeschlossen = 0;
+            let offen = 0;
+
+            data.forEach(item => {
+                const status = item.status || item.processStatus;
+                if (['COMPLETED', 'DONE', 'CLOSED', 'S4', 'S5'].includes(status)) {
+                    abgeschlossen++;
+                } else {
+                    offen++;
+                }
+            });
+
+            return {
+                gesamt: data.length,
+                abgeschlossen,
+                offen
+            };
+        } catch (error) {
+            console.error('Error loading Verschrottung KPIs:', error);
+            return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+        }
     }
 
     getMockKPIData() {
@@ -938,19 +1375,42 @@ class KPIPage {
             bearbeitungszeit: 4.2,
             ueberfaellig: 12 * (this.selectedPeriod === 'month' ? 1 : this.selectedPeriod === 'quarter' ? 2 : 5),
             werkzeuge: 1248,
+            nichtGefunden: 2.8,
+            standortAbweichung: 8.5,
             prozesse: {
                 inventur: { gesamt: 156 * mult, abgeschlossen: 136 * mult, offen: 20 * mult },
                 verlagerung: { gesamt: 45 * mult, abgeschlossen: 38 * mult, offen: 7 * mult },
                 vpw: { gesamt: 12 * mult, abgeschlossen: 9 * mult, offen: 3 * mult },
                 abl: { gesamt: 28 * mult, abgeschlossen: 22 * mult, offen: 6 * mult },
                 verschrottung: { gesamt: 8 * mult, abgeschlossen: 6 * mult, offen: 2 * mult }
-            }
+            },
+            standorte: [
+                { name: 'Bischofswiesen, DE', werkzeuge: 245, quote: 98 },
+                { name: 'Neustadt a. Rbge., DE', werkzeuge: 189, quote: 95 },
+                { name: 'Hunedoara, RO', werkzeuge: 312, quote: 92 },
+                { name: 'Timisoara, RO', werkzeuge: 178, quote: 85 },
+                { name: 'Satu Mare, RO', werkzeuge: 156, quote: 72 }
+            ]
         };
     }
 
     updateDisplay() {
-        // Update main KPIs based on selected period
         const data = this.kpiData;
+        const isLiveMode = apiService.mode === 'live';
+
+        // Update main KPIs
+        document.getElementById('kpiInventurQuote').textContent = data.inventurQuote + '%';
+
+        // Bearbeitungszeit - nur im Mock-Modus verfuegbar
+        const bearbeitungEl = document.getElementById('kpiBearbeitungszeit');
+        if (data.bearbeitungszeit !== null) {
+            bearbeitungEl.innerHTML = data.bearbeitungszeit + ' <span class="kpi-unit">Tage</span>';
+        } else {
+            bearbeitungEl.innerHTML = '<span class="kpi-na">n/a</span>';
+        }
+
+        document.getElementById('kpiUeberfaellig').textContent = data.ueberfaellig;
+        document.getElementById('kpiWerkzeuge').textContent = data.werkzeuge.toLocaleString('de-DE');
 
         // Update process counts
         const proz = data.prozesse;
@@ -959,39 +1419,168 @@ class KPIPage {
         document.getElementById('invGesamt').textContent = proz.inventur.gesamt;
         document.getElementById('invAbgeschlossen').textContent = proz.inventur.abgeschlossen;
         document.getElementById('invOffen').textContent = proz.inventur.offen;
-        const invPercent = Math.round((proz.inventur.abgeschlossen / proz.inventur.gesamt) * 100);
+        const invPercent = proz.inventur.gesamt > 0 ? Math.round((proz.inventur.abgeschlossen / proz.inventur.gesamt) * 100) : 0;
         document.getElementById('invProgress').style.width = invPercent + '%';
+        document.querySelector('#invProgress').parentElement.nextElementSibling.textContent = invPercent + '% abgeschlossen';
 
         // Verlagerung
         document.getElementById('verlGesamt').textContent = proz.verlagerung.gesamt;
         document.getElementById('verlAbgeschlossen').textContent = proz.verlagerung.abgeschlossen;
         document.getElementById('verlOffen').textContent = proz.verlagerung.offen;
-        const verlPercent = Math.round((proz.verlagerung.abgeschlossen / proz.verlagerung.gesamt) * 100);
+        const verlPercent = proz.verlagerung.gesamt > 0 ? Math.round((proz.verlagerung.abgeschlossen / proz.verlagerung.gesamt) * 100) : 0;
         document.getElementById('verlProgress').style.width = verlPercent + '%';
+        document.querySelector('#verlProgress').parentElement.nextElementSibling.textContent = verlPercent + '% abgeschlossen';
 
         // VPW
         document.getElementById('vpwGesamt').textContent = proz.vpw.gesamt;
         document.getElementById('vpwAbgeschlossen').textContent = proz.vpw.abgeschlossen;
         document.getElementById('vpwOffen').textContent = proz.vpw.offen;
-        const vpwPercent = Math.round((proz.vpw.abgeschlossen / proz.vpw.gesamt) * 100);
+        const vpwPercent = proz.vpw.gesamt > 0 ? Math.round((proz.vpw.abgeschlossen / proz.vpw.gesamt) * 100) : 0;
         document.getElementById('vpwProgress').style.width = vpwPercent + '%';
+        document.querySelector('#vpwProgress').parentElement.nextElementSibling.textContent = vpwPercent + '% abgeschlossen';
 
         // ABL
         document.getElementById('ablGesamt').textContent = proz.abl.gesamt;
         document.getElementById('ablAbgeschlossen').textContent = proz.abl.abgeschlossen;
         document.getElementById('ablOffen').textContent = proz.abl.offen;
-        const ablPercent = Math.round((proz.abl.abgeschlossen / proz.abl.gesamt) * 100);
+        const ablPercent = proz.abl.gesamt > 0 ? Math.round((proz.abl.abgeschlossen / proz.abl.gesamt) * 100) : 0;
         document.getElementById('ablProgress').style.width = ablPercent + '%';
+        document.querySelector('#ablProgress').parentElement.nextElementSibling.textContent = ablPercent + '% abgeschlossen';
 
         // Verschrottung
         document.getElementById('scrapGesamt').textContent = proz.verschrottung.gesamt;
         document.getElementById('scrapAbgeschlossen').textContent = proz.verschrottung.abgeschlossen;
         document.getElementById('scrapOffen').textContent = proz.verschrottung.offen;
-        const scrapPercent = Math.round((proz.verschrottung.abgeschlossen / proz.verschrottung.gesamt) * 100);
+        const scrapPercent = proz.verschrottung.gesamt > 0 ? Math.round((proz.verschrottung.abgeschlossen / proz.verschrottung.gesamt) * 100) : 0;
         document.getElementById('scrapProgress').style.width = scrapPercent + '%';
+        document.querySelector('#scrapProgress').parentElement.nextElementSibling.textContent = scrapPercent + '% abgeschlossen';
 
-        // Update Ueberfaellige
-        document.getElementById('kpiUeberfaellig').textContent = data.ueberfaellig;
+        // Update Quality KPIs
+        this.updateQualityKPIs(data, isLiveMode);
+
+        // Update Standort-Ranking
+        this.updateStandortRanking(data.standorte, isLiveMode);
+    }
+
+    updateQualityKPIs(data, isLiveMode) {
+        const qualityContainer = document.querySelector('.kpi-detail-card:first-child .detail-kpi-list');
+        if (!qualityContainer) return;
+
+        // Ersterfassungsquote - berechenbar aus Inventur (P2 beim ersten Versuch)
+        // Vereinfacht: 100% - nichtGefunden% - standortAbweichung%
+        const ersterfassung = isLiveMode
+            ? Math.max(0, 100 - (data.nichtGefunden || 0) - (data.standortAbweichung || 0))
+            : 94.2;
+
+        qualityContainer.innerHTML = `
+            <div class="detail-kpi-item">
+                <div class="detail-kpi-info">
+                    <span class="detail-kpi-name">Ersterfassungsquote</span>
+                    <span class="detail-kpi-desc">Werkzeuge beim ersten Versuch gefunden</span>
+                </div>
+                <div class="detail-kpi-value ${ersterfassung >= 90 ? 'success' : ersterfassung >= 70 ? '' : 'warning'}">${ersterfassung.toFixed(1)}%</div>
+            </div>
+            <div class="detail-kpi-item">
+                <div class="detail-kpi-info">
+                    <span class="detail-kpi-name">Fehlende Werkzeuge</span>
+                    <span class="detail-kpi-desc">Als nicht auffindbar gemeldet (P6)</span>
+                </div>
+                <div class="detail-kpi-value ${(data.nichtGefunden || 0) <= 3 ? '' : 'warning'}">${(data.nichtGefunden || 2.8).toFixed(1)}%</div>
+            </div>
+            <div class="detail-kpi-item">
+                <div class="detail-kpi-info">
+                    <span class="detail-kpi-name">Standort-Abweichungen</span>
+                    <span class="detail-kpi-desc">Werkzeuge an anderem Ort gefunden (P4/P5)</span>
+                </div>
+                <div class="detail-kpi-value">${(data.standortAbweichung || 8.5).toFixed(1)}%</div>
+            </div>
+            <div class="detail-kpi-item">
+                <div class="detail-kpi-info">
+                    <span class="detail-kpi-name">Dokumentationsquote</span>
+                    <span class="detail-kpi-desc">Mit Foto dokumentiert</span>
+                </div>
+                <div class="detail-kpi-value ${isLiveMode ? '' : 'success'}">
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '89.3%'}
+                </div>
+            </div>
+        `;
+
+        // Update Performance KPIs
+        const perfContainer = document.querySelector('.kpi-detail-card:last-child .detail-kpi-list');
+        if (!perfContainer) return;
+
+        perfContainer.innerHTML = `
+            <div class="detail-kpi-item">
+                <div class="detail-kpi-info">
+                    <span class="detail-kpi-name">Durchlaufzeit Inventur</span>
+                    <span class="detail-kpi-desc">Von Zuweisung bis Abschluss</span>
+                </div>
+                <div class="detail-kpi-value">
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '4.2 Tage'}
+                </div>
+            </div>
+            <div class="detail-kpi-item">
+                <div class="detail-kpi-info">
+                    <span class="detail-kpi-name">Durchlaufzeit Verlagerung</span>
+                    <span class="detail-kpi-desc">Von Antrag bis Bestaetigung</span>
+                </div>
+                <div class="detail-kpi-value">
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '6.8 Tage'}
+                </div>
+            </div>
+            <div class="detail-kpi-item">
+                <div class="detail-kpi-info">
+                    <span class="detail-kpi-name">Reaktionszeit</span>
+                    <span class="detail-kpi-desc">Durchschnittliche Zeit bis erste Bearbeitung</span>
+                </div>
+                <div class="detail-kpi-value">
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '<span class="success">1.2 Tage</span>'}
+                </div>
+            </div>
+            <div class="detail-kpi-item">
+                <div class="detail-kpi-info">
+                    <span class="detail-kpi-name">SLA-Einhaltung</span>
+                    <span class="detail-kpi-desc">Innerhalb Faelligkeit abgeschlossen</span>
+                </div>
+                <div class="detail-kpi-value">
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '<span class="success">91.4%</span>'}
+                </div>
+            </div>
+        `;
+    }
+
+    updateStandortRanking(standorte, isLiveMode) {
+        const tbody = document.querySelector('.ranking-table tbody');
+        if (!tbody) return;
+
+        if (!standorte || standorte.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #6b7280; padding: 2rem;">
+                        ${isLiveMode ? 'Keine Standortdaten verfuegbar' : 'Laden...'}
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = standorte.map((s, i) => {
+            const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            const quoteClass = s.quote >= 90 ? 'success' : s.quote >= 70 ? '' : 'warning';
+            const statusLabel = s.quote >= 95 ? 'Exzellent' : s.quote >= 90 ? 'Sehr gut' : s.quote >= 80 ? 'Gut' : s.quote >= 70 ? 'Befriedigend' : 'Verbesserung noetig';
+            const statusClass = s.quote >= 90 ? 'status-success' : s.quote >= 70 ? 'status-info' : 'status-warning';
+
+            return `
+                <tr>
+                    <td><span class="rank ${rankClass}">${i + 1}</span></td>
+                    <td>${s.name}</td>
+                    <td>${s.werkzeuge}</td>
+                    <td><span class="value ${quoteClass}">${s.quote}%</span></td>
+                    <td>${isLiveMode ? '<span class="kpi-na-small">n/a</span>' : (2 + i * 1.2).toFixed(1) + ' Tage'}</td>
+                    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                </tr>
+            `;
+        }).join('');
     }
 
     exportReport() {
