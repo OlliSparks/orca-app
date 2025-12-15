@@ -120,6 +120,11 @@ class OrcaApp {
         router.addRoute('/agent-inventur', () => {
             agentInventurPage.render();
         });
+
+        // ABL-Agent
+        router.addRoute('/agent-abl', () => {
+            agentABLPage.render();
+        });
     }
 
     async checkAPIStatus() {

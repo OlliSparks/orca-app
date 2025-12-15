@@ -12,6 +12,15 @@ class AgentenPage {
                 route: '/agent-inventur'
             },
             {
+                id: 'abl',
+                name: 'ABL-Agent',
+                icon: '📦',
+                description: 'Erstellen Sie Abnahmebereitschaftserklärungen Schritt für Schritt. Der Agent führt Sie durch den Prozess und erstellt die ABL automatisch.',
+                features: ['Foto-Upload', 'Standort-Erkennung', 'Schritt-für-Schritt Dialog', 'Automatische ABL-Erstellung'],
+                status: 'active',
+                route: '/agent-abl'
+            },
+            {
                 id: 'coming-soon-1',
                 name: 'Verlagerungs-Agent',
                 icon: '🚚',
