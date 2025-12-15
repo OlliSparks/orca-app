@@ -21,6 +21,33 @@ class AgentenPage {
                 route: '/agent-abl'
             },
             {
+                id: 'reporting',
+                name: 'Reporting-Agent',
+                icon: '📊',
+                description: 'Laden Sie Reports aus dem ORCA-System und exportieren Sie diese in verschiedenen Formaten (PDF, Excel, CSV).',
+                features: ['Fertigungsmittel-Report', 'Inventur-Reports', 'PDF/Excel Export', 'Custom-Auswertungen'],
+                status: 'active',
+                route: '/agent-reporting'
+            },
+            {
+                id: 'verlagerung',
+                name: 'Verlagerungs-Agent',
+                icon: '🚚',
+                description: 'Erfassen Sie Werkzeug-Verlagerungen schnell und einfach. Der Agent führt Sie durch den Prozess und dokumentiert alles automatisch.',
+                features: ['Standort-Erfassung', 'Foto-Dokumentation', 'Schritt-für-Schritt Dialog', 'Automatische Meldung'],
+                status: 'coming-soon',
+                route: '/agent-verlagerung'
+            },
+            {
+                id: 'vpw',
+                name: 'VPW-Agent',
+                icon: '🔄',
+                description: 'Führen Sie Vertragspartnerwechsel durch. Der Agent unterstützt Sie bei der Dokumentation und Übergabe.',
+                features: ['Partnerwahl', 'Übergabe-Protokoll', 'Foto-Dokumentation', 'Workflow-Integration'],
+                status: 'coming-soon',
+                route: '/agent-vpw'
+            },
+            {
                 id: 'verschrottung',
                 name: 'Verschrottungs-Agent',
                 icon: '♻️',
@@ -37,15 +64,6 @@ class AgentenPage {
                 features: ['Terminvorschläge', 'Kapazitätsplanung', 'Automatische Zuweisung'],
                 status: 'coming-soon',
                 route: '/agent-inventurplanung'
-            },
-            {
-                id: 'reporting',
-                name: 'Reporting-Agent',
-                icon: '📊',
-                description: 'Laden Sie Reports aus dem ORCA-System und exportieren Sie diese in verschiedenen Formaten (PDF, Excel, CSV).',
-                features: ['Inventur-Reports', 'Verschrottungs-Reports', 'PDF/Excel Export', 'Custom-Auswertungen'],
-                status: 'active',
-                route: '/agent-reporting'
             }
         ];
     }
