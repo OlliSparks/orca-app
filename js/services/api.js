@@ -62,25 +62,36 @@ class APIService {
 
     // Lade importierte Mock-Daten aus JSON-Datei
     async loadImportedMockData() {
-        try {
-            const response = await fetch('js/data/mock-assets.json');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.assets && data.assets.length > 0) {
-                    this.mockToolsCache = this.transformImportedAssets(data.assets);
-                    this.mockDataInfo = data._mockDataInfo;
-                    console.log(`✅ Mock-Daten geladen: ${this.mockToolsCache.length} Assets aus ${data._mockDataInfo.source}`);
+        // Versuche verschiedene Pfade (für lokale Entwicklung und GitHub Pages)
+        const paths = [
+            'js/data/mock-assets.json',
+            './js/data/mock-assets.json',
+            '/js/data/mock-assets.json'
+        ];
 
-                    // Aktualisiere API-Status im Footer falls bereits gerendert
-                    if (typeof orcaApp !== 'undefined' && orcaApp.checkAPIStatus) {
-                        orcaApp.checkAPIStatus();
+        for (const path of paths) {
+            try {
+                console.log(`📂 Versuche Mock-Daten zu laden von: ${path}`);
+                const response = await fetch(path);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.assets && data.assets.length > 0) {
+                        this.mockToolsCache = this.transformImportedAssets(data.assets);
+                        this.mockDataInfo = data._mockDataInfo;
+                        console.log(`✅ Mock-Daten geladen: ${this.mockToolsCache.length} Assets aus ${data._mockDataInfo.source}`);
+
+                        // Aktualisiere API-Status im Footer falls bereits gerendert
+                        if (typeof orcaApp !== 'undefined' && orcaApp.checkAPIStatus) {
+                            orcaApp.checkAPIStatus();
+                        }
+                        return;
                     }
-                    return;
                 }
+            } catch (e) {
+                console.warn(`⚠️ Pfad ${path} nicht erreichbar:`, e.message);
             }
-        } catch (e) {
-            console.warn('Importierte Mock-Daten nicht verfügbar, nutze generierte Daten');
         }
+        console.warn('📦 Importierte Mock-Daten nicht verfügbar, nutze generierte Testdaten');
     }
 
     // Transformiere importierte Asset-Daten in internes Format
@@ -3239,6 +3250,7 @@ class APIService {
      */
     async getAssetsGridReport(supplierId) {
         if (this.mode === 'mock') {
+            console.log('🔶 Mock-Modus: Verwende lokale Mock-Daten');
             return this.getMockAssetsGridData();
         }
 
@@ -3250,7 +3262,9 @@ class APIService {
             return data;
         } catch (error) {
             console.error('Error fetching assets grid report:', error);
-            throw error;
+            // Fallback auf Mock-Daten bei API-Fehler (z.B. CORS, Netzwerk)
+            console.warn('⚠️ API-Fehler - Fallback auf Mock-Daten');
+            return this.getMockAssetsGridData();
         }
     }
 
