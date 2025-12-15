@@ -248,18 +248,18 @@ class AgentReportingPage {
         this.showLoading(true);
 
         try {
-            // Get supplier ID from config
+            // Get supplier number from config
             const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
-            const supplierId = config.supplierId || config.companyKey;
+            const supplierNumber = config.supplierNumber || config.supplierId || config.companyKey;
 
-            if (!supplierId) {
-                this.showError('Bitte konfigurieren Sie eine Supplier-ID in den Einstellungen.');
+            if (!supplierNumber) {
+                this.showError('Bitte konfigurieren Sie eine Lieferantennummer in den Einstellungen.');
                 this.showLoading(false);
                 return;
             }
 
-            console.log('Loading assets grid for supplier:', supplierId);
-            const data = await api.getAssetsGridReport(supplierId);
+            console.log('Loading assets grid for supplier:', supplierNumber);
+            const data = await api.getAssetsGridReport(supplierNumber);
 
             this.reportData = data;
             this.renderAssetsGrid(data);
