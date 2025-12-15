@@ -3145,7 +3145,8 @@ class APIService {
 
     /**
      * Assets Grid Report abrufen (Fertigungsmittel-Tabelle)
-     * GET /report/grids/assets/restriction-based?fn=supplier&fv={supplierId}
+     * GET /orca-service/report/grids/assets/restriction-based?fn=supplier&fv={supplierId}
+     * Hinweis: Dieser Endpoint liegt unter /orca-service, nicht unter /api/orca
      * @param {string} supplierId - Supplier-ID für Filter
      * @returns {Promise<Object>} Grid-Daten mit assets
      */
@@ -3155,7 +3156,9 @@ class APIService {
         }
 
         try {
-            const endpoint = `/report/grids/assets/restriction-based?fn=supplier&fv=${supplierId}`;
+            // Dieser Endpoint liegt unter /orca-service, nicht unter der normalen baseURL
+            const baseHost = 'https://int.bmw.organizingcompanyassets.com';
+            const endpoint = `${baseHost}/orca-service/report/grids/assets/restriction-based?fn=supplier&fv=${supplierId}`;
             const data = await this.call(endpoint);
             return data;
         } catch (error) {
