@@ -34,7 +34,7 @@ class KPIPage {
         if (isLiveMode) {
             this.showLoadingScreen(app);
             this.injectStyles();
-            // Wait for apiService to be available
+            // Wait for api to be available
             await this.waitForApiService();
             await this.loadDataWithProgress();
             await this.renderDashboard(app, isLiveMode);
@@ -49,11 +49,11 @@ class KPIPage {
 
     async waitForApiService(maxWait = 5000) {
         const start = Date.now();
-        while (typeof apiService === 'undefined' && Date.now() - start < maxWait) {
+        while (typeof api === 'undefined' && Date.now() - start < maxWait) {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
-        if (typeof apiService === 'undefined') {
-            console.warn('apiService not available after waiting');
+        if (typeof api === 'undefined') {
+            console.warn('api not available after waiting');
         }
     }
 
@@ -1204,7 +1204,7 @@ class KPIPage {
 
     async loadData() {
         // Check API mode
-        const isLiveMode = typeof apiService !== 'undefined' && apiService.mode === 'live';
+        const isLiveMode = typeof api !== 'undefined' && api.mode === 'live';
 
         if (isLiveMode) {
             // Load real data from APIs
@@ -1361,14 +1361,14 @@ class KPIPage {
 
     async loadInventurKPIs() {
         try {
-            // Check if apiService is available
-            if (typeof apiService === 'undefined') {
-                console.warn('apiService not available for Inventur KPIs');
+            // Check if api is available
+            if (typeof api === 'undefined') {
+                console.warn('api not available for Inventur KPIs');
                 return null;
             }
 
             // First, load all inventories
-            const inventories = await apiService.getInventoryList({ limit: 10000 });
+            const inventories = await api.getInventoryList({ limit: 10000 });
 
             if (!inventories || !inventories.length) {
                 return null;
@@ -1383,7 +1383,7 @@ class KPIPage {
 
             for (const invKey of keysToLoad) {
                 try {
-                    const result = await apiService.getInventoryPositions(invKey, { limit: 10000 });
+                    const result = await api.getInventoryPositions(invKey, { limit: 10000 });
                     if (result && result.data) {
                         allPositions = allPositions.concat(result.data);
                     }
@@ -1505,8 +1505,8 @@ class KPIPage {
 
     async loadVerlagerungKPIs() {
         try {
-            if (typeof apiService === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
-            const data = await apiService.getVerlagerungList({ limit: 10000 });
+            if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+            const data = await api.getVerlagerungList({ limit: 10000 });
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1538,8 +1538,8 @@ class KPIPage {
 
     async loadVPWKPIs() {
         try {
-            if (typeof apiService === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
-            const data = await apiService.getPartnerwechselList({ limit: 10000 });
+            if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+            const data = await api.getPartnerwechselList({ limit: 10000 });
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1570,8 +1570,8 @@ class KPIPage {
 
     async loadABLKPIs() {
         try {
-            if (typeof apiService === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
-            const data = await apiService.getABLList({ limit: 10000 });
+            if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+            const data = await api.getABLList({ limit: 10000 });
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1603,8 +1603,8 @@ class KPIPage {
 
     async loadVerschrottungKPIs() {
         try {
-            if (typeof apiService === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
-            const data = await apiService.getVerschrottungList({ limit: 10000 });
+            if (typeof api === 'undefined') return { gesamt: 0, abgeschlossen: 0, offen: 0 };
+            const data = await api.getVerschrottungList({ limit: 10000 });
 
             if (!data || !data.length) {
                 return { gesamt: 0, abgeschlossen: 0, offen: 0 };
@@ -1669,7 +1669,7 @@ class KPIPage {
         const data = this.kpiData;
         if (!data) return;
 
-        const isLiveMode = typeof apiService !== 'undefined' && apiService.mode === 'live';
+        const isLiveMode = typeof api !== 'undefined' && api.mode === 'live';
 
         // Safety check - ensure elements exist
         const quoteEl = document.getElementById('kpiInventurQuote');
