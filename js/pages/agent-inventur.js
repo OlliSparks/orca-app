@@ -459,7 +459,7 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
                 }
                 const applyBtn = document.getElementById('applyResultsBtn');
                 if (applyBtn) {
-                    applyBtn.addEventListener('click', () => this.applyToInventory());
+                    applyBtn.addEventListener('click', () => this.applyToInventories());
                 }
             }, 100);
         }
