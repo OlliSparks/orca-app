@@ -560,6 +560,26 @@ td {
     border: 1px solid rgba(44,74,140,0.3);
 }
 
+.status-badge.success {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.status-badge.warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border: 1px solid #fbbf24;
+}
+
+.ai-status-preview {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    text-align: center;
+}
+
 .location-badge {
     display: inline-flex;
     align-items: center;

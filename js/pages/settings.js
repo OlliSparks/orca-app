@@ -146,6 +146,40 @@ class SettingsPage {
                         <div class="user-details" id="userDetails"></div>
                     </div>
                 </div>
+
+                <div class="settings-widget">
+                    <h2>🤖 KI-Agenten Einstellungen</h2>
+                    <p class="settings-description">
+                        Konfigurieren Sie hier die KI-Funktionen für die Agenten (z.B. Inventur-Agent).
+                        Der Claude API Key wird für die automatische Datenanalyse benötigt.
+                    </p>
+
+                    <div class="settings-section">
+                        <div class="form-group">
+                            <label for="claudeApiKey">Claude API Key</label>
+                            <input type="password" id="claudeApiKey" class="settings-input"
+                                   value="${config.claudeApiKey || ''}"
+                                   placeholder="sk-ant-api03-...">
+                            <span class="form-hint">
+                                Wird für die KI-gestützte Datenanalyse im Inventur-Agenten benötigt.
+                                <a href="https://console.anthropic.com/" target="_blank">API Key erstellen</a>
+                            </span>
+                        </div>
+
+                        <div class="ai-status-preview" id="aiStatusPreview">
+                            ${config.claudeApiKey
+                                ? '<span class="status-badge success">✓ KI aktiviert</span>'
+                                : '<span class="status-badge warning">⚠ Kein API Key konfiguriert</span>'
+                            }
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="settings-btn primary" id="saveAiBtn">
+                            ✓ KI-Einstellungen speichern
+                        </button>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -181,15 +215,42 @@ class SettingsPage {
 
         // Test connection button
         document.getElementById('testConnectionBtn').addEventListener('click', () => this.testConnection());
+
+        // Save AI settings button
+        document.getElementById('saveAiBtn').addEventListener('click', () => this.saveAiSettings());
+
+        // Update AI status preview on input
+        document.getElementById('claudeApiKey').addEventListener('input', (e) => {
+            const preview = document.getElementById('aiStatusPreview');
+            if (e.target.value.trim()) {
+                preview.innerHTML = '<span class="status-badge success">✓ KI aktiviert</span>';
+            } else {
+                preview.innerHTML = '<span class="status-badge warning">⚠ Kein API Key konfiguriert</span>';
+            }
+        });
+    }
+
+    saveAiSettings() {
+        const claudeApiKey = document.getElementById('claudeApiKey').value.trim();
+
+        // Load existing config and add claudeApiKey
+        const config = this.loadConfig();
+        config.claudeApiKey = claudeApiKey;
+        this.saveConfig(config);
+
+        this.showStatus('success', '✓ KI-Einstellungen gespeichert');
     }
 
     saveSettings() {
         const mode = document.querySelector('input[name="apiMode"]:checked').value;
+        const existingConfig = this.loadConfig();
+
         const config = {
             mode: mode,
             baseURL: document.getElementById('baseURL').value.trim(),
             supplierNumber: document.getElementById('supplierNumber').value.trim(),
-            bearerToken: document.getElementById('bearerToken').value.trim()
+            bearerToken: document.getElementById('bearerToken').value.trim(),
+            claudeApiKey: existingConfig.claudeApiKey || '' // Preserve AI key
         };
 
         this.saveConfig(config);

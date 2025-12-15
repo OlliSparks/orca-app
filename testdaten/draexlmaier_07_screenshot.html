@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Segoe UI, Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+        .window { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); max-width: 900px; }
+        .titlebar { background: #0078d4; color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; }
+        .titlebar span { font-weight: 600; }
+        .toolbar { background: #f5f5f5; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+        .toolbar input { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
+        .content { padding: 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f8f9fa; padding: 10px 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; }
+        td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; }
+        tr:hover { background: #f8f9fa; }
+        .status-ok { color: #28a745; font-weight: 500; }
+        .status-warn { color: #ffc107; font-weight: 500; }
+        .status-open { color: #6c757d; }
+        .loc { color: #6c757d; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="window">
+        <div class="titlebar">
+            <span>DRAEXLMAIER Werkzeugverwaltung - Bestandsuebersicht</span>
+        </div>
+        <div class="toolbar">
+            <input type="text" placeholder="Suche..." value="Hunedoara">
+            <span style="margin-left: 20px; color: #666;">Filter: Standort = Hunedoara | 15 Ergebnisse</span>
+        </div>
+        <div class="content">
+            <table>
+                <tr>
+                    <th>Werkzeug-Nr</th>
+                    <th>Typ</th>
+                    <th>Standort</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td><strong>0010120920</strong></td>
+                    <td>Spritzgiesswerkzeug</td>
+                    <td>Hunedoara <span class="loc">(RO)</span></td>
+                    <td class="status-ok">Aktiv</td>
+                </tr>
+                <tr>
+                    <td><strong>0010052637</strong></td>
+                    <td>Spritzgiesswerkzeug</td>
+                    <td>Hunedoara <span class="loc">(RO)</span></td>
+                    <td class="status-ok">Aktiv</td>
+                </tr>
+                <tr>
+                    <td><strong>0010052648</strong></td>
+                    <td>Spritzgiesswerkzeug</td>
+                    <td>Hunedoara <span class="loc">(RO)</span></td>
+                    <td class="status-ok">Aktiv</td>
+                </tr>
+                <tr>
+                    <td><strong>10006841</strong></td>
+                    <td>Schaeumform</td>
+                    <td>Hunedoara <span class="loc">(RO)</span></td>
+                    <td class="status-ok">Aktiv</td>
+                </tr>
+                <tr>
+                    <td><strong>10006842</strong></td>
+                    <td>Schaeumform</td>
+                    <td>Hunedoara <span class="loc">(RO)</span></td>
+                    <td class="status-ok">Aktiv</td>
+                </tr>
+                <tr>
+                    <td><strong>10006843</strong></td>
+                    <td>Schaeumform</td>
+                    <td>Hunedoara <span class="loc">(RO)</span></td>
+                    <td class="status-warn">Wartung</td>
+                </tr>
+                <tr>
+                    <td><strong>0010254378</strong></td>
+                    <td>Spritzgiesswerkzeug</td>
+                    <td>Hunedoara <span class="loc">(RO)</span></td>
+                    <td class="status-ok">Aktiv</td>
+                </tr>
+                <tr>
+                    <td><strong>10447851</strong></td>
+                    <td>Spritzgiesswerkzeug</td>
+                    <td>Hunedoara <span class="loc">(RO)</span></td>
+                    <td class="status-ok">Aktiv</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <p style="margin-top: 20px; color: #888; font-size: 11px;">
+        Dieses HTML im Browser oeffnen und als Screenshot (PNG) speichern fuer Vision-Test
+    </p>
+</body>
+</html>

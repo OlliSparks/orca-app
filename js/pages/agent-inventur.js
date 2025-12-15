@@ -28,6 +28,14 @@ class AgentInventurPage {
                 <div class="agent-layout">
                     <!-- Sidebar with upload options -->
                     <div class="agent-sidebar">
+                        <!-- KI Status - shows if AI is available -->
+                        <div class="sidebar-section ai-status-section" id="aiStatusSection">
+                            <div class="ai-status-display" id="aiStatusDisplay">
+                                <span class="ai-icon">🤖</span>
+                                <span class="ai-text" id="aiStatusText">KI-Analyse wird geladen...</span>
+                            </div>
+                        </div>
+
                         <div class="sidebar-section">
                             <h3>Datenquelle wählen</h3>
                             <div class="upload-options">
@@ -51,9 +59,9 @@ class AgentInventurPage {
                         </div>
 
                         <div class="sidebar-section upload-area-section">
-                            <div class="upload-area" id="uploadArea">
-                                <div class="upload-icon">📁</div>
-                                <p>Datei hierher ziehen<br>oder <span class="upload-link">durchsuchen</span></p>
+                            <div class="upload-area disabled" id="uploadArea">
+                                <div class="upload-icon">🔒</div>
+                                <p id="uploadText">Bitte erst API Key eingeben</p>
                                 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.png,.jpg,.jpeg" multiple hidden>
                             </div>
                             <div class="uploaded-files" id="uploadedFiles"></div>
@@ -64,12 +72,6 @@ class AgentInventurPage {
                             <input type="text" id="apiEndpoint" placeholder="API Endpoint URL" class="agent-input">
                             <input type="text" id="apiKey" placeholder="API Key (optional)" class="agent-input">
                             <button class="agent-btn secondary" id="testApiBtn">Verbindung testen</button>
-                        </div>
-
-                        <div class="sidebar-section">
-                            <h4>Claude API Key</h4>
-                            <input type="password" id="claudeApiKey" placeholder="sk-ant-..." class="agent-input" value="">
-                            <p class="hint">Für die KI-Analyse benötigt</p>
                         </div>
                     </div>
 
@@ -120,11 +122,51 @@ class AgentInventurPage {
     }
 
     loadApiKey() {
-        // Load API key from localStorage if available
-        const savedKey = localStorage.getItem('claude_api_key');
+        // Load API key from global settings (configured by admin)
+        const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+        const savedKey = config.claudeApiKey || localStorage.getItem('claude_api_key');
+
         if (savedKey) {
-            document.getElementById('claudeApiKey').value = savedKey;
             this.claudeApiKey = savedKey;
+            this.updateAiStatus('ready');
+        } else {
+            this.claudeApiKey = null;
+            this.updateAiStatus('no-key');
+        }
+    }
+
+    updateAiStatus(status) {
+        const statusSection = document.getElementById('aiStatusSection');
+        const statusDisplay = document.getElementById('aiStatusDisplay');
+        const statusText = document.getElementById('aiStatusText');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadText = document.getElementById('uploadText');
+
+        switch (status) {
+            case 'ready':
+                statusDisplay.className = 'ai-status-display ready';
+                statusText.textContent = 'KI-Analyse bereit';
+                uploadArea.classList.remove('disabled');
+                uploadText.innerHTML = 'Datei hierher ziehen<br>oder <span class="upload-link">durchsuchen</span>';
+                document.querySelector('.upload-icon').textContent = '📁';
+                break;
+
+            case 'no-key':
+                statusDisplay.className = 'ai-status-display warning';
+                statusText.innerHTML = 'KI nicht konfiguriert<br><small>Bitte Admin kontaktieren</small>';
+                uploadArea.classList.add('disabled');
+                uploadText.innerHTML = 'KI-Analyse nicht verfügbar';
+                document.querySelector('.upload-icon').textContent = '⚠️';
+                break;
+
+            case 'error':
+                statusDisplay.className = 'ai-status-display error';
+                statusText.textContent = 'KI-Fehler aufgetreten';
+                break;
+
+            default:
+                statusDisplay.className = 'ai-status-display';
+                statusText.textContent = 'KI-Analyse wird geladen...';
         }
     }
 
@@ -237,9 +279,20 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
 
-        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('click', () => {
+            if (!this.claudeApiKey) {
+                // Show warning - AI not configured
+                const statusSection = document.getElementById('aiStatusSection');
+                statusSection.classList.add('shake');
+                setTimeout(() => statusSection.classList.remove('shake'), 500);
+                this.addAssistantMessage('Die KI-Analyse ist nicht konfiguriert. Bitte kontaktieren Sie Ihren Administrator, um die KI-Funktion zu aktivieren.');
+                return;
+            }
+            fileInput.click();
+        });
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
+            if (!this.claudeApiKey) return;
             uploadArea.classList.add('drag-over');
         });
         uploadArea.addEventListener('dragleave', () => {
@@ -248,10 +301,17 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
+            if (!this.claudeApiKey) {
+                const statusSection = document.getElementById('aiStatusSection');
+                statusSection.classList.add('shake');
+                setTimeout(() => statusSection.classList.remove('shake'), 500);
+                return;
+            }
             this.handleFiles(e.dataTransfer.files);
         });
 
         fileInput.addEventListener('change', (e) => {
+            if (!this.claudeApiKey) return;
             this.handleFiles(e.target.files);
         });
 
@@ -274,12 +334,6 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
         });
 
         sendBtn.addEventListener('click', () => this.sendMessage());
-
-        // Claude API key
-        document.getElementById('claudeApiKey').addEventListener('change', (e) => {
-            this.claudeApiKey = e.target.value;
-            localStorage.setItem('claude_api_key', e.target.value);
-        });
 
         // Results panel
         document.getElementById('closeResults')?.addEventListener('click', () => {
@@ -878,6 +932,70 @@ Wählen Sie links eine Option und laden Sie Ihre Daten hoch.`
                 font-size: 0.9rem;
                 color: #374151;
                 margin-bottom: 0.75rem;
+            }
+
+            /* AI Status Section */
+            .ai-status-section {
+                padding: 0 !important;
+            }
+
+            .ai-status-display {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                background: #f3f4f6;
+                border: 2px solid #e5e7eb;
+            }
+
+            .ai-status-display.ready {
+                background: #dcfce7;
+                border-color: #86efac;
+            }
+
+            .ai-status-display.ready .ai-icon {
+                color: #16a34a;
+            }
+
+            .ai-status-display.warning {
+                background: #fef3c7;
+                border-color: #fcd34d;
+            }
+
+            .ai-status-display.warning .ai-icon {
+                color: #d97706;
+            }
+
+            .ai-status-display.error {
+                background: #fee2e2;
+                border-color: #fca5a5;
+            }
+
+            .ai-icon {
+                font-size: 1.5rem;
+            }
+
+            .ai-text {
+                font-size: 0.85rem;
+                color: #374151;
+                line-height: 1.3;
+            }
+
+            .ai-text small {
+                display: block;
+                color: #6b7280;
+                font-size: 0.75rem;
+            }
+
+            .shake {
+                animation: shake 0.5s ease-in-out;
+            }
+
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
             }
 
             .upload-options {
