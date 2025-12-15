@@ -237,11 +237,11 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
                     <div class="results-summary">
                         <div class="result-item">
                             <span class="result-number">${msg.results.toolCount}</span>
-                            <span class="result-label">Werkzeuge erkannt</span>
+                            <span class="result-label">Werkzeuge zugeordnet</span>
                         </div>
                         <div class="result-item">
                             <span class="result-number">${msg.results.inventoryCount}</span>
-                            <span class="result-label">Inventuren zugeordnet</span>
+                            <span class="result-label">${msg.results.inventoryCount === 1 ? 'Inventur' : 'Inventuren'}</span>
                         </div>
                     </div>
                     <button class="view-details-btn" id="viewDetailsBtn">Details anzeigen →</button>
@@ -485,16 +485,19 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
                 this.recognizedTools = results.tools;
                 this.matchedInventories = results.inventories;
 
+                const matchedCount = results.tools.length - results.unmatchedCount;
+                const inventurText = results.inventories.length === 1 ? 'Inventur' : 'Inventuren';
+
                 this.addAssistantMessage(
                     `Ich habe Ihre Daten analysiert und folgendes gefunden:
 
-**${results.tools.length} Werkzeuge** wurden erkannt und **${results.inventories.length} offenen Inventuren** zugeordnet.
-
-${results.unmatchedCount > 0 ? `⚠️ ${results.unmatchedCount} Werkzeuge konnten keiner Inventur zugeordnet werden.` : '✅ Alle Werkzeuge wurden erfolgreich zugeordnet.'}
+**${results.tools.length} Werkzeuge** wurden erkannt.
+${matchedCount > 0 ? `✓ **${matchedCount} Werkzeuge** wurden **${results.inventories.length} ${inventurText}** zugeordnet.` : ''}
+${results.unmatchedCount > 0 ? `⚠️ **${results.unmatchedCount} Werkzeuge** konnten keiner Inventur zugeordnet werden.` : '✅ Alle Werkzeuge wurden erfolgreich zugeordnet.'}
 
 Klicken Sie auf "Details anzeigen" um die Zuordnung zu prüfen, oder auf "Zu Inventuren übernehmen" um fortzufahren.`,
                     {
-                        toolCount: results.tools.length,
+                        toolCount: matchedCount,
                         inventoryCount: results.inventories.length
                     }
                 );
