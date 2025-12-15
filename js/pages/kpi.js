@@ -26,7 +26,9 @@ class KPIPage {
             headerStats.style.display = 'none';
         }
 
-        const isLiveMode = typeof apiService !== 'undefined' && apiService.mode === 'live';
+        // Check API mode from localStorage (most reliable source)
+        const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+        const isLiveMode = config.mode === 'live';
 
         // Show loading screen first if live mode
         if (isLiveMode) {
