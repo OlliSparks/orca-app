@@ -411,25 +411,25 @@ class AgentAPISetupPage {
                                 <button class="btn btn-secondary" id="downloadTemplateBtn">
                                     📥 Excel-Vorlage herunterladen
                                 </button>
-                                <span class="template-hint">Vorlage enthält Ihre bekannten Standorte</span>
+                                <span class="template-hint">Vorlage enthält Ihre Werkzeuge mit aktuellen Adressen</span>
                             </div>
 
                             <div class="required-fields">
-                                <h5>Benötigte Spalten:</h5>
+                                <h5>Spalten in der Vorlage:</h5>
                                 <table class="fields-table">
                                     <tr>
-                                        <td><strong>Werkzeugnummer</strong></td>
-                                        <td>BMW-Inventarnummer oder Ihre interne Nummer</td>
+                                        <td><strong>Inventarnummer</strong></td>
+                                        <td>BMW-Inventarnummer</td>
                                         <td class="required">Pflicht</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Standort</strong></td>
-                                        <td>Aktueller Aufstellort (Gebäude, Halle, Bereich)</td>
+                                        <td><strong>Standort (Adresse)</strong></td>
+                                        <td>Adresse, an der sich das Werkzeug befindet</td>
                                         <td class="required">Pflicht</td>
                                     </tr>
                                     <tr>
                                         <td><strong>Bezeichnung</strong></td>
-                                        <td>Name oder Beschreibung des Werkzeugs</td>
+                                        <td>Name des Werkzeugs</td>
                                         <td class="optional">Optional</td>
                                     </tr>
                                     <tr>
@@ -1301,64 +1301,70 @@ Lieferanten-Nr.: ${supplierInfo.number}`
     }
 
     async downloadTemplate() {
-        // Lade vorhandene Standorte
-        await this.loadSupplierLocations();
         const supplierInfo = this.getSupplierInfo();
 
-        // Excel-Vorlage erstellen
+        // Lade echte Werkzeugdaten aus FM-Akte
+        const assets = this.getSupplierAssets();
+
+        // Excel-Daten mit Header
         const templateData = [
-            // Header-Zeile
-            ['Werkzeugnummer', 'Standort', 'Bezeichnung', 'Zustand'],
-            // Beispiel-Zeilen
-            ['123456789', this.supplierLocations[0] || 'Halle A, Bereich 1', 'Spritzgusswerkzeug', 'OK'],
-            ['234567890', this.supplierLocations[1] || 'Halle B, Regal 4', 'Stanzwerkzeug', 'OK'],
-            ['345678901', this.supplierLocations[2] || 'Lager Nord', 'Formwerkzeug', 'In Wartung'],
+            ['Inventarnummer', 'Standort (Adresse)', 'Bezeichnung', 'Zustand']
         ];
 
-        // Falls mehr Standorte bekannt, mehr Beispiele hinzufügen
-        if (this.supplierLocations.length > 3) {
-            templateData.push(['', this.supplierLocations[3], '', '']);
+        // Echte Werkzeugdaten hinzufügen (nur inventurrelevante Felder)
+        if (assets && assets.length > 0) {
+            assets.forEach(asset => {
+                templateData.push([
+                    asset.inventoryNumber || asset.toolNumber || '',
+                    asset.locationDetail || asset.location || '', // Adresse
+                    asset.name || '',
+                    'OK' // Standard-Zustand, Lieferant kann ändern
+                ]);
+            });
+        } else {
+            // Fallback: Leere Zeilen wenn keine Daten
+            for (let i = 0; i < 10; i++) {
+                templateData.push(['', '', '', 'OK']);
+            }
         }
-
-        // Leere Zeilen für Eingabe
-        for (let i = 0; i < 10; i++) {
-            templateData.push(['', '', '', '']);
-        }
-
-        // Zweites Blatt: Standort-Liste
-        const locationSheet = [
-            ['Bekannte Standorte (zur Auswahl)'],
-            ...this.supplierLocations.map(loc => [loc])
-        ];
 
         // Excel-Datei erstellen
         const wb = XLSX.utils.book_new();
-
-        // Hauptblatt
         const ws = XLSX.utils.aoa_to_sheet(templateData);
 
         // Spaltenbreiten
         ws['!cols'] = [
-            { wch: 20 }, // Werkzeugnummer
-            { wch: 30 }, // Standort
+            { wch: 18 }, // Inventarnummer
+            { wch: 40 }, // Standort (Adresse)
             { wch: 30 }, // Bezeichnung
-            { wch: 15 }  // Zustand
+            { wch: 12 }  // Zustand
         ];
 
         XLSX.utils.book_append_sheet(wb, ws, 'Stammdaten');
 
-        // Standort-Blatt hinzufügen (wenn Standorte vorhanden)
-        if (this.supplierLocations.length > 0) {
-            const wsLocations = XLSX.utils.aoa_to_sheet(locationSheet);
-            wsLocations['!cols'] = [{ wch: 40 }];
-            XLSX.utils.book_append_sheet(wb, wsLocations, 'Standorte');
-        }
-
         // Download
-        const fileName = `ORCA_Stammdaten_Vorlage_${supplierInfo.number}.xlsx`;
+        const fileName = `ORCA_Stammdaten_${supplierInfo.number}_${new Date().toISOString().slice(0,10)}.xlsx`;
         XLSX.writeFile(wb, fileName);
 
-        console.log(`📥 Excel-Vorlage heruntergeladen: ${fileName}`);
+        console.log(`📥 Excel mit ${assets?.length || 0} Werkzeugen heruntergeladen: ${fileName}`);
+    }
+
+    // Echte Werkzeugdaten des Lieferanten laden
+    getSupplierAssets() {
+        try {
+            if (typeof api !== 'undefined' && api.mockToolsCache) {
+                // Nur inventurrelevante Felder extrahieren
+                return api.mockToolsCache.map(asset => ({
+                    inventoryNumber: asset.inventoryNumber || asset.toolNumber,
+                    location: asset.location,
+                    locationDetail: asset.locationDetail,
+                    name: asset.name
+                }));
+            }
+        } catch (e) {
+            console.warn('Konnte Werkzeugdaten nicht laden:', e);
+        }
+        return [];
     }
 
     addStyles() {
