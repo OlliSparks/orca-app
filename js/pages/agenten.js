@@ -21,13 +21,22 @@ class AgentenPage {
                 route: '/agent-abl'
             },
             {
-                id: 'coming-soon-1',
-                name: 'Verlagerungs-Agent',
-                icon: '🚚',
-                description: 'Unterstützung bei komplexen Verlagerungsprozessen mit automatischer Dokumentation.',
-                features: ['Standort-Matching', 'Prozess-Automatisierung'],
+                id: 'verschrottung',
+                name: 'Verschrottungs-Agent',
+                icon: '♻️',
+                description: 'Erfassen Sie Verschrottungsanträge schnell und einfach. Der Agent führt Sie durch den Prozess und dokumentiert alles automatisch.',
+                features: ['Foto-Dokumentation', 'Schritt-für-Schritt Dialog', 'Automatische Antragserstellung'],
                 status: 'coming-soon',
-                route: null
+                route: '/agent-verschrottung'
+            },
+            {
+                id: 'inventurplanung',
+                name: 'Inventurplanungs-Agent',
+                icon: '📅',
+                description: 'Planen Sie Ihre Inventuren effizient. Der Agent hilft bei der Terminierung und Ressourcenplanung.',
+                features: ['Terminvorschläge', 'Kapazitätsplanung', 'Automatische Zuweisung'],
+                status: 'coming-soon',
+                route: '/agent-inventurplanung'
             },
             {
                 id: 'reporting',

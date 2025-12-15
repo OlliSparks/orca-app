@@ -130,6 +130,16 @@ class OrcaApp {
         router.addRoute('/agent-reporting', () => {
             agentReportingPage.render();
         });
+
+        // Verschrottungs-Agent (Platzhalter)
+        router.addRoute('/agent-verschrottung', () => {
+            agentVerschrottungPage.render();
+        });
+
+        // Inventurplanungs-Agent (Platzhalter)
+        router.addRoute('/agent-inventurplanung', () => {
+            agentInventurplanungPage.render();
+        });
     }
 
     async checkAPIStatus() {
