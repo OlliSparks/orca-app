@@ -1767,8 +1767,14 @@ tr.missing {
 }
 
 .photo-upload-area:hover {
-    border-color: #8b5cf6;
-    background: #faf5ff;
+    border-color: var(--accent);
+    background: #fff7ed;
+}
+
+.photo-upload-area.dragover {
+    border-color: var(--accent);
+    background: #ffedd5;
+    border-style: solid;
 }
 
 .photo-placeholder {

@@ -801,6 +801,26 @@ class InventurPage {
         document.getElementById('photoUploadArea').addEventListener('click', () => document.getElementById('photoInput').click());
         document.getElementById('photoInput').addEventListener('change', (e) => this.handlePhotoSelect(e));
 
+        // Photo Drag & Drop
+        const photoUploadArea = document.getElementById('photoUploadArea');
+        photoUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            photoUploadArea.classList.add('dragover');
+        });
+        photoUploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            photoUploadArea.classList.remove('dragover');
+        });
+        photoUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            photoUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('photoInput').files = files;
+                this.handlePhotoSelect({ target: { files: files } });
+            }
+        });
+
         // Missing tool modal events
         document.getElementById('cancelMissing').addEventListener('click', () => this.closeMissingModal());
         document.getElementById('confirmMissing').addEventListener('click', () => this.confirmMissing());
