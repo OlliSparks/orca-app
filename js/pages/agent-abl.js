@@ -16,7 +16,7 @@ class AgentABLPage {
             wet: null,
             project: null,
             commodity: null,
-            department: null,
+            fek: null,
             recipient: null,
             location: null,
             locationKey: null,
@@ -36,6 +36,8 @@ class AgentABLPage {
             { id: 'wet', label: 'WET-Datum', required: false },
             { id: 'project', label: 'Projekt', required: false },
             { id: 'location', label: 'Standort', required: false },
+            { id: 'commodity', label: 'Commodity', required: false },
+            { id: 'fek', label: 'FEK', required: false },
             { id: 'recipient', label: 'Empfänger', required: false },
             { id: 'tool_number', label: 'Werkzeugnummer', required: true },
             { id: 'inventory_photo', label: 'Inventarschild', required: false },
@@ -64,7 +66,7 @@ class AgentABLPage {
             wet: null,
             project: null,
             commodity: null,
-            department: null,
+            fek: null,
             recipient: null,
             location: null,
             vatId: null,
@@ -280,8 +282,14 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
             case 'location':
                 inputArea.innerHTML = this.getLocationInputHtml(canSkip);
                 break;
+            case 'commodity':
+                inputArea.innerHTML = this.getTextInputWithSkip('Commodity eingeben...', 'z.B. Exterieur, Interieur, Antrieb', canSkip);
+                break;
+            case 'fek':
+                inputArea.innerHTML = this.getTextInputWithSkip('FEK eingeben...', 'Fertigungseinzelkosten in EUR', canSkip);
+                break;
             case 'recipient':
-                inputArea.innerHTML = this.getTextInputWithSkip('Empfänger beim Lieferanten...', 'Name oder E-Mail', canSkip);
+                inputArea.innerHTML = this.getTextInputWithSkip('Empfänger eingeben...', 'Name oder E-Mail des Empfängers', canSkip);
                 break;
             case 'tool_number':
                 inputArea.innerHTML = this.getTextInputWithSkip('Inventarnummer eingeben...', 'z.B. 0010120920', false);
@@ -671,6 +679,12 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
             case 'project':
                 this.processProject(value);
                 break;
+            case 'commodity':
+                this.processCommodity(value);
+                break;
+            case 'fek':
+                this.processFEK(value);
+                break;
             case 'recipient':
                 this.processRecipient(value);
                 break;
@@ -706,7 +720,9 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
             wet: 'Wann ist das **WET-Datum** (Werkzeugerstmustertermin)?',
             project: 'Zu welchem **Projekt** gehört das Werkzeug?',
             location: 'An welchem **Standort** befindet sich das Werkzeug?',
-            recipient: 'Wer ist der **Empfänger** der ABL beim Lieferanten?',
+            commodity: 'Welche **Commodity** (Warengruppe)?',
+            fek: 'Wie hoch sind die **FEK** (Fertigungseinzelkosten)?',
+            recipient: 'Wer ist der **Empfänger** der ABL?',
             tool_number: `Werkzeug ${this.tools.length + 1}: Bitte geben Sie die **Inventarnummer** ein:`,
             inventory_photo: 'Bitte laden Sie ein **Foto des Inventarschilds** hoch:',
             tool_photo: 'Bitte laden Sie ein **Foto des Gesamtwerkzeugs** hoch:',
@@ -766,6 +782,18 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
         this.ablData.location = locationName;
         this.addUserMessage(locationName);
         this.addAssistantMessage(`✓ Standort: **${locationName}**`);
+        this.nextStep();
+    }
+
+    processCommodity(value) {
+        this.ablData.commodity = value;
+        this.addAssistantMessage(`✓ Commodity: **${value}**`);
+        this.nextStep();
+    }
+
+    processFEK(value) {
+        this.ablData.fek = value;
+        this.addAssistantMessage(`✓ FEK: **${value}**`);
         this.nextStep();
     }
 
@@ -950,6 +978,8 @@ Das Werkzeug wird trotzdem erfasst.`
 • WET: ${this.ablData.wet ? new Date(this.ablData.wet).toLocaleDateString('de-DE') : '—'}
 • Projekt: ${this.ablData.project || '—'}
 • Standort: ${this.ablData.location || '—'}
+• Commodity: ${this.ablData.commodity || '—'}
+• FEK: ${this.ablData.fek || '—'}
 • Empfänger: ${this.ablData.recipient || '—'}
 
 **Werkzeuge (${this.tools.length}):**`;
