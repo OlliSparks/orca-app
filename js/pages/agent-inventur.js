@@ -192,9 +192,31 @@ class AgentInventurPage {
             return;
         }
 
-        const greeting = {
-            role: 'assistant',
-            content: `Willkommen beim Inventur-Agenten! 👋
+        // Prüfe auf vorhandene Stammdaten
+        const stammdaten = this.getStammdaten();
+
+        let greetingContent;
+        if (stammdaten && stammdaten.tools && stammdaten.tools.length > 0) {
+            // Stammdaten vorhanden - anbieten diese zu nutzen
+            greetingContent = `Willkommen zurück! 👋
+
+Ich habe Ihre **Stammdaten** gefunden:
+- **${stammdaten.toolCount} Werkzeuge** hinterlegt
+- Letzte Aktualisierung: ${new Date(stammdaten.uploadDate).toLocaleDateString('de-DE')}
+
+**Möchten Sie diese Daten für die Inventur verwenden?**`;
+
+            const greeting = {
+                role: 'assistant',
+                content: greetingContent,
+                timestamp: new Date(),
+                stammdatenOffer: true
+            };
+
+            this.messages.push(greeting);
+        } else {
+            // Keine Stammdaten - normale Begrüßung
+            greetingContent = `Willkommen beim Inventur-Agenten! 👋
 
 Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfen.
 
@@ -204,18 +226,83 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
 3. Ich analysiere und ordne sie Ihren offenen Inventuren zu
 4. Sie prüfen das Ergebnis und übernehmen es
 
-**Welche Daten haben Sie?**`,
-            timestamp: new Date()
-        };
+**Welche Daten haben Sie?**`;
 
-        this.messages.push(greeting);
+            const greeting = {
+                role: 'assistant',
+                content: greetingContent,
+                timestamp: new Date()
+            };
+
+            this.messages.push(greeting);
+        }
+
         this.renderMessages();
+    }
+
+    // Stammdaten aus localStorage laden
+    getStammdaten() {
+        try {
+            const saved = localStorage.getItem('orca_stammdaten');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (e) {
+            console.warn('Fehler beim Laden der Stammdaten:', e);
+        }
+        return null;
+    }
+
+    // Stammdaten als Werkzeugliste nutzen
+    useStammdaten() {
+        const stammdaten = this.getStammdaten();
+        if (!stammdaten || !stammdaten.tools) return;
+
+        // Konvertiere Stammdaten zu recognizedTools Format
+        this.recognizedTools = stammdaten.tools.map((tool, idx) => ({
+            id: idx + 1,
+            toolNumber: tool.toolNumber,
+            location: tool.location,
+            name: tool.name || '',
+            condition: tool.condition || 'OK',
+            fromStammdaten: true
+        }));
+
+        // Zeige Verarbeitungs-Nachricht
+        this.addMessage('user', `Stammdaten verwenden (${stammdaten.toolCount} Werkzeuge)`);
+
+        // Starte Matching
+        this.matchWithInventories();
     }
 
     renderMessages() {
         const container = document.getElementById('chatMessages');
         container.innerHTML = this.messages.map(msg => this.renderMessage(msg)).join('');
         container.scrollTop = container.scrollHeight;
+
+        // Stammdaten-Buttons Event-Listener
+        document.getElementById('useStammdatenBtn')?.addEventListener('click', () => {
+            this.useStammdaten();
+        });
+
+        document.getElementById('newDataBtn')?.addEventListener('click', () => {
+            // Normale Begrüßung zeigen
+            this.messages = [];
+            const greeting = {
+                role: 'assistant',
+                content: `Kein Problem! Laden Sie einfach Ihre aktuellen Daten hoch.
+
+**So funktioniert's:**
+1. Wählen Sie links eine Datenquelle (Excel, Screenshot, API)
+2. Laden Sie Ihre Daten hoch
+3. Ich analysiere und ordne sie Ihren offenen Inventuren zu
+
+**Welche Daten haben Sie?**`,
+                timestamp: new Date()
+            };
+            this.messages.push(greeting);
+            this.renderMessages();
+        });
     }
 
     renderMessage(msg) {
@@ -265,6 +352,21 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
             `;
         }
 
+        // Stammdaten offer buttons
+        let stammdatenHtml = '';
+        if (msg.stammdatenOffer) {
+            stammdatenHtml = `
+                <div class="stammdaten-offer">
+                    <button class="stammdaten-btn primary" id="useStammdatenBtn">
+                        ✓ Ja, Stammdaten verwenden
+                    </button>
+                    <button class="stammdaten-btn secondary" id="newDataBtn">
+                        Nein, neue Daten hochladen
+                    </button>
+                </div>
+            `;
+        }
+
         return `
             <div class="chat-message ${isUser ? 'user' : 'assistant'}">
                 <div class="message-avatar">
@@ -274,6 +376,7 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
                     <div class="message-text">${contentHtml}</div>
                     ${attachmentsHtml}
                     ${resultsHtml}
+                    ${stammdatenHtml}
                     <div class="message-time">${time}</div>
                 </div>
             </div>
@@ -1574,6 +1677,45 @@ Wählen Sie links eine Option und laden Sie Ihre Daten hoch.`
             .view-details-btn.primary:hover {
                 background: #16a34a;
                 transform: translateY(-1px);
+            }
+
+            /* Stammdaten offer */
+            .stammdaten-offer {
+                display: flex;
+                gap: 0.75rem;
+                margin-top: 1rem;
+                padding-top: 1rem;
+                border-top: 1px solid #e5e7eb;
+            }
+
+            .stammdaten-btn {
+                padding: 0.75rem 1.25rem;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                border: none;
+            }
+
+            .stammdaten-btn.primary {
+                background: #3b82f6;
+                color: white;
+            }
+
+            .stammdaten-btn.primary:hover {
+                background: #2563eb;
+                transform: translateY(-1px);
+            }
+
+            .stammdaten-btn.secondary {
+                background: #f3f4f6;
+                color: #374151;
+                border: 1px solid #d1d5db;
+            }
+
+            .stammdaten-btn.secondary:hover {
+                background: #e5e7eb;
             }
 
             /* Typing indicator */

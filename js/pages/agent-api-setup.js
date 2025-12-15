@@ -745,6 +745,11 @@ class AgentAPISetupPage {
     }
 
     getNextStepsForPath() {
+        const stammdaten = this.getExistingStammdaten();
+        const reminderDate = stammdaten?.nextReminder
+            ? new Date(stammdaten.nextReminder).toLocaleDateString('de-DE')
+            : 'in 6 Monaten';
+
         switch (this.selectedPath) {
             case 'direct':
                 return `
@@ -757,10 +762,15 @@ class AgentAPISetupPage {
             case 'stammdaten':
                 return `
                     <ol>
-                        <li>Ihre Stammdaten wurden gespeichert</li>
+                        <li>Ihre Stammdaten wurden gespeichert (${stammdaten?.toolCount || 0} Werkzeuge)</li>
                         <li>Bei der nächsten Inventur sind die Daten <strong>vorausgefüllt</strong></li>
-                        <li>In 6 Monaten erinnern wir Sie an ein Update</li>
+                        <li>Erinnerung: ${reminderDate}</li>
                     </ol>
+                    <div class="reminder-actions">
+                        <button class="btn btn-sm btn-secondary" id="testReminderBtn">
+                            📧 Erinnerungs-Mail Vorschau
+                        </button>
+                    </div>
                 `;
             case 'auto':
                 return `
@@ -851,8 +861,39 @@ class AgentAPISetupPage {
 
         // Save stammdaten
         document.getElementById('saveStammdatenBtn')?.addEventListener('click', () => {
-            this.currentStep = 'complete';
-            this.render();
+            if (this.saveStammdaten()) {
+                this.currentStep = 'complete';
+                this.render();
+            }
+        });
+
+        // Copy Stammdaten email
+        document.getElementById('copyStammdatenEmailBtn')?.addEventListener('click', () => {
+            navigator.clipboard.writeText('inventurdaten@organizingcompanyassets.com');
+            const btn = document.getElementById('copyStammdatenEmailBtn');
+            btn.textContent = '✓';
+            setTimeout(() => btn.textContent = '📋', 2000);
+        });
+
+        // View existing stammdaten
+        document.getElementById('viewExistingBtn')?.addEventListener('click', () => {
+            const stammdaten = this.getExistingStammdaten();
+            if (stammdaten) {
+                alert(`Gespeicherte Stammdaten:\n\n` +
+                    `Anzahl Werkzeuge: ${stammdaten.toolCount}\n` +
+                    `Hochgeladen: ${new Date(stammdaten.uploadDate).toLocaleDateString('de-DE')}\n` +
+                    `Nächste Erinnerung: ${stammdaten.nextReminder ? new Date(stammdaten.nextReminder).toLocaleDateString('de-DE') : 'Keine'}\n\n` +
+                    `Erste 5 Werkzeuge:\n` +
+                    stammdaten.tools.slice(0, 5).map(t => `- ${t.toolNumber}: ${t.location}`).join('\n'));
+            }
+        });
+
+        // Delete existing stammdaten
+        document.getElementById('deleteExistingBtn')?.addEventListener('click', () => {
+            if (confirm('Möchten Sie die gespeicherten Stammdaten wirklich löschen?')) {
+                localStorage.removeItem('orca_stammdaten');
+                this.render();
+            }
         });
 
         // Auto method selection
@@ -887,6 +928,17 @@ class AgentAPISetupPage {
             router.navigate('/agent-api-monitor');
         });
 
+        // Test reminder email
+        document.getElementById('testReminderBtn')?.addEventListener('click', () => {
+            const email = this.generateReminderEmail();
+            if (email) {
+                const preview = `An: ${email.to}\nBetreff: ${email.subject}\n\n${email.body}`;
+                if (confirm(preview + '\n\n---\nMöchten Sie diese E-Mail jetzt öffnen?')) {
+                    this.openReminderMailClient();
+                }
+            }
+        });
+
         // Template download
         document.getElementById('downloadTemplateBtn')?.addEventListener('click', () => {
             this.downloadTemplate();
@@ -911,20 +963,306 @@ class AgentAPISetupPage {
         });
     }
 
-    handleStammdatenFile(file) {
+    async handleStammdatenFile(file) {
         const statusEl = document.getElementById('uploadStatus');
+        const statusIcon = document.getElementById('uploadStatusIcon');
         const saveBtn = document.getElementById('saveStammdatenBtn');
+        const mappingStep = document.getElementById('mappingStep');
 
         document.getElementById('uploadFileName').textContent = file.name;
         document.getElementById('uploadFileInfo').textContent = 'Wird analysiert...';
+        statusIcon.textContent = '⏳';
         statusEl.style.display = 'flex';
 
-        // Simulate processing
-        setTimeout(() => {
-            const toolCount = Math.floor(Math.random() * 200) + 50;
-            document.getElementById('uploadFileInfo').textContent = `${toolCount} Werkzeuge erkannt`;
-            saveBtn.disabled = false;
-        }, 1500);
+        try {
+            // Excel-Datei parsen mit xlsx library
+            const data = await this.parseExcelFile(file);
+
+            if (data && data.length > 0) {
+                // Spalten erkennen
+                const headers = Object.keys(data[0]);
+                this.detectedColumns = this.detectColumnMapping(headers);
+                this.uploadedStammdaten = data;
+
+                // Status aktualisieren
+                statusIcon.textContent = '✅';
+                document.getElementById('uploadFileInfo').textContent = `${data.length} Werkzeuge erkannt`;
+
+                // Mapping-Vorschau anzeigen
+                mappingStep.style.display = 'block';
+                this.renderMappingPreview(headers, data);
+
+                // Speichern aktivieren
+                saveBtn.disabled = false;
+            } else {
+                throw new Error('Keine Daten gefunden');
+            }
+        } catch (error) {
+            statusIcon.textContent = '❌';
+            document.getElementById('uploadFileInfo').textContent = `Fehler: ${error.message}`;
+            saveBtn.disabled = true;
+        }
+    }
+
+    // Excel-Datei parsen
+    parseExcelFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                try {
+                    const data = e.target.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const firstSheet = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheet];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (jsonData.length === 0) {
+                        reject(new Error('Keine Daten in der Datei'));
+                    } else {
+                        resolve(jsonData);
+                    }
+                } catch (error) {
+                    reject(new Error('Datei konnte nicht gelesen werden'));
+                }
+            };
+
+            reader.onerror = () => reject(new Error('Datei konnte nicht geladen werden'));
+            reader.readAsBinaryString(file);
+        });
+    }
+
+    // Automatische Spalten-Erkennung
+    detectColumnMapping(headers) {
+        const mapping = {
+            toolNumber: null,
+            location: null,
+            name: null,
+            condition: null
+        };
+
+        const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
+
+        // Werkzeugnummer erkennen
+        const toolNumberPatterns = ['werkzeugnummer', 'inventarnummer', 'toolnumber', 'inventorynumber', 'nummer', 'id', 'asset', 'tool'];
+        for (let i = 0; i < headers.length; i++) {
+            if (toolNumberPatterns.some(p => normalizedHeaders[i].includes(p))) {
+                mapping.toolNumber = headers[i];
+                break;
+            }
+        }
+
+        // Standort erkennen
+        const locationPatterns = ['standort', 'location', 'ort', 'gebäude', 'halle', 'building', 'site', 'adresse'];
+        for (let i = 0; i < headers.length; i++) {
+            if (locationPatterns.some(p => normalizedHeaders[i].includes(p))) {
+                mapping.location = headers[i];
+                break;
+            }
+        }
+
+        // Bezeichnung erkennen
+        const namePatterns = ['bezeichnung', 'name', 'beschreibung', 'description', 'titel', 'title'];
+        for (let i = 0; i < headers.length; i++) {
+            if (namePatterns.some(p => normalizedHeaders[i].includes(p))) {
+                mapping.name = headers[i];
+                break;
+            }
+        }
+
+        // Zustand erkennen
+        const conditionPatterns = ['zustand', 'condition', 'status', 'state'];
+        for (let i = 0; i < headers.length; i++) {
+            if (conditionPatterns.some(p => normalizedHeaders[i].includes(p))) {
+                mapping.condition = headers[i];
+                break;
+            }
+        }
+
+        return mapping;
+    }
+
+    // Mapping-Vorschau rendern
+    renderMappingPreview(headers, data) {
+        const mappingEl = document.getElementById('mappingPreview');
+        const previewEl = document.getElementById('dataPreview');
+
+        // Mapping-Tabelle
+        mappingEl.innerHTML = `
+            <table class="mapping-table">
+                <tr>
+                    <th>ORCA-Feld</th>
+                    <th>Ihre Spalte</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td>Werkzeugnummer</td>
+                    <td>
+                        <select id="mapToolNumber" class="mapping-select">
+                            <option value="">-- Wählen --</option>
+                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.toolNumber === h ? 'selected' : ''}>${h}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>${this.detectedColumns.toolNumber ? '✅ Erkannt' : '⚠️ Bitte wählen'}</td>
+                </tr>
+                <tr>
+                    <td>Standort</td>
+                    <td>
+                        <select id="mapLocation" class="mapping-select">
+                            <option value="">-- Wählen --</option>
+                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.location === h ? 'selected' : ''}>${h}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>${this.detectedColumns.location ? '✅ Erkannt' : '⚠️ Bitte wählen'}</td>
+                </tr>
+                <tr>
+                    <td>Bezeichnung</td>
+                    <td>
+                        <select id="mapName" class="mapping-select">
+                            <option value="">-- Optional --</option>
+                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.name === h ? 'selected' : ''}>${h}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>${this.detectedColumns.name ? '✅ Erkannt' : '➖ Optional'}</td>
+                </tr>
+                <tr>
+                    <td>Zustand</td>
+                    <td>
+                        <select id="mapCondition" class="mapping-select">
+                            <option value="">-- Optional --</option>
+                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.condition === h ? 'selected' : ''}>${h}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>${this.detectedColumns.condition ? '✅ Erkannt' : '➖ Optional'}</td>
+                </tr>
+            </table>
+        `;
+
+        // Daten-Vorschau (erste 5 Zeilen)
+        const previewData = data.slice(0, 5);
+        previewEl.innerHTML = `
+            <h5>Vorschau (erste ${previewData.length} Zeilen):</h5>
+            <div class="preview-table-wrapper">
+                <table class="preview-table">
+                    <tr>
+                        ${headers.slice(0, 5).map(h => `<th>${h}</th>`).join('')}
+                        ${headers.length > 5 ? '<th>...</th>' : ''}
+                    </tr>
+                    ${previewData.map(row => `
+                        <tr>
+                            ${headers.slice(0, 5).map(h => `<td>${row[h] || '-'}</td>`).join('')}
+                            ${headers.length > 5 ? '<td>...</td>' : ''}
+                        </tr>
+                    `).join('')}
+                </table>
+            </div>
+        `;
+
+        // Event-Listener für Mapping-Änderungen
+        ['mapToolNumber', 'mapLocation', 'mapName', 'mapCondition'].forEach(id => {
+            document.getElementById(id)?.addEventListener('change', (e) => {
+                const field = id.replace('map', '').toLowerCase();
+                if (field === 'toolnumber') this.detectedColumns.toolNumber = e.target.value;
+                if (field === 'location') this.detectedColumns.location = e.target.value;
+                if (field === 'name') this.detectedColumns.name = e.target.value;
+                if (field === 'condition') this.detectedColumns.condition = e.target.value;
+            });
+        });
+    }
+
+    // Stammdaten speichern
+    saveStammdaten() {
+        if (!this.uploadedStammdaten || !this.detectedColumns.toolNumber) {
+            alert('Bitte laden Sie eine Datei hoch und wählen Sie mindestens die Werkzeugnummer-Spalte.');
+            return false;
+        }
+
+        const supplierInfo = this.getSupplierInfo();
+        const reminderMonths = document.querySelector('input[name="reminder"]:checked')?.value || '6';
+
+        // Daten normalisieren
+        const normalizedData = this.uploadedStammdaten.map(row => ({
+            toolNumber: String(row[this.detectedColumns.toolNumber] || '').trim(),
+            location: this.detectedColumns.location ? String(row[this.detectedColumns.location] || '').trim() : '',
+            name: this.detectedColumns.name ? String(row[this.detectedColumns.name] || '').trim() : '',
+            condition: this.detectedColumns.condition ? String(row[this.detectedColumns.condition] || '').trim() : 'OK'
+        })).filter(row => row.toolNumber); // Nur Zeilen mit Werkzeugnummer
+
+        // In localStorage speichern
+        const stammdatenPackage = {
+            supplierNumber: supplierInfo.number,
+            supplierEmail: supplierInfo.email,
+            uploadDate: new Date().toISOString(),
+            toolCount: normalizedData.length,
+            reminderMonths: parseInt(reminderMonths),
+            nextReminder: this.calculateNextReminder(parseInt(reminderMonths)),
+            mapping: this.detectedColumns,
+            tools: normalizedData
+        };
+
+        localStorage.setItem('orca_stammdaten', JSON.stringify(stammdatenPackage));
+        console.log(`✅ Stammdaten gespeichert: ${normalizedData.length} Werkzeuge`);
+
+        return true;
+    }
+
+    calculateNextReminder(months) {
+        if (months === 0) return null;
+        const next = new Date();
+        next.setMonth(next.getMonth() + months);
+        return next.toISOString();
+    }
+
+    // Erinnerungs-Mail generieren
+    generateReminderEmail() {
+        const supplierInfo = this.getSupplierInfo();
+        const stammdaten = this.getExistingStammdaten();
+
+        if (!stammdaten) return null;
+
+        const uploadDate = new Date(stammdaten.uploadDate).toLocaleDateString('de-DE');
+        const nextReminder = stammdaten.nextReminder
+            ? new Date(stammdaten.nextReminder).toLocaleDateString('de-DE')
+            : 'Nicht festgelegt';
+
+        return {
+            to: supplierInfo.email,
+            subject: `ORCA Stammdaten-Update erforderlich - Lieferant ${supplierInfo.number}`,
+            body: `Guten Tag,
+
+Ihre ORCA Werkzeug-Stammdaten wurden zuletzt am ${uploadDate} aktualisiert.
+
+Aktueller Stand:
+- ${stammdaten.toolCount} Werkzeuge hinterlegt
+- Letzte Aktualisierung: ${uploadDate}
+
+Um bei anstehenden Inventuren schnell reagieren zu können, empfehlen wir eine regelmäßige Aktualisierung Ihrer Stammdaten.
+
+So aktualisieren Sie Ihre Daten:
+1. Öffnen Sie ORCA 2.0
+2. Gehen Sie zu Agenten → Integrations-Assistent
+3. Wählen Sie "Stammdaten-Sync"
+4. Laden Sie Ihre aktuelle Werkzeugliste hoch
+
+Bei Fragen wenden Sie sich an inventurdaten@organizingcompanyassets.com
+
+Mit freundlichen Grüßen
+Ihr ORCA-Team
+
+---
+Diese E-Mail wurde automatisch generiert.
+Nächste geplante Erinnerung: ${nextReminder}
+Lieferanten-Nr.: ${supplierInfo.number}`
+        };
+    }
+
+    // E-Mail-Client öffnen für Erinnerung
+    openReminderMailClient() {
+        const email = this.generateReminderEmail();
+        if (!email) return;
+
+        const mailtoLink = `mailto:${email.to}?subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`;
+        window.location.href = mailtoLink;
     }
 
     async runConnectionTest() {
@@ -962,9 +1300,65 @@ class AgentAPISetupPage {
         });
     }
 
-    downloadTemplate() {
-        // In reality, this would download an actual Excel template
-        alert('Excel-Vorlage wird heruntergeladen...\n\n(Demo: In der echten Version würde hier eine Datei heruntergeladen)');
+    async downloadTemplate() {
+        // Lade vorhandene Standorte
+        await this.loadSupplierLocations();
+        const supplierInfo = this.getSupplierInfo();
+
+        // Excel-Vorlage erstellen
+        const templateData = [
+            // Header-Zeile
+            ['Werkzeugnummer', 'Standort', 'Bezeichnung', 'Zustand'],
+            // Beispiel-Zeilen
+            ['123456789', this.supplierLocations[0] || 'Halle A, Bereich 1', 'Spritzgusswerkzeug', 'OK'],
+            ['234567890', this.supplierLocations[1] || 'Halle B, Regal 4', 'Stanzwerkzeug', 'OK'],
+            ['345678901', this.supplierLocations[2] || 'Lager Nord', 'Formwerkzeug', 'In Wartung'],
+        ];
+
+        // Falls mehr Standorte bekannt, mehr Beispiele hinzufügen
+        if (this.supplierLocations.length > 3) {
+            templateData.push(['', this.supplierLocations[3], '', '']);
+        }
+
+        // Leere Zeilen für Eingabe
+        for (let i = 0; i < 10; i++) {
+            templateData.push(['', '', '', '']);
+        }
+
+        // Zweites Blatt: Standort-Liste
+        const locationSheet = [
+            ['Bekannte Standorte (zur Auswahl)'],
+            ...this.supplierLocations.map(loc => [loc])
+        ];
+
+        // Excel-Datei erstellen
+        const wb = XLSX.utils.book_new();
+
+        // Hauptblatt
+        const ws = XLSX.utils.aoa_to_sheet(templateData);
+
+        // Spaltenbreiten
+        ws['!cols'] = [
+            { wch: 20 }, // Werkzeugnummer
+            { wch: 30 }, // Standort
+            { wch: 30 }, // Bezeichnung
+            { wch: 15 }  // Zustand
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Stammdaten');
+
+        // Standort-Blatt hinzufügen (wenn Standorte vorhanden)
+        if (this.supplierLocations.length > 0) {
+            const wsLocations = XLSX.utils.aoa_to_sheet(locationSheet);
+            wsLocations['!cols'] = [{ wch: 40 }];
+            XLSX.utils.book_append_sheet(wb, wsLocations, 'Standorte');
+        }
+
+        // Download
+        const fileName = `ORCA_Stammdaten_Vorlage_${supplierInfo.number}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        console.log(`📥 Excel-Vorlage heruntergeladen: ${fileName}`);
     }
 
     addStyles() {
@@ -1474,33 +1868,195 @@ class AgentAPISetupPage {
             .required-fields {
                 margin-top: 1rem;
                 padding: 1rem;
-                background: #fffbeb;
+                background: #f8fafc;
                 border-radius: 8px;
             }
 
             .required-fields h5 {
-                margin: 0 0 0.5rem 0;
+                margin: 0 0 0.75rem 0;
                 font-size: 0.9rem;
             }
 
-            .required-fields ul {
-                margin: 0;
-                padding-left: 1.25rem;
+            .fields-table {
+                width: 100%;
+                font-size: 0.85rem;
             }
 
-            .required-fields li {
-                font-size: 0.85rem;
-                margin: 0.25rem 0;
+            .fields-table td {
+                padding: 0.5rem;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .fields-table .required {
+                color: #dc2626;
+                font-weight: 500;
+                font-size: 0.75rem;
+            }
+
+            .fields-table .optional {
+                color: #6b7280;
+                font-size: 0.75rem;
             }
 
             /* Template download */
             .template-download {
-                margin-bottom: 1rem;
+                margin-bottom: 1.5rem;
+                padding: 1rem;
+                background: #eff6ff;
+                border-radius: 8px;
             }
 
             .template-download p {
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
                 font-size: 0.9rem;
+            }
+
+            .template-hint {
+                display: block;
+                margin-top: 0.5rem;
+                font-size: 0.8rem;
+                color: #6b7280;
+            }
+
+            /* Alternative option (email) */
+            .alternative-option {
+                margin-top: 1.5rem;
+                padding: 1rem;
+                background: #fef3c7;
+                border-radius: 8px;
+            }
+
+            .alternative-option h5 {
+                margin: 0 0 0.5rem 0;
+            }
+
+            .alternative-option p {
+                margin: 0 0 0.5rem 0;
+                font-size: 0.9rem;
+            }
+
+            .email-display {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                background: #1e293b;
+                padding: 0.5rem 0.75rem;
+                border-radius: 6px;
+            }
+
+            .email-display code {
+                flex: 1;
+                color: #22c55e;
+                font-family: monospace;
+                font-size: 0.85rem;
+            }
+
+            .email-hint {
+                font-size: 0.8rem;
+                color: #92400e;
+                margin-top: 0.5rem;
+            }
+
+            /* Existing stammdaten info */
+            .existing-stammdaten-info {
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                background: #dbeafe;
+                border: 1px solid #93c5fd;
+                border-radius: 12px;
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .existing-stammdaten-info .info-icon {
+                font-size: 1.25rem;
+            }
+
+            .existing-stammdaten-info .info-content strong {
+                display: block;
+                margin-bottom: 0.25rem;
+            }
+
+            .existing-stammdaten-info .info-content p {
+                margin: 0 0 0.75rem 0;
+                font-size: 0.85rem;
+                color: #1e40af;
+            }
+
+            .btn-sm {
+                padding: 0.35rem 0.75rem;
+                font-size: 0.8rem;
+                margin-right: 0.5rem;
+            }
+
+            /* Mapping preview */
+            .mapping-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+            }
+
+            .mapping-table th,
+            .mapping-table td {
+                padding: 0.75rem;
+                text-align: left;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .mapping-table th {
+                background: #f8fafc;
+                font-weight: 600;
+            }
+
+            .mapping-select {
+                width: 100%;
+                padding: 0.5rem;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                font-size: 0.85rem;
+            }
+
+            /* Data preview */
+            .data-preview {
+                margin-top: 1rem;
+            }
+
+            .data-preview h5 {
+                margin: 0 0 0.5rem 0;
+                font-size: 0.85rem;
+                color: #6b7280;
+            }
+
+            .preview-table-wrapper {
+                overflow-x: auto;
+            }
+
+            .preview-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.8rem;
+            }
+
+            .preview-table th,
+            .preview-table td {
+                padding: 0.5rem;
+                text-align: left;
+                border: 1px solid #e5e7eb;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .preview-table th {
+                background: #f8fafc;
+                font-weight: 600;
+            }
+
+            .preview-table tr:nth-child(even) {
+                background: #f9fafb;
             }
 
             /* Reminder setup */

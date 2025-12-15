@@ -617,17 +617,55 @@ class MessagesPage {
         const msg = messageService.getAllMessages().find(m => m.id === messageId);
         if (!msg) return;
 
-        // Navigate to related process if possible
-        const processRoutes = {
-            'inventur': '/inventur',
-            'abl': msg.processId?.startsWith('local-') ? `/abl-detail/${msg.processId}` : '/abl',
-            'verlagerung': '/verlagerung',
-            'partnerwechsel': '/partnerwechsel',
-            'verschrottung': '/verschrottung'
-        };
+        // Navigate to detail view based on process type and processId
+        let route = null;
 
-        if (processRoutes[msg.process]) {
-            router.navigate(processRoutes[msg.process]);
+        switch (msg.process) {
+            case 'abl':
+                // ABL detail view - processId is the ABL ID (e.g., "ABL-1234567890")
+                if (msg.processId) {
+                    route = `/abl-detail/${msg.processId}`;
+                } else {
+                    route = '/abl';
+                }
+                break;
+
+            case 'verlagerung':
+                // Verlagerung detail view
+                if (msg.processId && !msg.processId.startsWith('rel-')) {
+                    route = `/verlagerung/${msg.processId}`;
+                } else {
+                    route = '/verlagerung';
+                }
+                break;
+
+            case 'inventur':
+                // Inventur has no individual detail view, go to list
+                route = '/inventur';
+                break;
+
+            case 'partnerwechsel':
+                if (msg.processId) {
+                    route = `/partnerwechsel/${msg.processId}`;
+                } else {
+                    route = '/partnerwechsel';
+                }
+                break;
+
+            case 'verschrottung':
+                if (msg.processId) {
+                    route = `/verschrottung-detail/${msg.processId}`;
+                } else {
+                    route = '/verschrottung';
+                }
+                break;
+
+            default:
+                route = null;
+        }
+
+        if (route) {
+            router.navigate(route);
         } else {
             // Re-render to update read status
             this.renderPage();
