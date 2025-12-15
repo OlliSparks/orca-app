@@ -122,15 +122,17 @@ class AgentABLPage {
 
     async loadCompanyData() {
         try {
-            // Lade eigene Company aus API
-            const companyResult = await window.orcaAPI.getCompanyBySupplier();
+            // Lade eigene Company aus API (nutze globalen api-Service)
+            const companyResult = await api.getCompanyBySupplier();
             if (companyResult.success && companyResult.data) {
                 this.companyData = companyResult.data;
 
                 // Lade Standorte der Company
-                const locationsResult = await window.orcaAPI.getCompanyLocations(companyResult.companyKey);
-                if (locationsResult.success && locationsResult.data) {
-                    this.locations = locationsResult.data;
+                if (companyResult.companyKey) {
+                    const locationsResult = await api.getCompanyLocations(companyResult.companyKey);
+                    if (locationsResult.success && locationsResult.data) {
+                        this.locations = locationsResult.data;
+                    }
                 }
             }
         } catch (error) {
@@ -777,7 +779,7 @@ Bitte geben Sie eine gültige Inventarnummer ein (7-10 Ziffern).`
         this.addAssistantMessage(`Suche Werkzeug **${normalized}**...`);
 
         try {
-            const assetResult = await window.orcaAPI.getAssetByNumber(normalized);
+            const assetResult = await api.getAssetByNumber(normalized);
             if (assetResult.success && assetResult.data) {
                 const asset = assetResult.data;
                 this.currentTool.name = asset.description || asset.name || 'Werkzeug';

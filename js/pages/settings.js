@@ -93,6 +93,14 @@ class SettingsPage {
                         </div>
 
                         <div class="form-group">
+                            <label for="companyName">Firmenname</label>
+                            <input type="text" id="companyName" class="settings-input"
+                                   value="${config.companyName || ''}"
+                                   placeholder="z.B. Mustermann GmbH">
+                            <span class="form-hint">Der Name Ihres Unternehmens (wird im ABL-Agent angezeigt)</span>
+                        </div>
+
+                        <div class="form-group">
                             <label for="bearerToken">Bearer Token</label>
                             <textarea id="bearerToken" class="settings-input settings-textarea"
                                       rows="4" placeholder="eyJhbGciOiJSUzI1NiIs...">${config.bearerToken}</textarea>
@@ -249,6 +257,7 @@ class SettingsPage {
             mode: mode,
             baseURL: document.getElementById('baseURL').value.trim(),
             supplierNumber: document.getElementById('supplierNumber').value.trim(),
+            companyName: document.getElementById('companyName').value.trim(),
             bearerToken: document.getElementById('bearerToken').value.trim(),
             claudeApiKey: existingConfig.claudeApiKey || '' // Preserve AI key
         };
@@ -262,6 +271,7 @@ class SettingsPage {
             mode: 'mock',
             bearerToken: '',
             supplierNumber: '133188',
+            companyName: '',
             baseURL: 'https://int.bmw.organizingcompanyassets.com/api/orca'
         };
 
