@@ -8,6 +8,45 @@ class AgentAPISetupPage {
             syncMethod: null,
             lastUpload: null
         };
+        // Stammdaten Upload-Daten
+        this.uploadedStammdaten = null;
+        this.detectedColumns = null;
+        this.supplierLocations = [];
+    }
+
+    // Lade vorhandene Standorte des Lieferanten aus den Assets
+    async loadSupplierLocations() {
+        try {
+            // Versuche echte Daten zu laden
+            if (typeof api !== 'undefined' && api.mockToolsCache) {
+                const uniqueLocations = new Set();
+                api.mockToolsCache.forEach(asset => {
+                    if (asset.location) uniqueLocations.add(asset.location);
+                    if (asset.locationDetail) uniqueLocations.add(asset.locationDetail);
+                });
+                this.supplierLocations = Array.from(uniqueLocations).filter(l => l && l !== 'Unbekannt');
+            }
+        } catch (e) {
+            console.warn('Konnte Standorte nicht laden:', e);
+        }
+        return this.supplierLocations;
+    }
+
+    // Hole User-Email für Erinnerungen
+    getUserEmail() {
+        if (typeof authService !== 'undefined' && authService.userInfo) {
+            return authService.userInfo.email || 'test.user@orca.com';
+        }
+        return 'test.user@orca.com';
+    }
+
+    // Hole Lieferanten-Info
+    getSupplierInfo() {
+        const supplierNumber = (typeof api !== 'undefined' && api.supplierNumber) || '133188';
+        return {
+            number: supplierNumber,
+            email: this.getUserEmail()
+        };
     }
 
     render() {
@@ -333,6 +372,9 @@ class AgentAPISetupPage {
     }
 
     renderStammdatenSetup() {
+        const supplierInfo = this.getSupplierInfo();
+        const existingStammdaten = this.getExistingStammdaten();
+
         return `
             <div class="setup-card">
                 <div class="setup-header">
@@ -342,6 +384,18 @@ class AgentAPISetupPage {
                         <p>Einmal hochladen, bei Inventuren nur noch bestätigen</p>
                     </div>
                 </div>
+
+                ${existingStammdaten ? `
+                <div class="existing-stammdaten-info">
+                    <div class="info-icon">ℹ️</div>
+                    <div class="info-content">
+                        <strong>Sie haben bereits Stammdaten hinterlegt</strong>
+                        <p>${existingStammdaten.toolCount} Werkzeuge, hochgeladen am ${new Date(existingStammdaten.uploadDate).toLocaleDateString('de-DE')}</p>
+                        <button class="btn btn-sm btn-neutral" id="viewExistingBtn">Anzeigen</button>
+                        <button class="btn btn-sm btn-neutral" id="deleteExistingBtn">Löschen & neu hochladen</button>
+                    </div>
+                </div>
+                ` : ''}
 
                 <div class="setup-steps">
                     <div class="setup-step active">
@@ -353,19 +407,47 @@ class AgentAPISetupPage {
                             <p>Exportieren Sie Ihre <strong>vollständige Werkzeugliste</strong> aus Ihrem System.</p>
 
                             <div class="template-download">
-                                <p>Optional: Nutzen Sie unsere Vorlage für optimale Erkennung:</p>
+                                <p>Nutzen Sie unsere Vorlage für optimale Erkennung:</p>
                                 <button class="btn btn-secondary" id="downloadTemplateBtn">
                                     📥 Excel-Vorlage herunterladen
                                 </button>
+                                <span class="template-hint">Vorlage enthält Ihre bekannten Standorte</span>
                             </div>
 
                             <div class="required-fields">
                                 <h5>Benötigte Spalten:</h5>
-                                <ul>
-                                    <li><strong>Werkzeugnummer</strong> (BMW-Nummer oder Ihre interne Nummer)</li>
-                                    <li><strong>Standort</strong> (Halle, Gebäude, Regal etc.)</li>
-                                    <li>Optional: Bezeichnung, Zustand, letzte Prüfung</li>
-                                </ul>
+                                <table class="fields-table">
+                                    <tr>
+                                        <td><strong>Werkzeugnummer</strong></td>
+                                        <td>BMW-Inventarnummer oder Ihre interne Nummer</td>
+                                        <td class="required">Pflicht</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Standort</strong></td>
+                                        <td>Aktueller Aufstellort (Gebäude, Halle, Bereich)</td>
+                                        <td class="required">Pflicht</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Bezeichnung</strong></td>
+                                        <td>Name oder Beschreibung des Werkzeugs</td>
+                                        <td class="optional">Optional</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Zustand</strong></td>
+                                        <td>OK, Beschädigt, In Reparatur</td>
+                                        <td class="optional">Optional</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div class="alternative-option">
+                                <h5>📧 Alternative: Per E-Mail senden</h5>
+                                <p>Senden Sie Ihre Werkzeugliste direkt an:</p>
+                                <div class="email-display">
+                                    <code>inventurdaten@organizingcompanyassets.com</code>
+                                    <button class="copy-btn" id="copyStammdatenEmailBtn" title="Kopieren">📋</button>
+                                </div>
+                                <p class="email-hint">Betreff: Stammdaten ${supplierInfo.number}</p>
                             </div>
                         </div>
                     </div>
@@ -379,29 +461,32 @@ class AgentAPISetupPage {
                             <div class="upload-area" id="stammdatenUploadArea">
                                 <div class="upload-icon">📁</div>
                                 <p>Datei hierher ziehen oder klicken zum Auswählen</p>
-                                <span class="upload-hint">Excel oder CSV, max. 10 MB</span>
+                                <span class="upload-hint">Excel (.xlsx) oder CSV, max. 10 MB</span>
                                 <input type="file" id="stammdatenFileInput" accept=".xlsx,.xls,.csv" hidden>
                             </div>
 
                             <div class="upload-status" id="uploadStatus" style="display: none;">
-                                <div class="status-icon">✅</div>
+                                <div class="status-icon" id="uploadStatusIcon">⏳</div>
                                 <div class="status-text">
                                     <strong id="uploadFileName">datei.xlsx</strong>
-                                    <span id="uploadFileInfo">0 Werkzeuge erkannt</span>
+                                    <span id="uploadFileInfo">Wird analysiert...</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="setup-step">
+                    <div class="setup-step" id="mappingStep" style="display: none;">
                         <div class="setup-step-header">
                             <span class="step-num">3</span>
-                            <h4>Zuordnung prüfen</h4>
+                            <h4>Spalten-Zuordnung prüfen</h4>
                         </div>
                         <div class="setup-step-body">
-                            <p>Nach dem Upload zeigen wir Ihnen, welche Spalten erkannt wurden.</p>
-                            <div class="mapping-preview" id="mappingPreview" style="display: none;">
+                            <p>Wir haben folgende Spalten erkannt:</p>
+                            <div class="mapping-preview" id="mappingPreview">
                                 <!-- Wird dynamisch gefüllt -->
+                            </div>
+                            <div class="data-preview" id="dataPreview">
+                                <!-- Vorschau der ersten Zeilen -->
                             </div>
                         </div>
                     </div>
@@ -409,7 +494,7 @@ class AgentAPISetupPage {
 
                 <div class="reminder-setup">
                     <h4>🔔 Erinnerung einrichten</h4>
-                    <p>Wir erinnern Sie, wenn es Zeit für ein Update ist:</p>
+                    <p>Wir erinnern Sie an <strong>${supplierInfo.email}</strong>, wenn es Zeit für ein Update ist:</p>
                     <div class="reminder-options">
                         <label class="reminder-option">
                             <input type="radio" name="reminder" value="6" checked>
@@ -432,6 +517,19 @@ class AgentAPISetupPage {
                 </div>
             </div>
         `;
+    }
+
+    // Prüfe ob bereits Stammdaten existieren
+    getExistingStammdaten() {
+        try {
+            const saved = localStorage.getItem('orca_stammdaten');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (e) {
+            console.warn('Fehler beim Laden der Stammdaten:', e);
+        }
+        return null;
     }
 
     renderAutoSetup() {

@@ -1538,10 +1538,20 @@ class InventurPage {
     }
 
     confirmSubmit() {
-        const confirmed = this.tools.filter(t => t.status === 'confirmed').length;
-        const relocated = this.tools.filter(t => t.status === 'relocated').length;
-        const missing = this.tools.filter(t => t.status === 'missing').length;
+        const confirmedTools = this.tools.filter(t => t.status === 'confirmed');
+        const relocatedTools = this.tools.filter(t => t.status === 'relocated');
+        const missingTools = this.tools.filter(t => t.status === 'missing');
+        const confirmed = confirmedTools.length;
+        const relocated = relocatedTools.length;
+        const missing = missingTools.length;
         const total = confirmed + relocated + missing;
+
+        // Collect tool numbers for message
+        const submittedToolNumbers = [
+            ...confirmedTools.map(t => t.inventoryNumber || t.number),
+            ...relocatedTools.map(t => t.inventoryNumber || t.number),
+            ...missingTools.map(t => t.inventoryNumber || t.number)
+        ].filter(Boolean);
 
         // Remove submitted tools from the list
         this.tools = this.tools.filter(t => t.status === 'pending');
@@ -1549,8 +1559,30 @@ class InventurPage {
         // Close modal
         this.closeSubmitModal();
 
+        // Create message for the inventory submission
+        if (typeof messageService !== 'undefined') {
+            let contentParts = [];
+            if (confirmed > 0) contentParts.push(`${confirmed} bestätigt`);
+            if (relocated > 0) contentParts.push(`${relocated} verschoben`);
+            if (missing > 0) contentParts.push(`${missing} fehlend`);
+
+            messageService.createOutgoingMessage(
+                'inventur',
+                'Inventur eingereicht',
+                `${total} Werkzeug${total !== 1 ? 'e' : ''} eingereicht: ${contentParts.join(', ')}`,
+                submittedToolNumbers.slice(0, 10), // Limit to first 10
+                {
+                    processId: `inv-${Date.now()}`,
+                    confirmed: confirmed,
+                    relocated: relocated,
+                    missing: missing,
+                    total: total
+                }
+            );
+        }
+
         // Show success message
-        let successMsg = `✅ Erfolgreich eingereicht!\n\n${total} Werkzeug(e) wurden an die API gesendet:\n• ${confirmed} bestätigt\n• ${relocated} verschoben`;
+        let successMsg = `Erfolgreich eingereicht!\n\n${total} Werkzeug(e) wurden an die API gesendet:\n• ${confirmed} bestätigt\n• ${relocated} verschoben`;
         if (missing > 0) {
             successMsg += `\n• ${missing} als fehlend gemeldet`;
         }

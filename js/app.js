@@ -14,7 +14,27 @@ class OrcaApp {
         // Start the router
         router.handleRouteChange();
 
+        // Check for new messages after a short delay
+        setTimeout(() => this.checkNewMessages(), 1000);
+
         console.log('ORCA 2.0 App initialized');
+    }
+
+    async checkNewMessages() {
+        try {
+            // Sync messages with processes
+            await messageService.syncWithProcesses();
+
+            // Get new messages since last check
+            const newMessages = messageService.getNewMessagesSinceLastCheck();
+
+            if (newMessages.length > 0) {
+                // Show popup for new messages
+                MessagesPage.showNewMessagesPopup(newMessages);
+            }
+        } catch (error) {
+            console.error('Error checking new messages:', error);
+        }
     }
 
     registerRoutes() {
@@ -100,6 +120,11 @@ class OrcaApp {
         // Einstellungen
         router.addRoute('/settings', () => {
             settingsPage.render();
+        });
+
+        // Nachrichten
+        router.addRoute('/messages', () => {
+            messagesPage.render();
         });
 
         router.addRoute('/unternehmen', () => {

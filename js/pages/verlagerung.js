@@ -574,6 +574,26 @@ class VerlagerungPage {
         });
 
         if (result.success) {
+            // Create message for the relocation
+            if (typeof messageService !== 'undefined') {
+                const sourceName = document.getElementById('sourceLocation').selectedOptions[0]?.text || sourceLocationKey;
+                const targetName = document.getElementById('targetLocation').selectedOptions[0]?.text || targetLocationKey;
+
+                messageService.createOutgoingMessage(
+                    'verlagerung',
+                    'Verlagerung erstellt',
+                    `Verlagerung von ${sourceName} nach ${targetName} erstellt`,
+                    [],
+                    {
+                        processId: result.data?.key || result.data?.context?.key || `rel-${Date.now()}`,
+                        description: description,
+                        sourceLocation: sourceName,
+                        targetLocation: targetName,
+                        dueDate: dueDate
+                    }
+                );
+            }
+
             this.closeModal();
             await this.refreshData();
             // Navigate to the new relocation detail

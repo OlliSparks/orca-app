@@ -1383,6 +1383,26 @@ Sie werden zur ABL-Übersicht weitergeleitet...`
         }
 
         localStorage.setItem('pending_abls', JSON.stringify(existingABLs));
+
+        // Create message for the ABL
+        if (typeof messageService !== 'undefined') {
+            const toolNumbers = this.tools.map(t => t.number).filter(Boolean);
+            const toolCount = this.tools.length;
+            const isSent = this.ablData.status === 'sent';
+
+            messageService.createOutgoingMessage(
+                'abl',
+                isSent ? 'ABL versendet' : 'ABL erstellt',
+                `ABL mit ${toolCount} Werkzeug${toolCount !== 1 ? 'en' : ''} ${isSent ? 'an OEM versendet' : 'im Vorrat gespeichert'}`,
+                toolNumbers,
+                {
+                    processId: this.isEditMode ? this.originalEditId : existingABLs[existingABLs.length - 1]?.id,
+                    supplier: this.ablData.supplier,
+                    owner: this.ablData.owner,
+                    toolCount: toolCount
+                }
+            );
+        }
     }
 
     attachEventListeners() {
