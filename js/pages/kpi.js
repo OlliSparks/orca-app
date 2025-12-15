@@ -1,9 +1,16 @@
 // ORCA 2.0 - KPI Dashboard
-// Kennzahlen-Uebersicht fuer alle Prozesse
+// Kennzahlen-Übersicht für alle Prozesse
 class KPIPage {
     constructor() {
         this.kpiData = null;
         this.selectedPeriod = 'month'; // month, quarter, year
+        this.loadingSteps = [
+            { id: 'inventur', label: 'Inventur-Daten', done: false },
+            { id: 'verlagerung', label: 'Verlagerungen', done: false },
+            { id: 'vpw', label: 'Vertragspartnerwechsel', done: false },
+            { id: 'abl', label: 'Abnahmebereitschaft', done: false },
+            { id: 'verschrottung', label: 'Verschrottungen', done: false }
+        ];
     }
 
     async render() {
@@ -19,8 +26,76 @@ class KPIPage {
             headerStats.style.display = 'none';
         }
 
-        const isLiveMode = apiService.mode === 'live';
+        const isLiveMode = typeof apiService !== 'undefined' && apiService.mode === 'live';
 
+        // Show loading screen first if live mode
+        if (isLiveMode) {
+            this.showLoadingScreen(app);
+            this.injectStyles();
+            await this.loadDataWithProgress();
+            this.renderDashboard(app, isLiveMode);
+        } else {
+            this.renderDashboard(app, isLiveMode);
+            this.injectStyles();
+            await this.loadData();
+        }
+
+        // Update footer
+        document.getElementById('footerActions').innerHTML = `
+            <button class="btn btn-neutral" onclick="kpiPage.exportReport()">Export Report</button>
+            <button class="btn btn-primary" onclick="kpiPage.refreshData()">Aktualisieren</button>
+        `;
+
+        // Attach event listeners
+        this.attachEventListeners();
+    }
+
+    showLoadingScreen(app) {
+        app.innerHTML = `
+            <div class="container">
+                <div class="kpi-loading-screen">
+                    <div class="loading-icon">📊</div>
+                    <h2>KPI-Dashboard wird geladen</h2>
+                    <p class="loading-hint">Die Berechnung der Kennzahlen erfordert Abfragen an alle Prozess-Schnittstellen. Dies kann einen Moment dauern.</p>
+
+                    <div class="loading-progress-container">
+                        <div class="loading-progress-bar">
+                            <div class="loading-progress-fill" id="loadingProgressFill" style="width: 0%;"></div>
+                        </div>
+                        <div class="loading-progress-text" id="loadingProgressText">0%</div>
+                    </div>
+
+                    <div class="loading-steps" id="loadingSteps">
+                        ${this.loadingSteps.map(step => `
+                            <div class="loading-step" id="step-${step.id}">
+                                <span class="step-icon">○</span>
+                                <span class="step-label">${step.label}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    updateLoadingProgress(stepId, percent) {
+        // Update progress bar
+        const progressFill = document.getElementById('loadingProgressFill');
+        const progressText = document.getElementById('loadingProgressText');
+        if (progressFill) progressFill.style.width = percent + '%';
+        if (progressText) progressText.textContent = Math.round(percent) + '%';
+
+        // Update step indicator
+        if (stepId) {
+            const stepEl = document.getElementById('step-' + stepId);
+            if (stepEl) {
+                stepEl.classList.add('done');
+                stepEl.querySelector('.step-icon').textContent = '✓';
+            }
+        }
+    }
+
+    renderDashboard(app, isLiveMode) {
         app.innerHTML = `
             <div class="container">
                 <!-- API Mode Indicator -->
@@ -33,7 +108,7 @@ class KPIPage {
                 <div class="kpi-header">
                     <div class="kpi-title-section">
                         <h1 class="kpi-main-title">Kennzahlen-Dashboard</h1>
-                        <p class="kpi-subtitle">Performance-Uebersicht aller Prozesse</p>
+                        <p class="kpi-subtitle">Performance-Übersicht aller Prozesse</p>
                     </div>
                     <div class="kpi-period-selector">
                         <button class="period-btn active" data-period="month">Monat</button>
@@ -75,8 +150,8 @@ class KPIPage {
                             <span>⚠</span>
                         </div>
                         <div class="kpi-card-content">
-                            <div class="kpi-value" id="kpiUeberfaellig">12</div>
-                            <div class="kpi-label">Ueberfaellige Inventuren</div>
+                            <div class="kpi-value" id="kpiÜberfällig">12</div>
+                            <div class="kpi-label">Überfällige Inventuren</div>
                             <div class="kpi-trend negative">
                                 <span class="trend-arrow">↑</span> +3 vs. Vormonat
                             </div>
@@ -97,9 +172,9 @@ class KPIPage {
                     </div>
                 </div>
 
-                <!-- Prozess-Uebersicht -->
+                <!-- Prozess-Übersicht -->
                 <div class="kpi-section">
-                    <h2 class="kpi-section-title">Prozess-Uebersicht</h2>
+                    <h2 class="kpi-section-title">Prozess-Übersicht</h2>
                     <div class="kpi-process-grid">
                         <!-- Inventur -->
                         <div class="kpi-process-card">
@@ -245,9 +320,9 @@ class KPIPage {
 
                 <!-- Detail-KPIs in zwei Spalten -->
                 <div class="kpi-details-section">
-                    <!-- Linke Spalte: Qualitaets-KPIs -->
+                    <!-- Linke Spalte: Qualitäts-KPIs -->
                     <div class="kpi-detail-card">
-                        <h3 class="detail-card-title">Qualitaets-Kennzahlen</h3>
+                        <h3 class="detail-card-title">Qualitäts-Kennzahlen</h3>
                         <div class="detail-kpi-list">
                             <div class="detail-kpi-item">
                                 <div class="detail-kpi-info">
@@ -409,7 +484,7 @@ class KPIPage {
                                     <td>156</td>
                                     <td><span class="value warning">72.4%</span></td>
                                     <td>7.8 Tage</td>
-                                    <td><span class="status-badge status-warning">Verbesserung noetig</span></td>
+                                    <td><span class="status-badge status-warning">Verbesserung nötig</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -975,6 +1050,114 @@ class KPIPage {
                 to { transform: rotate(360deg); }
             }
 
+            /* Loading Screen */
+            .kpi-loading-screen {
+                background: white;
+                border-radius: 16px;
+                padding: 3rem 2rem;
+                text-align: center;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                max-width: 500px;
+                margin: 3rem auto;
+            }
+
+            .kpi-loading-screen .loading-icon {
+                font-size: 4rem;
+                margin-bottom: 1.5rem;
+                animation: bounce 1s ease infinite;
+            }
+
+            @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+            }
+
+            .kpi-loading-screen h2 {
+                font-size: 1.5rem;
+                color: #1f2937;
+                margin-bottom: 0.75rem;
+            }
+
+            .kpi-loading-screen .loading-hint {
+                color: #6b7280;
+                font-size: 0.95rem;
+                line-height: 1.5;
+                margin-bottom: 2rem;
+                padding: 0 1rem;
+            }
+
+            .loading-progress-container {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 2rem;
+                padding: 0 1rem;
+            }
+
+            .loading-progress-bar {
+                flex: 1;
+                height: 12px;
+                background: #e5e7eb;
+                border-radius: 6px;
+                overflow: hidden;
+            }
+
+            .loading-progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+                border-radius: 6px;
+                transition: width 0.3s ease;
+            }
+
+            .loading-progress-text {
+                font-weight: 700;
+                color: #f97316;
+                min-width: 45px;
+                text-align: right;
+            }
+
+            .loading-steps {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: left;
+                padding: 0 1rem;
+            }
+
+            .loading-step {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.5rem 0.75rem;
+                background: #f9fafb;
+                border-radius: 6px;
+                transition: all 0.3s;
+            }
+
+            .loading-step.done {
+                background: #dcfce7;
+            }
+
+            .loading-step .step-icon {
+                font-size: 1rem;
+                color: #9ca3af;
+                width: 20px;
+                text-align: center;
+            }
+
+            .loading-step.done .step-icon {
+                color: #22c55e;
+            }
+
+            .loading-step .step-label {
+                color: #6b7280;
+                font-size: 0.9rem;
+            }
+
+            .loading-step.done .step-label {
+                color: #166534;
+            }
+
             /* Responsive */
             @media (max-width: 768px) {
                 .kpi-header {
@@ -1012,7 +1195,7 @@ class KPIPage {
 
     async loadData() {
         // Check API mode
-        const isLiveMode = apiService.mode === 'live';
+        const isLiveMode = typeof apiService !== 'undefined' && apiService.mode === 'live';
 
         if (isLiveMode) {
             // Load real data from APIs
@@ -1023,6 +1206,75 @@ class KPIPage {
         }
 
         this.updateDisplay();
+    }
+
+    async loadDataWithProgress() {
+        // Sequential loading with progress updates
+        const data = {
+            inventurQuote: 0,
+            bearbeitungszeit: null,
+            ueberfaellig: 0,
+            werkzeuge: 0,
+            nichtGefunden: 0,
+            standortAbweichung: 0,
+            prozesse: {
+                inventur: { gesamt: 0, abgeschlossen: 0, offen: 0 },
+                verlagerung: { gesamt: 0, abgeschlossen: 0, offen: 0 },
+                vpw: { gesamt: 0, abgeschlossen: 0, offen: 0 },
+                abl: { gesamt: 0, abgeschlossen: 0, offen: 0 },
+                verschrottung: { gesamt: 0, abgeschlossen: 0, offen: 0 }
+            },
+            standorte: []
+        };
+
+        try {
+            // Step 1: Inventur (takes longest, 40%)
+            this.updateLoadingProgress(null, 5);
+            const inventurResult = await this.loadInventurKPIs();
+            if (inventurResult) {
+                data.prozesse.inventur = inventurResult.prozess;
+                data.inventurQuote = inventurResult.quote;
+                data.ueberfaellig = inventurResult.ueberfaellig;
+                data.werkzeuge = inventurResult.werkzeuge;
+                data.nichtGefunden = inventurResult.nichtGefunden;
+                data.standortAbweichung = inventurResult.standortAbweichung;
+                data.standorte = inventurResult.standorte || [];
+            }
+            this.updateLoadingProgress('inventur', 40);
+
+            // Step 2: Verlagerung (20%)
+            const verlagerungResult = await this.loadVerlagerungKPIs();
+            if (verlagerungResult) {
+                data.prozesse.verlagerung = verlagerungResult;
+            }
+            this.updateLoadingProgress('verlagerung', 55);
+
+            // Step 3: VPW (15%)
+            const vpwResult = await this.loadVPWKPIs();
+            if (vpwResult) {
+                data.prozesse.vpw = vpwResult;
+            }
+            this.updateLoadingProgress('vpw', 70);
+
+            // Step 4: ABL (15%)
+            const ablResult = await this.loadABLKPIs();
+            if (ablResult) {
+                data.prozesse.abl = ablResult;
+            }
+            this.updateLoadingProgress('abl', 85);
+
+            // Step 5: Verschrottung (10%)
+            const verschrottungResult = await this.loadVerschrottungKPIs();
+            if (verschrottungResult) {
+                data.prozesse.verschrottung = verschrottungResult;
+            }
+            this.updateLoadingProgress('verschrottung', 100);
+
+        } catch (error) {
+            console.error('Error loading KPI data with progress:', error);
+        }
+
+        this.kpiData = data;
     }
 
     async loadLiveKPIData() {
@@ -1396,12 +1648,12 @@ class KPIPage {
 
     updateDisplay() {
         const data = this.kpiData;
-        const isLiveMode = apiService.mode === 'live';
+        const isLiveMode = typeof apiService !== 'undefined' && apiService.mode === 'live';
 
         // Update main KPIs
         document.getElementById('kpiInventurQuote').textContent = data.inventurQuote + '%';
 
-        // Bearbeitungszeit - nur im Mock-Modus verfuegbar
+        // Bearbeitungszeit - nur im Mock-Modus verfügbar
         const bearbeitungEl = document.getElementById('kpiBearbeitungszeit');
         if (data.bearbeitungszeit !== null) {
             bearbeitungEl.innerHTML = data.bearbeitungszeit + ' <span class="kpi-unit">Tage</span>';
@@ -1500,7 +1752,7 @@ class KPIPage {
                     <span class="detail-kpi-desc">Mit Foto dokumentiert</span>
                 </div>
                 <div class="detail-kpi-value ${isLiveMode ? '' : 'success'}">
-                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '89.3%'}
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfügbar</span>' : '89.3%'}
                 </div>
             </div>
         `;
@@ -1516,7 +1768,7 @@ class KPIPage {
                     <span class="detail-kpi-desc">Von Zuweisung bis Abschluss</span>
                 </div>
                 <div class="detail-kpi-value">
-                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '4.2 Tage'}
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfügbar</span>' : '4.2 Tage'}
                 </div>
             </div>
             <div class="detail-kpi-item">
@@ -1525,7 +1777,7 @@ class KPIPage {
                     <span class="detail-kpi-desc">Von Antrag bis Bestaetigung</span>
                 </div>
                 <div class="detail-kpi-value">
-                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '6.8 Tage'}
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfügbar</span>' : '6.8 Tage'}
                 </div>
             </div>
             <div class="detail-kpi-item">
@@ -1534,7 +1786,7 @@ class KPIPage {
                     <span class="detail-kpi-desc">Durchschnittliche Zeit bis erste Bearbeitung</span>
                 </div>
                 <div class="detail-kpi-value">
-                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '<span class="success">1.2 Tage</span>'}
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfügbar</span>' : '<span class="success">1.2 Tage</span>'}
                 </div>
             </div>
             <div class="detail-kpi-item">
@@ -1543,7 +1795,7 @@ class KPIPage {
                     <span class="detail-kpi-desc">Innerhalb Faelligkeit abgeschlossen</span>
                 </div>
                 <div class="detail-kpi-value">
-                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfuegbar</span>' : '<span class="success">91.4%</span>'}
+                    ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfügbar</span>' : '<span class="success">91.4%</span>'}
                 </div>
             </div>
         `;
@@ -1557,7 +1809,7 @@ class KPIPage {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="6" style="text-align: center; color: #6b7280; padding: 2rem;">
-                        ${isLiveMode ? 'Keine Standortdaten verfuegbar' : 'Laden...'}
+                        ${isLiveMode ? 'Keine Standortdaten verfügbar' : 'Laden...'}
                     </td>
                 </tr>
             `;
@@ -1567,7 +1819,7 @@ class KPIPage {
         tbody.innerHTML = standorte.map((s, i) => {
             const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
             const quoteClass = s.quote >= 90 ? 'success' : s.quote >= 70 ? '' : 'warning';
-            const statusLabel = s.quote >= 95 ? 'Exzellent' : s.quote >= 90 ? 'Sehr gut' : s.quote >= 80 ? 'Gut' : s.quote >= 70 ? 'Befriedigend' : 'Verbesserung noetig';
+            const statusLabel = s.quote >= 95 ? 'Exzellent' : s.quote >= 90 ? 'Sehr gut' : s.quote >= 80 ? 'Gut' : s.quote >= 70 ? 'Befriedigend' : 'Verbesserung nötig';
             const statusClass = s.quote >= 90 ? 'status-success' : s.quote >= 70 ? 'status-info' : 'status-warning';
 
             return `
@@ -1592,7 +1844,7 @@ class KPIPage {
             ['Kennzahl', 'Wert'],
             ['Inventur-Quote', data.inventurQuote + '%'],
             ['Bearbeitungszeit', data.bearbeitungszeit + ' Tage'],
-            ['Ueberfaellig', data.ueberfaellig],
+            ['Überfällig', data.ueberfaellig],
             ['Verwaltete Werkzeuge', data.werkzeuge],
             [''],
             ['Prozess', 'Gesamt', 'Abgeschlossen', 'Offen'],
