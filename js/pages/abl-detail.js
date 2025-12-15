@@ -387,7 +387,7 @@ class ABLDetailPage {
                             <p style="font-size: 0.9rem; color: #a16207;">Diese ABL befindet sich im Vorrat. Vervollständigen Sie die Daten und senden Sie sie an den OEM.</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="router.navigate('/agent-abl')">
+                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="ablDetailPage.openInAgent()">
                         Im ABL-Agent bearbeiten
                     </button>
                 </div>
@@ -488,6 +488,35 @@ class ABLDetailPage {
         localStorage.setItem('pending_abls', JSON.stringify(filtered));
 
         router.navigate('/abl');
+    }
+
+    // Öffne ABL im Agent mit vorhandenen Daten
+    openInAgent() {
+        if (!this.inventoryKey) {
+            router.navigate('/agent-abl');
+            return;
+        }
+
+        // Für lokale ABLs: Daten aus pending_abls laden
+        if (this.isLocalABL && this.localABLData) {
+            // Speichere ABL-Daten in sessionStorage für den Agent
+            sessionStorage.setItem('editABLData', JSON.stringify({
+                id: this.inventoryKey,
+                ...this.localABLData
+            }));
+            router.navigate('/agent-abl?edit=' + encodeURIComponent(this.inventoryKey));
+            return;
+        }
+
+        // Für API-ABLs: Inventory und Positions übergeben
+        const ablData = {
+            id: this.inventoryKey,
+            inventory: this.inventory,
+            positions: this.positions,
+            isAPIABL: true
+        };
+        sessionStorage.setItem('editABLData', JSON.stringify(ablData));
+        router.navigate('/agent-abl?edit=' + encodeURIComponent(this.inventoryKey));
     }
 
     renderPositionsRows() {

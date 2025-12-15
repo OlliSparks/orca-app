@@ -53,6 +53,12 @@ class AgentABLPage {
     render() {
         const app = document.getElementById('app');
 
+        // Prüfe ob Edit-Modus (Daten aus Detail-Seite)
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('edit');
+        this.isEditMode = !!editId;
+        this.editId = editId;
+
         // Reset state bei jedem neuen Besuch
         this.messages = [];
         this.currentStep = 'start';
@@ -61,6 +67,7 @@ class AgentABLPage {
         this.currentTool = this.createEmptyTool();
         this.ablData = {
             supplier: null,
+            supplierKey: null,
             owner: null,
             purchaseOrder: null,
             wet: null,
@@ -69,6 +76,7 @@ class AgentABLPage {
             fek: null,
             recipient: null,
             location: null,
+            locationKey: null,
             vatId: null,
             comment: null,
             createdAt: new Date().toISOString(),
@@ -77,7 +85,9 @@ class AgentABLPage {
 
         // Update header
         document.getElementById('headerTitle').textContent = 'orca 2.0 - ABL-Agent';
-        document.getElementById('headerSubtitle').textContent = 'Abnahmebereitschaftserklärung erstellen';
+        document.getElementById('headerSubtitle').textContent = this.isEditMode
+            ? 'ABL bearbeiten'
+            : 'Abnahmebereitschaftserklärung erstellen';
         document.getElementById('headerStats').style.display = 'none';
 
         // Update navigation dropdown
@@ -141,7 +151,150 @@ class AgentABLPage {
             console.error('Fehler beim Laden der Company-Daten:', error);
         }
 
-        this.showGreeting();
+        // Im Edit-Modus: Lade vorhandene ABL-Daten
+        if (this.isEditMode) {
+            this.loadEditData();
+        } else {
+            this.showGreeting();
+        }
+    }
+
+    // Lade ABL-Daten für Edit-Modus
+    loadEditData() {
+        try {
+            const editDataJson = sessionStorage.getItem('editABLData');
+            if (!editDataJson) {
+                console.warn('Keine Edit-Daten gefunden, starte neu');
+                this.isEditMode = false;
+                this.showGreeting();
+                return;
+            }
+
+            const editData = JSON.parse(editDataJson);
+            sessionStorage.removeItem('editABLData'); // Einmal lesen, dann löschen
+
+            // Lokale ABL (aus Agent erstellt)
+            if (!editData.isAPIABL) {
+                // Übernehme vorhandene Daten
+                this.ablData = {
+                    ...this.ablData,
+                    supplier: editData.supplier || null,
+                    supplierKey: editData.supplierKey || null,
+                    owner: editData.owner || null,
+                    purchaseOrder: editData.purchaseOrder || null,
+                    wet: editData.wet || null,
+                    project: editData.project || null,
+                    commodity: editData.commodity || null,
+                    fek: editData.fek || null,
+                    recipient: editData.recipient || null,
+                    location: editData.location || null,
+                    locationKey: editData.locationKey || null,
+                    vatId: editData.vatId || null,
+                    comment: editData.comment || null,
+                    createdAt: editData.createdAt || new Date().toISOString(),
+                    status: editData.status || 'draft'
+                };
+
+                // Übernehme Werkzeuge
+                if (editData.tools && editData.tools.length > 0) {
+                    this.tools = editData.tools.map(t => ({
+                        number: t.number || null,
+                        name: t.name || null,
+                        inventoryPhoto: t.inventoryPhoto || null,
+                        toolPhoto: t.toolPhoto || null,
+                        width: t.width || null,
+                        length: t.length || null,
+                        height: t.height || null,
+                        weight: t.weight || null,
+                        material: t.material || null
+                    }));
+                }
+
+                // Speichere original ID zum späteren Aktualisieren
+                this.originalEditId = editData.id;
+            } else {
+                // API-ABL - nur lesen, nicht bearbeiten
+                const inv = editData.inventory || {};
+                const positions = editData.positions || [];
+
+                this.ablData = {
+                    ...this.ablData,
+                    supplier: inv.supplier || null,
+                    owner: inv.owner || null,
+                    purchaseOrder: inv.purchaseOrder || null,
+                    project: inv.project || null,
+                    location: inv.location || null
+                };
+
+                // Positionen als Werkzeuge übernehmen
+                this.tools = positions.map(pos => ({
+                    number: pos.inventoryNumber || pos.assetNumber || null,
+                    name: pos.name || pos.description || null,
+                    inventoryPhoto: pos.inventoryPhoto || null,
+                    toolPhoto: pos.toolPhoto || null,
+                    width: null,
+                    length: null,
+                    height: null,
+                    weight: null,
+                    material: null
+                }));
+
+                this.originalEditId = editData.id;
+            }
+
+            this.showEditGreeting();
+        } catch (error) {
+            console.error('Fehler beim Laden der Edit-Daten:', error);
+            this.isEditMode = false;
+            this.showGreeting();
+        }
+    }
+
+    // Begrüßung im Edit-Modus
+    showEditGreeting() {
+        // Zeige Zusammenfassung der vorhandenen Daten
+        let summary = `Willkommen zurück! 📦\n\nSie bearbeiten eine **bestehende ABL**`;
+
+        if (this.originalEditId) {
+            summary += ` (${this.originalEditId})`;
+        }
+
+        summary += `.\n\n**Vorhandene Daten:**`;
+
+        // Zeige was bereits ausgefüllt ist
+        const filledFields = [];
+        if (this.ablData.supplier) filledFields.push(`- Lieferant: **${this.ablData.supplier}**`);
+        if (this.ablData.owner) filledFields.push(`- Auftraggeber: **${this.ablData.owner}**`);
+        if (this.ablData.purchaseOrder) filledFields.push(`- Bestellnummer: **${this.ablData.purchaseOrder}**`);
+        if (this.ablData.wet) filledFields.push(`- WET-Datum: **${this.ablData.wet}**`);
+        if (this.ablData.project) filledFields.push(`- Projekt: **${this.ablData.project}**`);
+        if (this.ablData.location) filledFields.push(`- Standort: **${this.ablData.location}**`);
+        if (this.ablData.commodity) filledFields.push(`- Commodity: **${this.ablData.commodity}**`);
+        if (this.ablData.fek) filledFields.push(`- FEK: **${this.ablData.fek}**`);
+        if (this.ablData.recipient) filledFields.push(`- Empfänger: **${this.ablData.recipient}**`);
+
+        if (filledFields.length > 0) {
+            summary += `\n${filledFields.join('\n')}`;
+        } else {
+            summary += `\n- Keine Kopfdaten vorhanden`;
+        }
+
+        if (this.tools.length > 0) {
+            summary += `\n\n**${this.tools.length} Werkzeug(e) enthalten:**`;
+            this.tools.slice(0, 3).forEach(tool => {
+                summary += `\n- ${tool.number || 'Ohne Nummer'}${tool.name ? ': ' + tool.name : ''}`;
+            });
+            if (this.tools.length > 3) {
+                summary += `\n- ... und ${this.tools.length - 3} weitere`;
+            }
+        }
+
+        summary += `\n\n**Was möchten Sie tun?**`;
+
+        this.addAssistantMessage(summary, { inputType: 'edit_choice' });
+        this.currentStep = 'edit_choice';
+        this.updateToolsCount();
+        this.updateInputArea();
     }
 
     createEmptyTool() {
@@ -264,6 +417,9 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
         const canSkip = step && !step.required;
 
         switch (this.currentStep) {
+            case 'edit_choice':
+                inputArea.innerHTML = this.getEditChoiceInputHtml();
+                break;
             case 'supplier':
                 inputArea.innerHTML = this.getSupplierInputHtml();
                 break;
@@ -341,6 +497,29 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                 confirmBtn.focus();
             }
         }, 100);
+    }
+
+    getEditChoiceInputHtml() {
+        return `
+            <div class="edit-choice-buttons">
+                <button class="edit-btn edit-btn-primary" id="editContinueBtn">
+                    📝 Daten ergänzen
+                    <span class="btn-desc">Fehlende Felder ausfüllen</span>
+                </button>
+                <button class="edit-btn edit-btn-secondary" id="editToolsBtn">
+                    🔧 Werkzeuge bearbeiten
+                    <span class="btn-desc">Werkzeuge hinzufügen/ändern</span>
+                </button>
+                <button class="edit-btn edit-btn-success" id="editSummaryBtn">
+                    📋 Zur Zusammenfassung
+                    <span class="btn-desc">Direkt zum Abschluss</span>
+                </button>
+                <button class="edit-btn edit-btn-neutral" id="editRestartBtn">
+                    🔄 Von vorne beginnen
+                    <span class="btn-desc">Alle Daten löschen</span>
+                </button>
+            </div>
+        `;
     }
 
     getSupplierInputHtml() {
@@ -551,6 +730,25 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
     }
 
     reattachInputListeners() {
+        // Edit choice buttons (Edit-Modus)
+        const editContinueBtn = document.getElementById('editContinueBtn');
+        const editToolsBtn = document.getElementById('editToolsBtn');
+        const editSummaryBtn = document.getElementById('editSummaryBtn');
+        const editRestartBtn = document.getElementById('editRestartBtn');
+
+        if (editContinueBtn) {
+            editContinueBtn.addEventListener('click', () => this.handleEditChoice('continue'));
+        }
+        if (editToolsBtn) {
+            editToolsBtn.addEventListener('click', () => this.handleEditChoice('tools'));
+        }
+        if (editSummaryBtn) {
+            editSummaryBtn.addEventListener('click', () => this.handleEditChoice('summary'));
+        }
+        if (editRestartBtn) {
+            editRestartBtn.addEventListener('click', () => this.handleEditChoice('restart'));
+        }
+
         // Text input + Send button
         const input = document.getElementById('chatInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -735,6 +933,99 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
         const prompt = prompts[this.currentStep] || 'Weiter zum nächsten Schritt:';
         this.addAssistantMessage(prompt);
         this.updateInputArea();
+    }
+
+    // Handle edit mode choice
+    handleEditChoice(choice) {
+        switch (choice) {
+            case 'continue':
+                // Finde ersten leeren optionalen Schritt
+                this.addUserMessage('Daten ergänzen');
+                this.addAssistantMessage('Alles klar! Lassen Sie uns die fehlenden Daten ergänzen.');
+
+                // Setze auf ersten nicht ausgefüllten Schritt
+                // Überspringe Supplier wenn schon vorhanden
+                if (this.ablData.supplier) {
+                    this.currentStepIndex = 1; // owner
+                    this.currentStep = 'owner';
+                } else {
+                    this.currentStepIndex = 0;
+                    this.currentStep = 'supplier';
+                }
+                this.showStepPrompt();
+                break;
+
+            case 'tools':
+                // Direkt zu Werkzeugen
+                this.addUserMessage('Werkzeuge bearbeiten');
+                this.addAssistantMessage('Okay! Lassen Sie uns die Werkzeuge bearbeiten.');
+
+                // Finde Index von tool_number
+                const toolStepIdx = this.steps.findIndex(s => s.id === 'tool_number');
+                if (toolStepIdx >= 0) {
+                    this.currentStepIndex = toolStepIdx;
+                    this.currentStep = 'tool_number';
+                    this.currentTool = this.createEmptyTool();
+                }
+                this.showStepPrompt();
+                break;
+
+            case 'summary':
+                // Direkt zur Zusammenfassung
+                this.addUserMessage('Zur Zusammenfassung');
+
+                // Wenn noch keine Werkzeuge: warnen
+                if (this.tools.length === 0 && !this.currentTool?.number) {
+                    this.addAssistantMessage('⚠️ **Achtung:** Es sind noch keine Werkzeuge erfasst. Bitte fügen Sie mindestens ein Werkzeug hinzu.');
+                    const toolStepIdx = this.steps.findIndex(s => s.id === 'tool_number');
+                    if (toolStepIdx >= 0) {
+                        this.currentStepIndex = toolStepIdx;
+                        this.currentStep = 'tool_number';
+                    }
+                    this.showStepPrompt();
+                } else {
+                    // Direkt zur Summary
+                    this.currentStepIndex = this.steps.length - 1;
+                    this.currentStep = 'summary';
+                    this.showSummary();
+                }
+                break;
+
+            case 'restart':
+                // Von vorne beginnen
+                if (!confirm('Möchten Sie wirklich alle Daten löschen und von vorne beginnen?')) {
+                    return;
+                }
+                this.addUserMessage('Von vorne beginnen');
+                this.isEditMode = false;
+                this.originalEditId = null;
+                this.messages = [];
+                this.tools = [];
+                this.currentTool = this.createEmptyTool();
+                this.ablData = {
+                    supplier: null,
+                    supplierKey: null,
+                    owner: null,
+                    purchaseOrder: null,
+                    wet: null,
+                    project: null,
+                    commodity: null,
+                    fek: null,
+                    recipient: null,
+                    location: null,
+                    locationKey: null,
+                    vatId: null,
+                    comment: null,
+                    createdAt: new Date().toISOString(),
+                    status: 'draft'
+                };
+                this.currentStepIndex = 0;
+                this.currentStep = 'start';
+                this.renderMessages();
+                this.showGreeting();
+                break;
+        }
+        this.updateProgress();
     }
 
     // Processing functions for each step
@@ -1054,17 +1345,43 @@ Sie werden zur ABL-Übersicht weitergeleitet...`
     }
 
     saveToStorage() {
-        const ablRecord = {
-            id: `ABL-${Date.now()}`,
-            ...this.ablData,
-            tools: this.tools,
-            toolCount: this.tools.length,
-            primaryToolNumber: this.tools[0]?.number || null,
-            createdAt: this.ablData.createdAt || new Date().toISOString()
-        };
-
         const existingABLs = JSON.parse(localStorage.getItem('pending_abls') || '[]');
-        existingABLs.push(ablRecord);
+
+        // Im Edit-Modus: Bestehende ABL aktualisieren
+        if (this.isEditMode && this.originalEditId) {
+            const existingIndex = existingABLs.findIndex(abl => abl.id === this.originalEditId);
+
+            const ablRecord = {
+                id: this.originalEditId, // Original-ID beibehalten
+                ...this.ablData,
+                tools: this.tools,
+                toolCount: this.tools.length,
+                primaryToolNumber: this.tools[0]?.number || null,
+                updatedAt: new Date().toISOString()
+            };
+
+            if (existingIndex >= 0) {
+                // Aktualisieren
+                existingABLs[existingIndex] = ablRecord;
+                console.log('ABL aktualisiert:', this.originalEditId);
+            } else {
+                // Falls nicht gefunden, trotzdem hinzufügen
+                existingABLs.push(ablRecord);
+                console.log('ABL hinzugefügt (Edit-ID nicht gefunden):', this.originalEditId);
+            }
+        } else {
+            // Neue ABL erstellen
+            const ablRecord = {
+                id: `ABL-${Date.now()}`,
+                ...this.ablData,
+                tools: this.tools,
+                toolCount: this.tools.length,
+                primaryToolNumber: this.tools[0]?.number || null,
+                createdAt: this.ablData.createdAt || new Date().toISOString()
+            };
+            existingABLs.push(ablRecord);
+        }
+
         localStorage.setItem('pending_abls', JSON.stringify(existingABLs));
     }
 
@@ -1483,6 +1800,75 @@ Sie werden zur ABL-Übersicht weitergeleitet...`
 
             .no-locations-warning p:last-child {
                 margin-bottom: 0;
+            }
+
+            /* Edit Choice Buttons */
+            .edit-choice-buttons {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.75rem;
+                padding: 1rem;
+            }
+
+            .edit-btn {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.25rem;
+                padding: 1rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 12px;
+                background: white;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-size: 1rem;
+            }
+
+            .edit-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+
+            .edit-btn .btn-desc {
+                font-size: 0.7rem;
+                color: #6b7280;
+                font-weight: normal;
+            }
+
+            .edit-btn-primary {
+                border-color: #3b82f6;
+                color: #1e40af;
+            }
+
+            .edit-btn-primary:hover {
+                background: #eff6ff;
+            }
+
+            .edit-btn-secondary {
+                border-color: #8b5cf6;
+                color: #6d28d9;
+            }
+
+            .edit-btn-secondary:hover {
+                background: #f5f3ff;
+            }
+
+            .edit-btn-success {
+                border-color: #22c55e;
+                color: #15803d;
+            }
+
+            .edit-btn-success:hover {
+                background: #f0fdf4;
+            }
+
+            .edit-btn-neutral {
+                border-color: #9ca3af;
+                color: #4b5563;
+            }
+
+            .edit-btn-neutral:hover {
+                background: #f3f4f6;
             }
         `;
         document.head.appendChild(styles);
