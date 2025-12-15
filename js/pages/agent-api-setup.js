@@ -427,7 +427,7 @@ class AgentAPISetupPage {
                                 <span class="email-icon">📧</span>
                                 <div class="email-info">
                                     <span>Per E-Mail an:</span>
-                                    <code id="stammdatenEmail">inventurdaten@organizingcompanyassets.com</code>
+                                    <code id="stammdatenEmail">inventory@organizingcompanyassets.com</code>
                                 </div>
                                 <button class="copy-btn" id="copyStammdatenEmailBtn" title="Kopieren">📋</button>
                             </div>
@@ -851,7 +851,7 @@ class AgentAPISetupPage {
 
         // Copy Stammdaten email
         document.getElementById('copyStammdatenEmailBtn')?.addEventListener('click', () => {
-            navigator.clipboard.writeText('inventurdaten@organizingcompanyassets.com');
+            navigator.clipboard.writeText('inventory@organizingcompanyassets.com');
             const btn = document.getElementById('copyStammdatenEmailBtn');
             btn.textContent = '✓';
             setTimeout(() => btn.textContent = '📋', 2000);
@@ -1226,7 +1226,7 @@ So aktualisieren Sie Ihre Daten:
 3. Wählen Sie "Stammdaten-Sync"
 4. Laden Sie Ihre aktuelle Werkzeugliste hoch
 
-Bei Fragen wenden Sie sich an inventurdaten@organizingcompanyassets.com
+Bei Fragen wenden Sie sich an inventory@organizingcompanyassets.com
 
 Mit freundlichen Grüßen
 Ihr ORCA-Team
