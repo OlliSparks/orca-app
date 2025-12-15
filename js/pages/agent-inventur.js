@@ -550,20 +550,52 @@ Bitte stellen Sie sicher, dass:
     async readFileContent(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
+            const fileName = file.name.toLowerCase();
 
+            // Handle images
             if (file.type.startsWith('image/')) {
                 reader.onload = () => resolve({
                     type: 'image',
                     data: reader.result.split(',')[1] // Base64 without prefix
                 });
                 reader.readAsDataURL(file);
-            } else {
-                reader.onload = () => resolve({
-                    type: 'text',
-                    data: reader.result
-                });
-                reader.readAsText(file);
+                return;
             }
+
+            // Handle Excel files with SheetJS
+            if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+
+                        // Convert all sheets to text
+                        let textContent = '';
+                        for (const sheetName of workbook.SheetNames) {
+                            const sheet = workbook.Sheets[sheetName];
+                            // Convert to CSV format for easy parsing
+                            const csv = XLSX.utils.sheet_to_csv(sheet, { FS: '\t' });
+                            textContent += `=== Sheet: ${sheetName} ===\n${csv}\n\n`;
+                        }
+
+                        resolve({
+                            type: 'text',
+                            data: textContent
+                        });
+                    } catch (err) {
+                        reject(new Error('Excel-Datei konnte nicht gelesen werden: ' + err.message));
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+                return;
+            }
+
+            // Handle CSV and text files
+            reader.onload = () => resolve({
+                type: 'text',
+                data: reader.result
+            });
+            reader.readAsText(file);
 
             reader.onerror = () => reject(new Error('Datei konnte nicht gelesen werden'));
         });
