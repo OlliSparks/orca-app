@@ -33,18 +33,11 @@ class KPIPage {
             this.showLoadingScreen(app);
             this.injectStyles();
             await this.loadDataWithProgress();
-            this.renderDashboard(app, isLiveMode);
+            await this.renderDashboard(app, isLiveMode);
         } else {
-            this.renderDashboard(app, isLiveMode);
+            await this.renderDashboard(app, isLiveMode);
             this.injectStyles();
-            await this.loadData();
         }
-
-        // Update footer
-        document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="kpiPage.exportReport()">Export Report</button>
-            <button class="btn btn-primary" onclick="kpiPage.refreshData()">Aktualisieren</button>
-        `;
 
         // Attach event listeners
         this.attachEventListeners();
@@ -95,7 +88,7 @@ class KPIPage {
         }
     }
 
-    renderDashboard(app, isLiveMode) {
+    async renderDashboard(app, isLiveMode) {
         app.innerHTML = `
             <div class="container">
                 <!-- API Mode Indicator -->
@@ -502,11 +495,13 @@ class KPIPage {
             <button class="btn btn-primary" onclick="kpiPage.refreshData()">Aktualisieren</button>
         `;
 
-        // Attach event listeners
-        this.attachEventListeners();
+        // Load data if not already loaded (for mock mode)
+        if (!this.kpiData) {
+            this.kpiData = this.getMockKPIData();
+        }
 
-        // Load data (Mock for now)
-        await this.loadData();
+        // Update display with loaded data
+        this.updateDisplay();
     }
 
     injectStyles() {
