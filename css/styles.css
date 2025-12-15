@@ -1777,6 +1777,86 @@ tr.missing {
     border-style: solid;
 }
 
+/* === EXPORT DROPDOWN === */
+.export-dropdown {
+    position: relative;
+    margin-right: 1rem;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.export-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.export-btn .dropdown-arrow {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}
+
+.export-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.25rem;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    min-width: 150px;
+    z-index: 100;
+    display: none;
+}
+
+.export-menu.active {
+    display: block;
+}
+
+.export-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: none;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+
+.export-option:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.export-option:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+.export-option:hover {
+    background: #f3f4f6;
+}
+
+.export-option span {
+    font-size: 1rem;
+}
+
 .photo-placeholder {
     color: #6b7280;
 }

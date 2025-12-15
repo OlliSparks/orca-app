@@ -135,6 +135,19 @@ class InventurPage {
                         </div>
                     </div>
                     <div class="toolbar-right">
+                        <div class="export-dropdown">
+                            <button class="export-btn" id="exportBtn">
+                                📥 Export <span class="dropdown-arrow">▾</span>
+                            </button>
+                            <div class="export-menu" id="exportMenu">
+                                <button class="export-option" data-format="xlsx">
+                                    <span>📊</span> Excel (.xlsx)
+                                </button>
+                                <button class="export-option" data-format="csv">
+                                    <span>📄</span> CSV (.csv)
+                                </button>
+                            </div>
+                        </div>
                         <div class="view-toggle">
                             <button class="view-btn" data-view="table">📋 Tabelle</button>
                             <button class="view-btn active" data-view="card">🗂️ Karten</button>
@@ -723,6 +736,26 @@ class InventurPage {
                 this.currentView = btn.dataset.view;
                 this.switchView();
             });
+        });
+
+        // Export dropdown
+        const exportBtn = document.getElementById('exportBtn');
+        const exportMenu = document.getElementById('exportMenu');
+        exportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportMenu.classList.toggle('active');
+        });
+        document.querySelectorAll('.export-option').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const format = btn.dataset.format;
+                this.exportData(format);
+                exportMenu.classList.remove('active');
+            });
+        });
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            exportMenu.classList.remove('active');
         });
 
         // Confirm all checkbox (table view)
@@ -1710,6 +1743,108 @@ class InventurPage {
         } else {
             this.renderCards();
         }
+    }
+
+    // Export-Funktionen
+    exportData(format) {
+        const filteredTools = this.getFilteredTools();
+
+        if (filteredTools.length === 0) {
+            alert('Keine Daten zum Exportieren vorhanden.');
+            return;
+        }
+
+        // Daten für Export aufbereiten
+        const exportData = filteredTools.map(tool => ({
+            'Werkzeugnummer': tool.number || tool.inventoryNumber || '',
+            'Bezeichnung': tool.name || '',
+            'Standort': tool.location || '',
+            'Verantwortlicher': tool.responsible || '',
+            'Fälligkeitsdatum': this.formatDate(tool.dueDate) || '',
+            'Status': this.getStatusText(tool.status),
+            'Kommentar': tool.comment || ''
+        }));
+
+        if (format === 'xlsx') {
+            this.exportToExcel(exportData);
+        } else if (format === 'csv') {
+            this.exportToCSV(exportData);
+        }
+    }
+
+    getStatusText(status) {
+        const statusMap = {
+            'pending': 'Offen',
+            'confirmed': 'Bestätigt',
+            'relocated': 'Verschoben',
+            'missing': 'Fehlend'
+        };
+        return statusMap[status] || status || 'Offen';
+    }
+
+    exportToExcel(data) {
+        // Nutze SheetJS (bereits eingebunden)
+        if (typeof XLSX === 'undefined') {
+            alert('Excel-Export nicht verfügbar. Bitte nutzen Sie CSV.');
+            return;
+        }
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Inventur');
+
+        // Spaltenbreiten anpassen
+        ws['!cols'] = [
+            { wch: 15 }, // Werkzeugnummer
+            { wch: 30 }, // Bezeichnung
+            { wch: 20 }, // Standort
+            { wch: 20 }, // Verantwortlicher
+            { wch: 15 }, // Fälligkeitsdatum
+            { wch: 12 }, // Status
+            { wch: 30 }  // Kommentar
+        ];
+
+        // Dateiname mit Datum
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `Inventur_Export_${date}.xlsx`;
+
+        XLSX.writeFile(wb, filename);
+    }
+
+    exportToCSV(data) {
+        if (data.length === 0) return;
+
+        // Header
+        const headers = Object.keys(data[0]);
+        const csvRows = [headers.join(';')];
+
+        // Daten
+        for (const row of data) {
+            const values = headers.map(header => {
+                const value = row[header] || '';
+                // Escape für CSV (Semikolon, Anführungszeichen, Zeilenumbrüche)
+                const escaped = String(value).replace(/"/g, '""');
+                return `"${escaped}"`;
+            });
+            csvRows.push(values.join(';'));
+        }
+
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        // Dateiname mit Datum
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `Inventur_Export_${date}.csv`;
+
+        // Download triggern
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 }
 
