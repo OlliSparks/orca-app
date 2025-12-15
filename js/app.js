@@ -150,6 +150,16 @@ class OrcaApp {
         router.addRoute('/agent-vpw', () => {
             agentVPWPage.render();
         });
+
+        // API-Setup-Agent (Lieferanten-Anbindung)
+        router.addRoute('/agent-api-setup', () => {
+            agentAPISetupPage.render();
+        });
+
+        // API-Monitor-Agent (Admin-Übersicht)
+        router.addRoute('/agent-api-monitor', () => {
+            agentAPIMonitorPage.render();
+        });
     }
 
     async checkAPIStatus() {

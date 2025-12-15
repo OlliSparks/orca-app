@@ -64,6 +64,24 @@ class AgentenPage {
                 features: ['Terminvorschläge', 'Kapazitätsplanung', 'Automatische Zuweisung'],
                 status: 'coming-soon',
                 route: '/agent-inventurplanung'
+            },
+            {
+                id: 'api-setup',
+                name: 'API-Anbindung',
+                icon: '🔗',
+                description: 'Verbinden Sie Ihr Werkzeug-Management-System mit ORCA. Automatische Inventurbeantwortung ohne manuellen Aufwand.',
+                features: ['Schritt-für-Schritt Einrichtung', 'Vollautomatisch oder Prüfen & Freigeben', 'Code-Beispiele', 'Verbindungstest'],
+                status: 'active',
+                route: '/agent-api-setup'
+            },
+            {
+                id: 'api-monitor',
+                name: 'API-Monitor',
+                icon: '📡',
+                description: 'Übersicht aller angebundenen Lieferanten-Systeme. Status, Aktivitäten und Statistiken.',
+                features: ['Verbindungsstatus', 'Aktivitätslog', 'Antwort-Statistiken', 'Fehlerüberwachung'],
+                status: 'active',
+                route: '/agent-api-monitor'
             }
         ];
     }
