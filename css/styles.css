@@ -3545,6 +3545,7 @@ table td input[type="text"] {
     transition: all var(--transition-normal);
     box-shadow: 0 4px 12px rgba(44, 74, 140, 0.25);
     flex-shrink: 0;
+    margin-left: auto;
 }
 
 .agent-btn-integrated:hover {

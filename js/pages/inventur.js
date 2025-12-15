@@ -67,10 +67,6 @@ class InventurPage {
                 <!-- Tacho Widget mit Agent-Button -->
                 <div class="speedometer-widget">
                     <div class="speedometer-header">
-                        <div class="speedometer-text">
-                            <h2>Fortschritt: Inventur</h2>
-                            <p>Bearbeitete Werkzeuge (bestätigt, verschoben oder als fehlend gemeldet)</p>
-                        </div>
                         <div class="speedometer-container">
                             <div class="speedometer">
                                 <svg viewBox="0 0 200 120" style="width: 100%; height: 100%;">
@@ -85,6 +81,10 @@ class InventurPage {
                                 <div class="speedometer-percentage" id="speedometerPercentage">0%</div>
                                 <div class="speedometer-label">Abgeschlossen</div>
                             </div>
+                        </div>
+                        <div class="speedometer-text">
+                            <h2>Fortschritt: Inventur</h2>
+                            <p>Bearbeitete Werkzeuge (bestätigt, verschoben oder als fehlend gemeldet)</p>
                         </div>
                         <button class="agent-btn-integrated" id="agentImportBtn">
                             <span class="agent-btn-icon">🤖</span>
