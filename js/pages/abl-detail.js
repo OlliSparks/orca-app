@@ -44,10 +44,22 @@ class ABLDetailPage {
 
         try {
             // Prüfe ob es eine lokale ABL ist (aus dem Agent erstellt)
+            let localABL = null;
+
+            // Erst sessionStorage prüfen (von ABL-Liste)
             const localABLData = sessionStorage.getItem('localABLDetail');
             if (localABLData && this.inventoryKey.startsWith('ABL-')) {
                 sessionStorage.removeItem('localABLDetail');
-                const localABL = JSON.parse(localABLData);
+                localABL = JSON.parse(localABLData);
+            }
+
+            // Wenn nicht in sessionStorage, direkt aus localStorage laden (von Messages)
+            if (!localABL && this.inventoryKey.startsWith('ABL-')) {
+                const pendingABLs = JSON.parse(localStorage.getItem('pending_abls') || '[]');
+                localABL = pendingABLs.find(abl => abl.id === this.inventoryKey);
+            }
+
+            if (localABL) {
                 this.isLocalABL = true;
                 this.localABLData = localABL;
 
