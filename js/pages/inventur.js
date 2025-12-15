@@ -346,6 +346,9 @@ class InventurPage {
         // Load data
         await this.loadData();
 
+        // Check for agent import data
+        await this.applyAgentImport();
+
         // Attach event listeners
         this.attachEventListeners();
 
@@ -427,6 +430,133 @@ class InventurPage {
         } catch (error) {
             console.error('Error loading company users:', error);
             this.companyUsers = [];
+        }
+    }
+
+    // Prüft auf importierte Daten vom Inventur-Agenten und markiert diese als bestätigt
+    async applyAgentImport() {
+        const importDataStr = localStorage.getItem('agent_import_data');
+        if (!importDataStr) return;
+
+        try {
+            const importData = JSON.parse(importDataStr);
+
+            // Prüfe ob die Daten noch aktuell sind (max 1 Stunde alt)
+            const importTime = new Date(importData.timestamp);
+            const now = new Date();
+            const hoursDiff = (now - importTime) / (1000 * 60 * 60);
+            if (hoursDiff > 1) {
+                localStorage.removeItem('agent_import_data');
+                return;
+            }
+
+            // Erstelle Set der importierten Werkzeugnummern (normalisiert)
+            const importedNumbers = new Set();
+            for (const tool of importData.tools) {
+                if (tool.number) {
+                    // Normalisiere: entferne führende Nullen für Vergleich
+                    const normalized = tool.number.replace(/^0+/, '');
+                    importedNumbers.add(normalized);
+                    importedNumbers.add(tool.number); // Auch original behalten
+                }
+            }
+
+            // Markiere übereinstimmende Werkzeuge als bestätigt
+            let confirmedCount = 0;
+            for (const tool of this.tools) {
+                const toolNumber = tool.toolNumber || tool.number || tool.id || '';
+                const normalizedToolNumber = toolNumber.toString().replace(/^0+/, '');
+
+                if (importedNumbers.has(toolNumber.toString()) || importedNumbers.has(normalizedToolNumber)) {
+                    if (tool.status !== 'confirmed') {
+                        tool.status = 'confirmed';
+                        confirmedCount++;
+                    }
+                }
+            }
+
+            // Lösche importierte Daten
+            localStorage.removeItem('agent_import_data');
+
+            // Zeige Erfolgs-Banner wenn Werkzeuge bestätigt wurden
+            if (confirmedCount > 0) {
+                this.showAgentImportBanner(confirmedCount, importData.tools.length);
+            }
+
+        } catch (error) {
+            console.error('Error applying agent import:', error);
+            localStorage.removeItem('agent_import_data');
+        }
+    }
+
+    // Zeigt ein Banner mit der Import-Zusammenfassung
+    showAgentImportBanner(confirmedCount, totalImported) {
+        const existingBanner = document.getElementById('agentImportBanner');
+        if (existingBanner) existingBanner.remove();
+
+        const banner = document.createElement('div');
+        banner.id = 'agentImportBanner';
+        banner.className = 'agent-import-banner';
+        banner.innerHTML = `
+            <div class="banner-content">
+                <span class="banner-icon">🤖</span>
+                <div class="banner-text">
+                    <strong>${confirmedCount} Werkzeuge</strong> wurden vom Inventur-Agenten als bestätigt übernommen.
+                    ${confirmedCount < totalImported
+                        ? `<br><small>${totalImported - confirmedCount} Werkzeuge konnten nicht zugeordnet werden.</small>`
+                        : ''
+                    }
+                </div>
+                <button class="banner-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+
+        // Füge Banner nach dem Header ein
+        const container = document.querySelector('.inventur-page') || document.querySelector('.container');
+        if (container) {
+            container.insertBefore(banner, container.firstChild);
+        }
+
+        // Füge Styles hinzu wenn nicht vorhanden
+        if (!document.getElementById('agent-import-banner-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'agent-import-banner-styles';
+            styles.textContent = `
+                .agent-import-banner {
+                    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+                    border: 1px solid #86efac;
+                    border-radius: 8px;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                }
+                .agent-import-banner .banner-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                }
+                .agent-import-banner .banner-icon {
+                    font-size: 2rem;
+                }
+                .agent-import-banner .banner-text {
+                    flex: 1;
+                    color: #166534;
+                }
+                .agent-import-banner .banner-text small {
+                    color: #15803d;
+                }
+                .agent-import-banner .banner-close {
+                    background: none;
+                    border: none;
+                    font-size: 1.5rem;
+                    color: #16a34a;
+                    cursor: pointer;
+                    padding: 0 0.5rem;
+                }
+                .agent-import-banner .banner-close:hover {
+                    color: #166534;
+                }
+            `;
+            document.head.appendChild(styles);
         }
     }
 
