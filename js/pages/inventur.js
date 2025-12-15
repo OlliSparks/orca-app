@@ -403,6 +403,17 @@ class InventurPage {
 
         console.log('Total positions loaded:', allPositions.length);
 
+        // Debug: Zeige erstes Position-Objekt nach Transformation
+        if (allPositions.length > 0) {
+            console.log('First transformed position:', {
+                number: allPositions[0].number,
+                name: allPositions[0].name,
+                location: allPositions[0].location,
+                dueDate: allPositions[0].dueDate,
+                responsible: allPositions[0].responsible
+            });
+        }
+
         // Schritt 3: Positionen als tools speichern
         this.tools = allPositions.map(tool => ({
             ...tool,
