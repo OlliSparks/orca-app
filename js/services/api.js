@@ -2713,19 +2713,25 @@ class APIService {
                 const response = await this.call(`/companies/${companyKey}/locations?limit=10000&showInactive=true`, 'GET');
 
                 const locations = Array.isArray(response) ? response : (response.data || []);
-                return {
-                    success: true,
-                    data: locations.map(loc => ({
+
+                // Map und filtere Standorte - nur solche mit gültigem Namen anzeigen
+                const mappedLocations = locations
+                    .map(loc => ({
                         key: loc.context?.key || '',
-                        name: loc.meta?.title || loc.meta?.name || 'Unbenannt',
+                        name: loc.meta?.title || loc.meta?.name || '',
                         country: loc.meta?.country || '',
                         city: loc.meta?.city || '',
                         street: loc.meta?.street || '',
                         postcode: loc.meta?.postcode || '',
                         isDefault: loc.meta?.isDefault || false,
                         originalData: loc
-                    })),
-                    total: locations.length
+                    }))
+                    .filter(loc => loc.name && loc.name.trim() !== ''); // Filtere leere/unbenannte Standorte
+
+                return {
+                    success: true,
+                    data: mappedLocations,
+                    total: mappedLocations.length
                 };
             },
             () => this.getMockLocationsData()
