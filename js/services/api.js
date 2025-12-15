@@ -3138,6 +3138,27 @@ class APIService {
     }
 
     /**
+     * Assets Grid Report abrufen (Fertigungsmittel-Tabelle)
+     * GET /report/grids/assets/restriction-based?fn=supplier&fv={supplierId}
+     * @param {string} supplierId - Supplier-ID für Filter
+     * @returns {Promise<Object>} Grid-Daten mit assets
+     */
+    async getAssetsGridReport(supplierId) {
+        if (this.mode === 'mock') {
+            return this.getMockAssetsGridData();
+        }
+
+        try {
+            const endpoint = `/report/grids/assets/restriction-based?fn=supplier&fv=${supplierId}`;
+            const data = await this.call(endpoint);
+            return data;
+        } catch (error) {
+            console.error('Error fetching assets grid report:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Binärer API-Call für PDF/XLSX Downloads
      */
     async callBinary(endpoint) {
@@ -3215,6 +3236,39 @@ class APIService {
             content: format === 'HTML'
                 ? `<html><body><h1>Verschrottungs-Report ${scrappingKey}</h1><p>12 Assets zur Verschrottung</p></body></html>`
                 : null
+        };
+    }
+
+    getMockAssetsGridData() {
+        return {
+            gridData: [
+                {
+                    assetNumber: 'WZ-2024-001',
+                    description: 'Spritzgusswerkzeug A',
+                    status: 'I1',
+                    location: 'Hunedoara, RO',
+                    responsible: 'Max Mustermann',
+                    lastInventory: '2024-11-15'
+                },
+                {
+                    assetNumber: 'WZ-2024-002',
+                    description: 'Stanzwerkzeug B',
+                    status: 'I2',
+                    location: 'Timisoara, RO',
+                    responsible: 'Hans Schmidt',
+                    lastInventory: '2024-10-20'
+                },
+                {
+                    assetNumber: 'WZ-2024-003',
+                    description: 'Presswerkzeug C',
+                    status: 'I0',
+                    location: 'Sibiu, RO',
+                    responsible: 'Peter Müller',
+                    lastInventory: '2024-09-05'
+                }
+            ],
+            totalCount: 3,
+            generatedAt: new Date().toISOString()
         };
     }
 }

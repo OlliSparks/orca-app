@@ -29,7 +29,11 @@ class AgentReportingPage {
                         <div class="sidebar-section">
                             <h3>Report-Typ</h3>
                             <div class="report-types">
-                                <button class="report-type active" data-type="inventory">
+                                <button class="report-type active" data-type="assets">
+                                    <span class="type-icon">🔧</span>
+                                    <span class="type-label">Fertigungsmittel</span>
+                                </button>
+                                <button class="report-type" data-type="inventory">
                                     <span class="type-icon">📋</span>
                                     <span class="type-label">Inventur-Reports</span>
                                 </button>
@@ -45,26 +49,10 @@ class AgentReportingPage {
                         </div>
 
                         <div class="sidebar-section" id="reportFilterSection">
-                            <h3>Filter</h3>
-                            <div class="filter-group">
-                                <label>Status</label>
-                                <select id="statusFilter" class="agent-select">
-                                    <option value="all">Alle</option>
-                                    <option value="I3">Genehmigt (I3)</option>
-                                    <option value="I4">Abgeschlossen (I4)</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label>Zeitraum</label>
-                                <select id="periodFilter" class="agent-select">
-                                    <option value="all">Alle</option>
-                                    <option value="month">Letzter Monat</option>
-                                    <option value="quarter">Letztes Quartal</option>
-                                    <option value="year">Letztes Jahr</option>
-                                </select>
-                            </div>
-                            <button class="agent-btn primary" id="loadReportsBtn">
-                                <span>Reports laden</span>
+                            <h3>Fertigungsmittel laden</h3>
+                            <p class="filter-hint">Lädt alle Werkzeuge des konfigurierten Lieferanten.</p>
+                            <button class="agent-btn primary" id="loadAssetsBtn">
+                                <span>Fertigungsmittel laden</span>
                             </button>
                         </div>
 
@@ -161,6 +149,9 @@ class AgentReportingPage {
             btn.addEventListener('click', () => this.selectReportType(btn));
         });
 
+        // Load assets button (default)
+        document.getElementById('loadAssetsBtn')?.addEventListener('click', () => this.loadAssetsGrid());
+
         // Load reports button
         document.getElementById('loadReportsBtn')?.addEventListener('click', () => this.loadReports());
 
@@ -182,7 +173,17 @@ class AgentReportingPage {
 
         // Update filter section based on type
         const filterSection = document.getElementById('reportFilterSection');
-        if (type === 'custom') {
+
+        if (type === 'assets') {
+            filterSection.innerHTML = `
+                <h3>Fertigungsmittel laden</h3>
+                <p class="filter-hint">Lädt alle Werkzeuge des konfigurierten Lieferanten.</p>
+                <button class="agent-btn primary" id="loadAssetsBtn">
+                    <span>Fertigungsmittel laden</span>
+                </button>
+            `;
+            document.getElementById('loadAssetsBtn')?.addEventListener('click', () => this.loadAssetsGrid());
+        } else if (type === 'custom') {
             filterSection.innerHTML = `
                 <h3>Eigene Auswertung</h3>
                 <div class="filter-group">
@@ -236,6 +237,120 @@ class AgentReportingPage {
 
         // Hide report list when changing type
         document.getElementById('reportListSection').style.display = 'none';
+
+        // Reset main content
+        document.getElementById('reportPlaceholder').style.display = 'flex';
+        document.getElementById('reportContent').style.display = 'none';
+        document.getElementById('reportActions').style.display = 'none';
+    }
+
+    async loadAssetsGrid() {
+        this.showLoading(true);
+
+        try {
+            // Get supplier ID from config
+            const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+            const supplierId = config.supplierId || config.companyKey;
+
+            if (!supplierId) {
+                this.showError('Bitte konfigurieren Sie eine Supplier-ID in den Einstellungen.');
+                this.showLoading(false);
+                return;
+            }
+
+            console.log('Loading assets grid for supplier:', supplierId);
+            const data = await api.getAssetsGridReport(supplierId);
+
+            this.reportData = data;
+            this.renderAssetsGrid(data);
+
+            // Show actions sidebar
+            document.getElementById('reportActions').style.display = 'flex';
+
+        } catch (error) {
+            console.error('Error loading assets grid:', error);
+            this.showError('Fehler beim Laden der Fertigungsmittel: ' + error.message);
+        }
+
+        this.showLoading(false);
+    }
+
+    renderAssetsGrid(data) {
+        const container = document.getElementById('reportContent');
+        const placeholder = document.getElementById('reportPlaceholder');
+
+        placeholder.style.display = 'none';
+        container.style.display = 'block';
+
+        const gridData = data.gridData || data.content || data || [];
+        const totalCount = gridData.length;
+
+        // Detect column names from first item
+        const firstItem = gridData[0] || {};
+        const columns = Object.keys(firstItem);
+
+        // Prioritize important columns
+        const priorityCols = ['assetNumber', 'number', 'name', 'description', 'status', 'location', 'responsible'];
+        const sortedColumns = [
+            ...priorityCols.filter(c => columns.includes(c)),
+            ...columns.filter(c => !priorityCols.includes(c))
+        ].slice(0, 8); // Max 8 columns
+
+        container.innerHTML = `
+            <div class="report-header-bar">
+                <h2>Fertigungsmittel</h2>
+                <span class="report-date">${totalCount} Werkzeuge | Stand: ${new Date().toLocaleDateString('de-DE')}</span>
+            </div>
+            <div class="assets-grid-container">
+                <table class="assets-grid-table">
+                    <thead>
+                        <tr>
+                            ${sortedColumns.map(col => `<th>${this.formatColumnName(col)}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${gridData.map(item => `
+                            <tr>
+                                ${sortedColumns.map(col => `<td>${this.formatCellValue(item[col], col)}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        // Store for export
+        this.assetsGridData = gridData;
+    }
+
+    formatColumnName(col) {
+        const names = {
+            assetNumber: 'Asset-Nr.',
+            number: 'Nummer',
+            name: 'Name',
+            description: 'Beschreibung',
+            status: 'Status',
+            location: 'Standort',
+            responsible: 'Verantwortlich',
+            lastInventory: 'Letzte Inventur',
+            supplier: 'Lieferant',
+            type: 'Typ'
+        };
+        return names[col] || col;
+    }
+
+    formatCellValue(value, col) {
+        if (value === null || value === undefined) return '-';
+
+        if (col === 'status') {
+            return `<span class="status-badge ${value}">${value}</span>`;
+        }
+
+        if (typeof value === 'object') {
+            return value.name || value.title || JSON.stringify(value);
+        }
+
+        return String(value);
     }
 
     async loadReports() {
@@ -501,6 +616,12 @@ class AgentReportingPage {
     }
 
     async exportReport(format) {
+        // Check if we have assets grid data to export
+        if (this.assetsGridData && this.assetsGridData.length > 0) {
+            this.exportAssetsGrid(format);
+            return;
+        }
+
         if (!this.selectedReport) {
             alert('Bitte wählen Sie zuerst einen Report aus.');
             return;
@@ -548,6 +669,51 @@ class AgentReportingPage {
         }
 
         this.showLoading(false);
+    }
+
+    exportAssetsGrid(format) {
+        const data = this.assetsGridData;
+        const timestamp = new Date().toISOString().split('T')[0];
+
+        if (format === 'CSV') {
+            // Export as CSV
+            const columns = Object.keys(data[0] || {});
+            const header = columns.join(';');
+            const rows = data.map(item =>
+                columns.map(col => {
+                    let val = item[col];
+                    if (typeof val === 'object') val = val?.name || JSON.stringify(val);
+                    return `"${String(val || '').replace(/"/g, '""')}"`;
+                }).join(';')
+            );
+            const csv = [header, ...rows].join('\n');
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+            this.downloadBlob(blob, `fertigungsmittel-${timestamp}.csv`);
+
+        } else if (format === 'XLSX' && typeof XLSX !== 'undefined') {
+            // Export as Excel using SheetJS
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Fertigungsmittel');
+            XLSX.writeFile(wb, `fertigungsmittel-${timestamp}.xlsx`);
+
+        } else {
+            // Fallback: JSON export
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            this.downloadBlob(blob, `fertigungsmittel-${timestamp}.json`);
+        }
+    }
+
+    downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     async generateCustomReport() {
@@ -1220,6 +1386,56 @@ class AgentReportingPage {
 
             .btn-icon {
                 font-size: 1rem;
+            }
+
+            /* Assets Grid Table */
+            .assets-grid-container {
+                overflow-x: auto;
+                max-height: calc(100vh - 280px);
+            }
+
+            .assets-grid-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.875rem;
+            }
+
+            .assets-grid-table th {
+                position: sticky;
+                top: 0;
+                background: #f3f4f6;
+                padding: 0.75rem 1rem;
+                text-align: left;
+                font-weight: 600;
+                color: #374151;
+                border-bottom: 2px solid #e5e7eb;
+                white-space: nowrap;
+            }
+
+            .assets-grid-table td {
+                padding: 0.625rem 1rem;
+                border-bottom: 1px solid #e5e7eb;
+                color: #1f2937;
+            }
+
+            .assets-grid-table tbody tr:hover {
+                background: #f9fafb;
+            }
+
+            .assets-grid-table tbody tr:nth-child(even) {
+                background: #fafafa;
+            }
+
+            .assets-grid-table tbody tr:nth-child(even):hover {
+                background: #f3f4f6;
+            }
+
+            /* Filter hint */
+            .filter-hint {
+                font-size: 0.8rem;
+                color: #6b7280;
+                margin-bottom: 1rem;
+                line-height: 1.4;
             }
         `;
         document.head.appendChild(styles);
