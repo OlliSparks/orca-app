@@ -56,7 +56,15 @@ class InventurPage {
                     <p>Alle fälligen Werkzeuge für die nächsten 3 Wochen sind bestätigt. Vielen Dank für Ihre hervorragende Arbeit!</p>
                 </div>
 
-                <!-- Tacho Widget -->
+                <!-- Ladebalken -->
+                <div class="loading-bar-container" id="loadingBarContainer" style="display: none;">
+                    <div class="loading-bar-text">Lade Inventurdaten...</div>
+                    <div class="loading-bar">
+                        <div class="loading-bar-progress" id="loadingBarProgress"></div>
+                    </div>
+                </div>
+
+                <!-- Tacho Widget mit Agent-Button -->
                 <div class="speedometer-widget">
                     <div class="speedometer-header">
                         <div class="speedometer-text">
@@ -78,28 +86,34 @@ class InventurPage {
                                 <div class="speedometer-label">Abgeschlossen</div>
                             </div>
                         </div>
+                        <button class="agent-btn-integrated" id="agentImportBtn">
+                            <span class="agent-btn-icon">🤖</span>
+                            <div class="agent-btn-content">
+                                <strong>KI-Agent</strong>
+                                <small>Daten importieren</small>
+                            </div>
+                        </button>
                     </div>
                 </div>
 
-                <div class="view-controls">
-                    <button class="agent-btn" id="agentImportBtn">
-                        <span class="agent-btn-icon">🤖</span>
-                        <span class="agent-btn-text">
-                            <strong>KI-Agent starten</strong>
-                            <small>Daten automatisch importieren</small>
-                        </span>
-                    </button>
-                    <div style="display: flex; gap: 0.5rem; margin-left: auto;">
-                        <button class="bulk-btn secondary" id="filterLocationBtn">📌 Nach Standort filtern</button>
-                        <button class="bulk-btn secondary" id="filterResponsibleBtn">👤 Nach Verantwortlichem filtern</button>
-                        <button class="bulk-btn secondary" id="resetFiltersBtn" style="display: none;">✕ Filter zurücksetzen</button>
+                <!-- Aktions-Leiste: Filter + Bestätigen -->
+                <div class="action-bar">
+                    <div class="action-bar-left">
+                        <button class="action-btn filter" id="filterLocationBtn">
+                            <span>📌</span> Standort
+                        </button>
+                        <button class="action-btn filter" id="filterResponsibleBtn">
+                            <span>👤</span> Verantwortlicher
+                        </button>
+                        <button class="action-btn reset" id="resetFiltersBtn" style="display: none;">
+                            ✕ Filter zurücksetzen
+                        </button>
                     </div>
-                </div>
-
-                <div class="confirm-all-section">
-                    <button class="bulk-btn primary confirm-all-prominent" id="confirmAllBtn">
-                        ✓ Alle gefilterten Werkzeuge bestätigen
-                    </button>
+                    <div class="action-bar-right">
+                        <button class="action-btn primary" id="confirmAllBtn">
+                            ✓ Alle bestätigen
+                        </button>
+                    </div>
                 </div>
 
                 <div class="toolbar">
@@ -363,10 +377,14 @@ class InventurPage {
     }
 
     async loadData() {
+        // Ladebalken anzeigen
+        this.showLoadingBar(true, 'Lade Inventurliste...');
+
         // Schritt 1: Inventur-Liste holen (Kopfdaten)
         const inventoryResponse = await api.getInventoryList();
         if (!inventoryResponse.success) {
             console.error('Failed to load inventory list');
+            this.showLoadingBar(false);
             return;
         }
 
@@ -376,12 +394,17 @@ class InventurPage {
             this.updateSupplierHeader();
         }
 
-
         // Schritt 2: Fuer jede Inventur die Positionen laden
         const allPositions = [];
+        const totalInventories = inventoryResponse.data.length;
 
-        for (const inventory of inventoryResponse.data) {
+        for (let i = 0; i < inventoryResponse.data.length; i++) {
+            const inventory = inventoryResponse.data[i];
             const inventoryKey = inventory.inventoryKey || inventory.id;
+
+            // Ladebalken aktualisieren
+            const progress = Math.round(((i + 1) / totalInventories) * 100);
+            this.showLoadingBar(true, `Lade Positionen (${i + 1}/${totalInventories})...`, progress);
 
             try {
                 const positionsResponse = await api.getInventoryPositions(inventoryKey);
@@ -417,7 +440,35 @@ class InventurPage {
         this.extractLocationsFromTools();
 
         // Schritt 5: Benutzerliste aus API laden (fuer Delegate-Dropdown)
+        this.showLoadingBar(true, 'Lade Benutzerliste...', 100);
         await this.loadCompanyUsers();
+
+        // Ladebalken ausblenden
+        this.showLoadingBar(false);
+    }
+
+    // Ladebalken anzeigen/ausblenden
+    showLoadingBar(show, text = '', progress = 0) {
+        const container = document.getElementById('loadingBarContainer');
+        const progressBar = document.getElementById('loadingBarProgress');
+        const textEl = container?.querySelector('.loading-bar-text');
+
+        if (!container) return;
+
+        if (show) {
+            container.style.display = 'block';
+            if (textEl) textEl.textContent = text;
+            if (progressBar) {
+                progressBar.style.width = progress > 0 ? `${progress}%` : '30%';
+                if (progress === 0) {
+                    progressBar.classList.add('indeterminate');
+                } else {
+                    progressBar.classList.remove('indeterminate');
+                }
+            }
+        } else {
+            container.style.display = 'none';
+        }
     }
 
     // Laedt die Benutzerliste aus der Company-API

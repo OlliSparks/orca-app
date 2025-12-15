@@ -244,7 +244,10 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
                             <span class="result-label">${msg.results.inventoryCount === 1 ? 'Inventur' : 'Inventuren'}</span>
                         </div>
                     </div>
-                    <button class="view-details-btn" id="viewDetailsBtn">Details anzeigen →</button>
+                    <div class="results-actions">
+                        <button class="view-details-btn secondary" id="viewDetailsBtn">Details anzeigen</button>
+                        <button class="view-details-btn primary" id="applyResultsBtn">✓ In Inventur übernehmen</button>
+                    </div>
                 </div>
             `;
         }
@@ -441,12 +444,16 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
         this.messages.push(msg);
         this.renderMessages();
 
-        // Attach event listener for view details button if results exist
+        // Attach event listeners for result buttons
         if (results) {
             setTimeout(() => {
-                const btn = document.getElementById('viewDetailsBtn');
-                if (btn) {
-                    btn.addEventListener('click', () => this.showResultsPanel());
+                const detailsBtn = document.getElementById('viewDetailsBtn');
+                if (detailsBtn) {
+                    detailsBtn.addEventListener('click', () => this.showResultsPanel());
+                }
+                const applyBtn = document.getElementById('applyResultsBtn');
+                if (applyBtn) {
+                    applyBtn.addEventListener('click', () => this.applyToInventory());
                 }
             }, 100);
         }
@@ -1185,34 +1192,34 @@ Wählen Sie links eine Option und laden Sie Ihre Daten hoch.`
 
             .ai-status-display.ready {
                 background: #dcfce7;
-                border-color: #86efac;
+                border-color: #22c55e;
             }
 
             .ai-status-display.ready .ai-icon {
-                color: #16a34a;
+                color: #22c55e;
             }
 
             .ai-status-display.mock {
                 background: #dbeafe;
-                border-color: #93c5fd;
+                border-color: #3b82f6;
             }
 
             .ai-status-display.mock .ai-icon {
-                color: #2563eb;
+                color: #3b82f6;
             }
 
             .ai-status-display.warning {
                 background: #fef3c7;
-                border-color: #fcd34d;
+                border-color: #f59e0b;
             }
 
             .ai-status-display.warning .ai-icon {
-                color: #d97706;
+                color: #f59e0b;
             }
 
             .ai-status-display.error {
                 background: #fee2e2;
-                border-color: #fca5a5;
+                border-color: #ef4444;
             }
 
             .ai-icon {
@@ -1480,7 +1487,7 @@ Wählen Sie links eine Option und laden Sie Ihre Daten hoch.`
             .result-number {
                 font-size: 1.5rem;
                 font-weight: 600;
-                color: #3b82f6;
+                color: #f97316;
             }
 
             .result-label {
@@ -1488,18 +1495,36 @@ Wählen Sie links eine Option und laden Sie Ihre Daten hoch.`
                 color: #6b7280;
             }
 
+            .results-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
             .view-details-btn {
-                background: #3b82f6;
                 color: white;
                 border: none;
                 padding: 0.5rem 1rem;
                 border-radius: 6px;
                 font-size: 0.85rem;
                 cursor: pointer;
+                transition: all 0.2s ease;
             }
 
-            .view-details-btn:hover {
-                background: #2563eb;
+            .view-details-btn.secondary {
+                background: #64748b;
+            }
+
+            .view-details-btn.secondary:hover {
+                background: #475569;
+            }
+
+            .view-details-btn.primary {
+                background: #22c55e;
+            }
+
+            .view-details-btn.primary:hover {
+                background: #16a34a;
+                transform: translateY(-1px);
             }
 
             /* Typing indicator */
