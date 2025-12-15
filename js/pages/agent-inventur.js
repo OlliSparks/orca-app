@@ -504,22 +504,42 @@ Ich helfe Ihnen, Ihre Werkzeugdaten mit den anstehenden Inventuren zu verknüpfe
             if (results.success) {
                 this.recognizedTools = results.tools;
                 this.matchedInventories = results.inventories;
+                this.incompleteTools = results.incompleteTools || [];
 
                 const matchedCount = results.tools.length - results.unmatchedCount;
                 const inventurText = results.inventories.length === 1 ? 'Inventur' : 'Inventuren';
+                const totalRecognized = results.totalRecognized || results.tools.length;
+                const incompleteCount = results.incompleteCount || 0;
 
-                this.addAssistantMessage(
-                    `Ich habe Ihre Daten analysiert und folgendes gefunden:
+                let statusMessage = `Ich habe Ihre Daten analysiert und folgendes gefunden:
 
-**${results.tools.length} Werkzeuge** wurden erkannt.
-${matchedCount > 0 ? `✓ **${matchedCount} Werkzeuge** wurden **${results.inventories.length} ${inventurText}** zugeordnet.` : ''}
-${results.unmatchedCount > 0 ? `⚠️ **${results.unmatchedCount} Werkzeuge** konnten keiner Inventur zugeordnet werden.` : '✅ Alle Werkzeuge wurden erfolgreich zugeordnet.'}
+**${totalRecognized} Werkzeugnummern** wurden erkannt.`;
 
-Klicken Sie auf "Details anzeigen" um die Zuordnung zu prüfen, oder auf "Zu Inventuren übernehmen" um fortzufahren.`,
-                    {
+                // Vollständige Werkzeuge (Nummer + Standort)
+                if (matchedCount > 0) {
+                    statusMessage += `\n✓ **${matchedCount} Werkzeuge** mit Standort wurden **${results.inventories.length} ${inventurText}** zugeordnet.`;
+                }
+
+                // Unvollständige Werkzeuge (ohne Standort)
+                if (incompleteCount > 0) {
+                    statusMessage += `\n⚠️ **${incompleteCount} Werkzeuge** ohne Standort-Information - diese können nicht übernommen werden.`;
+                }
+
+                // Nicht zuordenbare Werkzeuge
+                if (results.unmatchedCount > 0) {
+                    statusMessage += `\n❌ **${results.unmatchedCount} Werkzeuge** konnten keiner offenen Inventur zugeordnet werden.`;
+                }
+
+                if (matchedCount === 0) {
+                    statusMessage += `\n\n**Hinweis:** Für eine Inventur-Übernahme werden sowohl Werkzeugnummer als auch Standort benötigt.`;
+                } else {
+                    statusMessage += `\n\nKlicken Sie auf "Details anzeigen" um die Zuordnung zu prüfen, oder auf "In Inventur übernehmen" um fortzufahren.`;
+                }
+
+                this.addAssistantMessage(statusMessage, matchedCount > 0 ? {
                         toolCount: matchedCount,
                         inventoryCount: results.inventories.length
-                    }
+                    } : null
                 );
             } else {
                 this.addAssistantMessage(
@@ -768,14 +788,21 @@ Falls keine Werkzeuge gefunden werden können:
             };
         }
 
-        // Match with inventories
-        const matchResult = await this.matchWithInventories(extractedTools);
+        // Prüfe auf vollständige Werkzeuge (Nummer + Standort)
+        const completeTools = extractedTools.filter(t => t.number && t.location);
+        const incompleteTools = extractedTools.filter(t => t.number && !t.location);
+
+        // Match with inventories (nur vollständige Werkzeuge)
+        const matchResult = await this.matchWithInventories(completeTools);
 
         return {
             success: true,
             tools: matchResult.tools,
             inventories: matchResult.inventories,
-            unmatchedCount: matchResult.unmatchedCount
+            unmatchedCount: matchResult.unmatchedCount,
+            totalRecognized: extractedTools.length,
+            incompleteCount: incompleteTools.length,
+            incompleteTools: incompleteTools
         };
     }
 
