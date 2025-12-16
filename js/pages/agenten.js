@@ -30,13 +30,22 @@ class AgentenPage {
                 route: '/agent-reporting'
             },
             {
-                id: 'verlagerung',
-                name: 'Verlagerungs-Agent',
+                id: 'verlagerung-beantragen',
+                name: 'Verlagerung beantragen',
                 icon: '🚚',
-                description: 'Erfassen Sie Werkzeug-Verlagerungen schnell und einfach. Der Agent führt Sie durch den Prozess und dokumentiert alles automatisch.',
-                features: ['Standort-Erfassung', 'Foto-Dokumentation', 'Schritt-für-Schritt Dialog', 'Automatische Meldung'],
-                status: 'coming-soon',
-                route: '/agent-verlagerung'
+                description: 'Erstellen Sie Verlagerungsanträge Schritt für Schritt. Erfassen Sie Werkzeuge, Maße, Zolltarifnummern und Zielstandorte.',
+                features: ['Werkzeug-Auswahl', 'Maße & Gewicht', 'Zolltarifnummer', 'Quell-/Ziel-Standort'],
+                status: 'active',
+                route: '/agent-verlagerung-beantragen'
+            },
+            {
+                id: 'verlagerung-durchfuehren',
+                name: 'Verlagerung durchführen',
+                icon: '📦',
+                description: 'Führen Sie genehmigte Verlagerungen durch. Dokumentieren Sie Versand, Transport, Zolldokumente und Empfangsbestätigung.',
+                features: ['Versand-Dokumentation', 'Spedition & Tracking', 'Zolldokumente', 'Empfangsbestätigung'],
+                status: 'active',
+                route: '/agent-verlagerung-durchfuehren'
             },
             {
                 id: 'vpw',

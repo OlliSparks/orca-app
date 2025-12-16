@@ -3141,6 +3141,122 @@ class APIService {
         };
     }
 
+    // === ABL Dropdown Data Endpoints ===
+
+    /**
+     * Get available field values for dropdowns (projects, commodities, owners etc.)
+     * GET /asset-list/fields
+     */
+    async getAssetListFields() {
+        return this.callWithFallback(
+            async () => {
+                const response = await this.call('/asset-list/fields', 'GET');
+                return {
+                    success: true,
+                    data: {
+                        projects: response.projects || response.project || [],
+                        commodities: response.commodities || response.commodity || [],
+                        owners: response.owners || response.owner || [],
+                        suppliers: response.suppliers || response.supplier || [],
+                        processStatus: response.processStatus || [],
+                        lifecycleStatus: response.lifecycleStatus || []
+                    }
+                };
+            },
+            () => this.getMockAssetListFields()
+        );
+    }
+
+    getMockAssetListFields() {
+        return {
+            success: true,
+            data: {
+                projects: ['G70', 'G80', 'U11', 'NA5', 'iX', 'i7', '7er Reihe', '5er Reihe', '3er Reihe'],
+                commodities: ['Exterieur', 'Interieur', 'Antrieb', 'Fahrwerk', 'Elektrik', 'Karosserie', 'Sitze'],
+                owners: ['BMW AG', 'MINI', 'Rolls-Royce Motor Cars'],
+                suppliers: [],
+                processStatus: ['A0', 'A1', 'A2', 'A3'],
+                lifecycleStatus: ['Aktiv', 'Inaktiv', 'In Verschrottung']
+            }
+        };
+    }
+
+    /**
+     * Search companies (for owner/OEM selection)
+     * GET /companies?query=<search>
+     */
+    async searchCompanies(query = '') {
+        return this.callWithFallback(
+            async () => {
+                const endpoint = query
+                    ? `/companies?query=${encodeURIComponent(query)}&limit=20`
+                    : '/companies?limit=50';
+                const response = await this.call(endpoint, 'GET');
+
+                const companies = Array.isArray(response) ? response : (response.data || []);
+                return {
+                    success: true,
+                    data: companies.map(c => ({
+                        key: c.context?.key || c.key || '',
+                        name: c.meta?.name || c.name || 'Unbekannt',
+                        number: c.meta?.companyNumber || c.meta?.number || '',
+                        country: c.meta?.country || '',
+                        city: c.meta?.city || ''
+                    }))
+                };
+            },
+            () => this.getMockCompaniesSearch(query)
+        );
+    }
+
+    getMockCompaniesSearch(query = '') {
+        const allCompanies = [
+            { key: 'bmw-ag', name: 'BMW AG', number: '1', country: 'DE', city: 'München' },
+            { key: 'mini', name: 'MINI', number: '2', country: 'DE', city: 'Oxford' },
+            { key: 'rolls-royce', name: 'Rolls-Royce Motor Cars', number: '3', country: 'GB', city: 'Goodwood' },
+            { key: 'vw-ag', name: 'Volkswagen AG', number: '4', country: 'DE', city: 'Wolfsburg' },
+            { key: 'audi-ag', name: 'AUDI AG', number: '5', country: 'DE', city: 'Ingolstadt' },
+            { key: 'porsche-ag', name: 'Porsche AG', number: '6', country: 'DE', city: 'Stuttgart' },
+            { key: 'mercedes', name: 'Mercedes-Benz AG', number: '7', country: 'DE', city: 'Stuttgart' }
+        ];
+
+        const filtered = query
+            ? allCompanies.filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
+            : allCompanies;
+
+        return { success: true, data: filtered };
+    }
+
+    /**
+     * Get FEK users (Facheinkäufer) for a company
+     * GET /access/companies/{key}/users?group=FEK
+     */
+    async getFEKUsers(companyKey) {
+        return this.callWithFallback(
+            async () => {
+                const response = await this.call(`/access/companies/${companyKey}/users?group=FEK&showInactive=false`, 'GET');
+                const users = Array.isArray(response) ? response : (response.data || []);
+                return {
+                    success: true,
+                    data: users.map(user => ({
+                        key: user.context?.key || user.userKey || '',
+                        firstName: user.meta?.firstName || '',
+                        lastName: user.meta?.lastName || '',
+                        fullName: `${user.meta?.firstName || ''} ${user.meta?.lastName || ''}`.trim() || 'Unbekannt',
+                        email: user.meta?.mail || user.meta?.email || ''
+                    }))
+                };
+            },
+            () => ({
+                success: true,
+                data: [
+                    { key: 'fek-1', firstName: 'Thomas', lastName: 'Müller', fullName: 'Thomas Müller', email: 'thomas.mueller@bmw.de' },
+                    { key: 'fek-2', firstName: 'Sandra', lastName: 'Weber', fullName: 'Sandra Weber', email: 'sandra.weber@bmw.de' }
+                ]
+            })
+        );
+    }
+
     // Check if API is connected
     async checkConnection() {
         try {

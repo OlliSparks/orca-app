@@ -185,6 +185,16 @@ class OrcaApp {
         router.addRoute('/agent-api-monitor', () => {
             agentAPIMonitorPage.render();
         });
+
+        // Verlagerung beantragen Agent
+        router.addRoute('/agent-verlagerung-beantragen', () => {
+            agentVerlagerungBeantragenPage.render();
+        });
+
+        // Verlagerung durchführen Agent
+        router.addRoute('/agent-verlagerung-durchfuehren', () => {
+            agentVerlagerungDurchfuehrenPage.render();
+        });
     }
 
     async checkAPIStatus() {

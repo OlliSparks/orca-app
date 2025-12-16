@@ -7,6 +7,14 @@ class AgentABLPage {
         this.currentTool = null;
         this.companyData = null; // Eigene Company aus API
         this.locations = []; // Standorte aus API
+        // Dropdown-Daten aus API
+        this.dropdownData = {
+            owners: [],      // OEMs/Auftraggeber
+            projects: [],    // Projekte
+            commodities: [], // Warengruppen
+            fekUsers: [],    // FEK-Benutzer
+            recipients: []   // Empfänger (alle Benutzer)
+        };
         this.ablData = {
             // Bestellbezug
             supplier: null,
@@ -145,6 +153,34 @@ class AgentABLPage {
                     if (locationsResult.success && locationsResult.data) {
                         this.locations = locationsResult.data;
                     }
+
+                    // Lade Benutzer für Empfänger-Dropdown
+                    const usersResult = await api.getCompanyUsers(companyResult.companyKey);
+                    if (usersResult.success && usersResult.data) {
+                        this.dropdownData.recipients = usersResult.data;
+                    }
+
+                    // Lade FEK-Benutzer
+                    const fekResult = await api.getFEKUsers(companyResult.companyKey);
+                    if (fekResult.success && fekResult.data) {
+                        this.dropdownData.fekUsers = fekResult.data;
+                    }
+                }
+            }
+
+            // Lade Asset-Feldwerte (Projekte, Commodities, etc.)
+            const fieldsResult = await api.getAssetListFields();
+            if (fieldsResult.success && fieldsResult.data) {
+                this.dropdownData.projects = fieldsResult.data.projects || [];
+                this.dropdownData.commodities = fieldsResult.data.commodities || [];
+                this.dropdownData.owners = fieldsResult.data.owners || [];
+            }
+
+            // Lade OEM/Companies für Owner-Dropdown falls keine Owners aus fields
+            if (this.dropdownData.owners.length === 0) {
+                const companiesResult = await api.searchCompanies();
+                if (companiesResult.success && companiesResult.data) {
+                    this.dropdownData.owners = companiesResult.data.map(c => c.name);
                 }
             }
         } catch (error) {
@@ -424,7 +460,7 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                 inputArea.innerHTML = this.getSupplierInputHtml();
                 break;
             case 'owner':
-                inputArea.innerHTML = this.getTextInputWithSkip('Auftraggeber eingeben...', 'z.B. BMW AG', canSkip);
+                inputArea.innerHTML = this.getOwnerInputHtml(canSkip);
                 break;
             case 'purchaseOrder':
                 inputArea.innerHTML = this.getTextInputWithSkip('Bestellnummer eingeben...', 'z.B. PO-2025-001234', canSkip);
@@ -433,19 +469,19 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                 inputArea.innerHTML = this.getDateInputHtml('WET-Datum', canSkip);
                 break;
             case 'project':
-                inputArea.innerHTML = this.getTextInputWithSkip('Projekt eingeben...', 'z.B. G70, U11', canSkip);
+                inputArea.innerHTML = this.getProjectInputHtml(canSkip);
                 break;
             case 'location':
                 inputArea.innerHTML = this.getLocationInputHtml(canSkip);
                 break;
             case 'commodity':
-                inputArea.innerHTML = this.getTextInputWithSkip('Commodity eingeben...', 'z.B. Exterieur, Interieur, Antrieb', canSkip);
+                inputArea.innerHTML = this.getCommodityInputHtml(canSkip);
                 break;
             case 'fek':
-                inputArea.innerHTML = this.getTextInputWithSkip('FEK eingeben...', 'Fertigungseinzelkosten in EUR', canSkip);
+                inputArea.innerHTML = this.getFEKInputHtml(canSkip);
                 break;
             case 'recipient':
-                inputArea.innerHTML = this.getTextInputWithSkip('Empfänger eingeben...', 'Name oder E-Mail des Empfängers', canSkip);
+                inputArea.innerHTML = this.getRecipientInputHtml(canSkip);
                 break;
             case 'tool_number':
                 inputArea.innerHTML = this.getTextInputWithSkip('Inventarnummer eingeben...', 'z.B. 0010120920', false);
@@ -602,6 +638,113 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                         <p class="input-hint">Bitte fügen Sie Standorte unter Unternehmen → Standorte hinzu.</p>
                     </div>
                 `}
+                ${canSkip ? '<button class="skip-btn" id="skipBtn">Überspringen →</button>' : ''}
+            </div>
+        `;
+    }
+
+    // === Neue Dropdown-Input-Methoden ===
+
+    getOwnerInputHtml(canSkip) {
+        const hasOwners = this.dropdownData.owners.length > 0;
+        return `
+            <div class="dropdown-input">
+                ${hasOwners ? `
+                    <select id="ownerSelect" class="abl-select">
+                        <option value="">-- Auftraggeber auswählen --</option>
+                        ${this.dropdownData.owners.map(owner => `<option value="${owner}">${owner}</option>`).join('')}
+                    </select>
+                    <div class="input-or">oder</div>
+                ` : ''}
+                <div class="input-container">
+                    <input type="text" id="chatInput" placeholder="Auftraggeber eingeben..." autocomplete="off">
+                    <button class="send-btn" id="sendBtn">Weiter →</button>
+                </div>
+                <div class="input-hint">OEM/Auftraggeber wie BMW AG, VW, etc.</div>
+                ${canSkip ? '<button class="skip-btn" id="skipBtn">Überspringen →</button>' : ''}
+            </div>
+        `;
+    }
+
+    getProjectInputHtml(canSkip) {
+        const hasProjects = this.dropdownData.projects.length > 0;
+        return `
+            <div class="dropdown-input">
+                ${hasProjects ? `
+                    <select id="projectSelect" class="abl-select">
+                        <option value="">-- Projekt auswählen --</option>
+                        ${this.dropdownData.projects.map(p => `<option value="${p}">${p}</option>`).join('')}
+                    </select>
+                    <div class="input-or">oder</div>
+                ` : ''}
+                <div class="input-container">
+                    <input type="text" id="chatInput" placeholder="Projekt eingeben..." autocomplete="off">
+                    <button class="send-btn" id="sendBtn">Weiter →</button>
+                </div>
+                <div class="input-hint">z.B. G70, U11, iX</div>
+                ${canSkip ? '<button class="skip-btn" id="skipBtn">Überspringen →</button>' : ''}
+            </div>
+        `;
+    }
+
+    getCommodityInputHtml(canSkip) {
+        const hasCommodities = this.dropdownData.commodities.length > 0;
+        return `
+            <div class="dropdown-input">
+                ${hasCommodities ? `
+                    <select id="commoditySelect" class="abl-select">
+                        <option value="">-- Commodity auswählen --</option>
+                        ${this.dropdownData.commodities.map(c => `<option value="${c}">${c}</option>`).join('')}
+                    </select>
+                    <div class="input-or">oder</div>
+                ` : ''}
+                <div class="input-container">
+                    <input type="text" id="chatInput" placeholder="Commodity eingeben..." autocomplete="off">
+                    <button class="send-btn" id="sendBtn">Weiter →</button>
+                </div>
+                <div class="input-hint">Warengruppe wie Exterieur, Interieur, Antrieb</div>
+                ${canSkip ? '<button class="skip-btn" id="skipBtn">Überspringen →</button>' : ''}
+            </div>
+        `;
+    }
+
+    getFEKInputHtml(canSkip) {
+        const hasFEKUsers = this.dropdownData.fekUsers.length > 0;
+        return `
+            <div class="dropdown-input">
+                ${hasFEKUsers ? `
+                    <select id="fekSelect" class="abl-select">
+                        <option value="">-- FEK-Benutzer auswählen --</option>
+                        ${this.dropdownData.fekUsers.map(u => `<option value="${u.fullName}" data-email="${u.email}">${u.fullName} (${u.email})</option>`).join('')}
+                    </select>
+                    <div class="input-or">oder</div>
+                ` : ''}
+                <div class="input-container">
+                    <input type="text" id="chatInput" placeholder="FEK eingeben..." autocomplete="off">
+                    <button class="send-btn" id="sendBtn">Weiter →</button>
+                </div>
+                <div class="input-hint">Facheinkäufer Name oder Wert in EUR</div>
+                ${canSkip ? '<button class="skip-btn" id="skipBtn">Überspringen →</button>' : ''}
+            </div>
+        `;
+    }
+
+    getRecipientInputHtml(canSkip) {
+        const hasRecipients = this.dropdownData.recipients.length > 0;
+        return `
+            <div class="dropdown-input">
+                ${hasRecipients ? `
+                    <select id="recipientSelect" class="abl-select">
+                        <option value="">-- Empfänger auswählen --</option>
+                        ${this.dropdownData.recipients.filter(u => u.isActive !== false).map(u => `<option value="${u.fullName}" data-email="${u.email}">${u.fullName} (${u.email})</option>`).join('')}
+                    </select>
+                    <div class="input-or">oder</div>
+                ` : ''}
+                <div class="input-container">
+                    <input type="text" id="chatInput" placeholder="Empfänger eingeben..." autocomplete="off">
+                    <button class="send-btn" id="sendBtn">Weiter →</button>
+                </div>
+                <div class="input-hint">Name oder E-Mail des Empfängers</div>
                 ${canSkip ? '<button class="skip-btn" id="skipBtn">Überspringen →</button>' : ''}
             </div>
         `;
@@ -773,6 +916,61 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                     const selectedOption = e.target.options[e.target.selectedIndex];
                     const locationName = selectedOption.dataset.name || e.target.value;
                     this.processLocation(e.target.value, locationName);
+                }
+            });
+        }
+
+        // Owner select (Auftraggeber)
+        const ownerSelect = document.getElementById('ownerSelect');
+        if (ownerSelect) {
+            ownerSelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    this.addUserMessage(e.target.value);
+                    this.processOwner(e.target.value);
+                }
+            });
+        }
+
+        // Project select
+        const projectSelect = document.getElementById('projectSelect');
+        if (projectSelect) {
+            projectSelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    this.addUserMessage(e.target.value);
+                    this.processProject(e.target.value);
+                }
+            });
+        }
+
+        // Commodity select
+        const commoditySelect = document.getElementById('commoditySelect');
+        if (commoditySelect) {
+            commoditySelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    this.addUserMessage(e.target.value);
+                    this.processCommodity(e.target.value);
+                }
+            });
+        }
+
+        // FEK select
+        const fekSelect = document.getElementById('fekSelect');
+        if (fekSelect) {
+            fekSelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    this.addUserMessage(e.target.value);
+                    this.processFEK(e.target.value);
+                }
+            });
+        }
+
+        // Recipient select
+        const recipientSelect = document.getElementById('recipientSelect');
+        if (recipientSelect) {
+            recipientSelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    this.addUserMessage(e.target.value);
+                    this.processRecipient(e.target.value);
                 }
             });
         }
@@ -1567,6 +1765,21 @@ Sie werden zur ABL-Übersicht weitergeleitet...`
                 color: #9ca3af;
                 font-size: 0.85rem;
                 margin: 0.5rem 0;
+            }
+
+            .dropdown-input {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .dropdown-input .abl-select {
+                width: 100%;
+                margin-bottom: 0;
+            }
+
+            .dropdown-input .input-container {
+                margin-top: 0;
             }
 
             .supplier-display {

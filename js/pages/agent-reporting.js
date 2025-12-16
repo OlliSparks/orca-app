@@ -1,10 +1,9 @@
-// ORCA 2.0 - Reporting Agent
+// ORCA 2.0 - Reporting Agent (Daten-zentrierter Ansatz)
 class AgentReportingPage {
     constructor() {
-        this.availableReports = [];
-        this.selectedReport = null;
-        this.reportData = null;
+        this.gridData = null;  // Die geladenen Basis-Daten
         this.isLoading = false;
+        this.currentView = 'data'; // 'data' oder spezifische Auswertung
     }
 
     render() {
@@ -12,778 +11,526 @@ class AgentReportingPage {
 
         // Update header
         document.getElementById('headerTitle').textContent = 'orca 2.0 - Reporting-Agent';
-        document.getElementById('headerSubtitle').textContent = 'Reports abrufen und analysieren';
+        document.getElementById('headerSubtitle').textContent = 'Ihre Daten analysieren und exportieren';
         document.getElementById('headerStats').style.display = 'none';
 
-        // Update navigation dropdown
         const navDropdown = document.getElementById('navDropdown');
         if (navDropdown) {
             navDropdown.value = '/agenten';
         }
 
+        // Check if data is already loaded
+        if (this.gridData && this.gridData.length > 0) {
+            this.renderDataView();
+        } else {
+            this.renderLoadView();
+        }
+
+        this.addStyles();
+    }
+
+    // =============== PHASE 1: Daten laden ===============
+    renderLoadView() {
+        const app = document.getElementById('app');
+
         app.innerHTML = `
-            <div class="container agent-reporting-page">
-                <div class="reporting-layout">
-                    <!-- Sidebar with report types -->
-                    <div class="reporting-sidebar">
-                        <div class="sidebar-section">
-                            <h3>Report-Typ</h3>
-                            <div class="report-types">
-                                <button class="report-type active" data-type="assets">
-                                    <span class="type-icon">🔧</span>
-                                    <span class="type-label">Fertigungsmittel</span>
-                                </button>
-                                <button class="report-type" data-type="inventory">
-                                    <span class="type-icon">📋</span>
-                                    <span class="type-label">Inventur-Reports</span>
-                                </button>
-                                <button class="report-type" data-type="scrapping">
-                                    <span class="type-icon">🗑️</span>
-                                    <span class="type-label">Verschrottungs-Reports</span>
-                                </button>
-                                <button class="report-type" data-type="custom">
-                                    <span class="type-icon">📊</span>
-                                    <span class="type-label">Eigene Auswertung</span>
-                                </button>
+            <div class="container reporting-page">
+                <div class="load-view">
+                    <div class="load-card">
+                        <div class="load-icon">📊</div>
+                        <h2>Fertigungsmittel-Daten laden</h2>
+                        <p>Laden Sie Ihre Werkzeugdaten, um Auswertungen und Reports zu erstellen.</p>
+
+                        <button class="load-btn" id="loadDataBtn">
+                            <span class="btn-icon">⬇️</span>
+                            Daten laden
+                        </button>
+
+                        <div class="load-info">
+                            <div class="info-item">
+                                <span class="info-icon">🔧</span>
+                                <span>Alle Ihre Fertigungsmittel</span>
                             </div>
-                        </div>
-
-                        <div class="sidebar-section" id="reportFilterSection">
-                            <h3>Fertigungsmittel laden</h3>
-                            <p class="filter-hint">Lädt alle Werkzeuge des konfigurierten Lieferanten.</p>
-                            <button class="agent-btn primary" id="loadAssetsBtn">
-                                <span>Fertigungsmittel laden</span>
-                            </button>
-                        </div>
-
-                        <div class="sidebar-section" id="reportListSection" style="display: none;">
-                            <h3>Verfügbare Reports</h3>
-                            <div class="report-list" id="reportList">
-                                <!-- Dynamic content -->
+                            <div class="info-item">
+                                <span class="info-icon">📍</span>
+                                <span>Standorte & Status</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-icon">📋</span>
+                                <span>Prozess-Informationen</span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Main content area -->
-                    <div class="reporting-main">
-                        <div class="report-container" id="reportContainer">
-                            <!-- Initial state -->
-                            <div class="report-placeholder" id="reportPlaceholder">
-                                <div class="placeholder-icon">📊</div>
-                                <h2>Reporting-Agent</h2>
-                                <p>Wählen Sie einen Report-Typ oder nutzen Sie einen der vordefinierten Reports.</p>
-
-                                <!-- Report Examples -->
-                                <div class="report-categories">
-                                    <div class="report-category">
-                                        <h3>⚙️ Operative Reports</h3>
-                                        <div class="report-examples">
-                                            <button class="report-example" data-report="process-progress">
-                                                <span class="example-title">Prozess-Fortschritt</span>
-                                                <span class="example-desc">Status aller laufenden Inventuren/Verlagerungen</span>
-                                            </button>
-                                            <button class="report-example" data-report="overdue">
-                                                <span class="example-title">Überfällige Prozesse</span>
-                                                <span class="example-desc">Prozesse die nie abgeschlossen wurden</span>
-                                            </button>
-                                            <button class="report-example" data-report="location-discrepancy">
-                                                <span class="example-title">Standort-Diskrepanzen</span>
-                                                <span class="example-desc">"Anderer Standort" / "Standort unbekannt"</span>
-                                            </button>
-                                            <button class="report-example" data-report="image-status">
-                                                <span class="example-title">Bildstatus-Tracking</span>
-                                                <span class="example-desc">Assets die noch Fotos brauchen</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div class="report-category">
-                                        <h3>📈 Strategische Reports</h3>
-                                        <div class="report-examples">
-                                            <button class="report-example" data-report="geo-distribution">
-                                                <span class="example-title">Asset-Verteilung nach Land</span>
-                                                <span class="example-desc">Geografische Risikoanalyse</span>
-                                            </button>
-                                            <button class="report-example" data-report="value-by-owner">
-                                                <span class="example-title">Wertanalyse pro Eigentümer</span>
-                                                <span class="example-desc">Portfolio-Übersicht nach Besitzer</span>
-                                            </button>
-                                            <button class="report-example" data-report="lifecycle-status">
-                                                <span class="example-title">Lifecycle-Status</span>
-                                                <span class="example-desc">Bestätigt vs. Unbestätigt</span>
-                                            </button>
-                                            <button class="report-example" data-report="inventory-calendar">
-                                                <span class="example-title">Inventurfrist-Kalender</span>
-                                                <span class="example-desc">Anstehende Inventuren 2025/2026</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div class="report-category">
-                                        <h3>✅ Compliance Reports</h3>
-                                        <div class="report-examples">
-                                            <button class="report-example" data-report="abl-status">
-                                                <span class="example-title">ABL-Status</span>
-                                                <span class="example-desc">ABL erforderlich / ABL vorhanden</span>
-                                            </button>
-                                            <button class="report-example" data-report="unconfirmed">
-                                                <span class="example-title">Unbestätigte Assets</span>
-                                                <span class="example-desc">Assets ohne Bestätigung</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="placeholder-hint">
-                                    <p>💡 <strong>Tipp:</strong> Laden Sie zuerst die Fertigungsmittel über die Seitenleiste, um die Reports zu befüllen.</p>
-                                </div>
-                            </div>
-
-                            <!-- Loading state -->
-                            <div class="report-loading" id="reportLoading" style="display: none;">
-                                <div class="loading-spinner"></div>
-                                <p>Report wird geladen...</p>
-                            </div>
-
-                            <!-- Report content -->
-                            <div class="report-content" id="reportContent" style="display: none;">
-                                <!-- Dynamic content -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Report actions sidebar -->
-                    <div class="reporting-actions" id="reportActions" style="display: none;">
-                        <div class="actions-header">
-                            <h3>Aktionen</h3>
-                        </div>
-                        <div class="actions-content">
-                            <div class="export-section">
-                                <h4>Export</h4>
-                                <button class="action-btn" id="exportPdfBtn">
-                                    <span class="btn-icon">📄</span>
-                                    <span>Als PDF</span>
-                                </button>
-                                <button class="action-btn" id="exportXlsxBtn">
-                                    <span class="btn-icon">📊</span>
-                                    <span>Als Excel</span>
-                                </button>
-                                <button class="action-btn" id="exportCsvBtn">
-                                    <span class="btn-icon">📋</span>
-                                    <span>Als CSV</span>
-                                </button>
-                            </div>
-                            <div class="analysis-section">
-                                <h4>Analyse</h4>
-                                <button class="action-btn" id="summaryBtn">
-                                    <span class="btn-icon">📈</span>
-                                    <span>Zusammenfassung</span>
-                                </button>
-                                <button class="action-btn" id="compareBtn">
-                                    <span class="btn-icon">🔄</span>
-                                    <span>Vergleichen</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>Daten werden geladen...</p>
                 </div>
             </div>
         `;
 
-        this.addStyles();
-        this.attachEventListeners();
+        document.getElementById('loadDataBtn')?.addEventListener('click', () => this.loadData());
     }
 
-    attachEventListeners() {
-        // Report type selection
-        document.querySelectorAll('.report-type').forEach(btn => {
-            btn.addEventListener('click', () => this.selectReportType(btn));
-        });
-
-        // Load assets button (default)
-        document.getElementById('loadAssetsBtn')?.addEventListener('click', () => this.loadAssetsGrid());
-
-        // Load reports button
-        document.getElementById('loadReportsBtn')?.addEventListener('click', () => this.loadReports());
-
-        // Export buttons
-        document.getElementById('exportPdfBtn')?.addEventListener('click', () => this.exportReport('PDF'));
-        document.getElementById('exportXlsxBtn')?.addEventListener('click', () => this.exportReport('XLSX'));
-        document.getElementById('exportCsvBtn')?.addEventListener('click', () => this.exportReport('CSV'));
-
-        // Analysis buttons
-        document.getElementById('summaryBtn')?.addEventListener('click', () => this.showSummary());
-        document.getElementById('compareBtn')?.addEventListener('click', () => this.compareReports());
-
-        // Report example buttons
-        document.querySelectorAll('.report-example').forEach(btn => {
-            btn.addEventListener('click', () => this.loadPresetReport(btn.dataset.report));
-        });
-    }
-
-    // Load preset report from example buttons
-    async loadPresetReport(reportType) {
-        // First load assets if not already loaded
-        if (!this.reportData || !this.reportData.gridData) {
-            await this.loadAssetsGrid();
-        }
-
-        if (!this.reportData || !this.reportData.gridData) {
-            alert('Bitte laden Sie zuerst die Fertigungsmittel.');
-            return;
-        }
-
-        const gridData = this.reportData.gridData;
-
-        switch (reportType) {
-            case 'process-progress':
-                this.renderProcessProgressReport(gridData);
-                break;
-            case 'overdue':
-                this.renderOverdueReport(gridData);
-                break;
-            case 'location-discrepancy':
-                this.renderLocationDiscrepancyReport(gridData);
-                break;
-            case 'image-status':
-                this.renderImageStatusReport(gridData);
-                break;
-            case 'geo-distribution':
-                this.renderGeoDistributionReport(gridData);
-                break;
-            case 'value-by-owner':
-                this.renderValueByOwnerReport(gridData);
-                break;
-            case 'lifecycle-status':
-                this.renderLifecycleStatusReport(gridData);
-                break;
-            case 'inventory-calendar':
-                this.renderInventoryCalendarReport(gridData);
-                break;
-            case 'abl-status':
-                this.renderABLStatusReport(gridData);
-                break;
-            case 'unconfirmed':
-                this.renderUnconfirmedReport(gridData);
-                break;
-            default:
-                console.warn('Unknown report type:', reportType);
-        }
-    }
-
-    selectReportType(btn) {
-        document.querySelectorAll('.report-type').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const type = btn.dataset.type;
-
-        // Update filter section based on type
-        const filterSection = document.getElementById('reportFilterSection');
-
-        if (type === 'assets') {
-            filterSection.innerHTML = `
-                <h3>Fertigungsmittel laden</h3>
-                <p class="filter-hint">Lädt alle Werkzeuge des konfigurierten Lieferanten.</p>
-                <button class="agent-btn primary" id="loadAssetsBtn">
-                    <span>Fertigungsmittel laden</span>
-                </button>
-            `;
-            document.getElementById('loadAssetsBtn')?.addEventListener('click', () => this.loadAssetsGrid());
-        } else if (type === 'custom') {
-            filterSection.innerHTML = `
-                <h3>Eigene Auswertung</h3>
-                <div class="filter-group">
-                    <label>Datenquelle</label>
-                    <select id="dataSourceFilter" class="agent-select">
-                        <option value="inventory">Inventuren</option>
-                        <option value="tools">Werkzeuge</option>
-                        <option value="processes">Prozesse</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Gruppierung</label>
-                    <select id="groupByFilter" class="agent-select">
-                        <option value="status">Nach Status</option>
-                        <option value="location">Nach Standort</option>
-                        <option value="supplier">Nach Lieferant</option>
-                        <option value="month">Nach Monat</option>
-                    </select>
-                </div>
-                <button class="agent-btn primary" id="generateReportBtn">
-                    <span>Auswertung erstellen</span>
-                </button>
-            `;
-            document.getElementById('generateReportBtn')?.addEventListener('click', () => this.generateCustomReport());
-        } else {
-            filterSection.innerHTML = `
-                <h3>Filter</h3>
-                <div class="filter-group">
-                    <label>Status</label>
-                    <select id="statusFilter" class="agent-select">
-                        <option value="all">Alle</option>
-                        <option value="I3">Genehmigt (I3)</option>
-                        <option value="I4">Abgeschlossen (I4)</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Zeitraum</label>
-                    <select id="periodFilter" class="agent-select">
-                        <option value="all">Alle</option>
-                        <option value="month">Letzter Monat</option>
-                        <option value="quarter">Letztes Quartal</option>
-                        <option value="year">Letztes Jahr</option>
-                    </select>
-                </div>
-                <button class="agent-btn primary" id="loadReportsBtn">
-                    <span>Reports laden</span>
-                </button>
-            `;
-            document.getElementById('loadReportsBtn')?.addEventListener('click', () => this.loadReports());
-        }
-
-        // Hide report list when changing type
-        document.getElementById('reportListSection').style.display = 'none';
-
-        // Reset main content
-        document.getElementById('reportPlaceholder').style.display = 'flex';
-        document.getElementById('reportContent').style.display = 'none';
-        document.getElementById('reportActions').style.display = 'none';
-    }
-
-    async loadAssetsGrid() {
-        this.showLoading(true);
+    async loadData() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.style.display = 'flex';
 
         try {
-            // Get supplier number from config
             const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
             const supplierNumber = config.supplierNumber || config.supplierId || config.companyKey;
 
             if (!supplierNumber) {
-                this.showError('Bitte konfigurieren Sie eine Lieferantennummer in den Einstellungen.');
-                this.showLoading(false);
+                alert('Bitte konfigurieren Sie eine Lieferantennummer in den Einstellungen.');
+                if (overlay) overlay.style.display = 'none';
                 return;
             }
 
-            console.log('Loading assets grid for supplier:', supplierNumber);
-            const data = await api.getAssetsGridReport(supplierNumber);
+            console.log('Loading data for supplier:', supplierNumber);
+            const response = await api.getAssetsGridReport(supplierNumber);
 
-            this.reportData = data;
-            this.renderAssetsGrid(data);
+            this.gridData = response.gridData || response.content || response || [];
+            this.currentView = 'data';
 
-            // Show actions sidebar
-            document.getElementById('reportActions').style.display = 'flex';
+            // Render the data view
+            this.renderDataView();
 
         } catch (error) {
-            console.error('Error loading assets grid:', error);
-            this.showError('Fehler beim Laden der Fertigungsmittel: ' + error.message);
+            console.error('Error loading data:', error);
+            alert('Fehler beim Laden: ' + error.message);
+            if (overlay) overlay.style.display = 'none';
         }
-
-        this.showLoading(false);
     }
 
-    renderAssetsGrid(data) {
-        const container = document.getElementById('reportContent');
-        const placeholder = document.getElementById('reportPlaceholder');
+    // =============== PHASE 2: Daten anzeigen + Auswertungen ===============
+    renderDataView() {
+        const app = document.getElementById('app');
+        const data = this.gridData;
 
-        placeholder.style.display = 'none';
-        container.style.display = 'block';
+        // Berechne Statistiken
+        const stats = this.calculateStats(data);
 
-        const gridData = data.gridData || data.content || data || [];
-        const totalCount = gridData.length;
+        app.innerHTML = `
+            <div class="container reporting-page data-loaded">
+                <!-- Header mit Daten-Übersicht -->
+                <div class="data-header">
+                    <div class="data-summary">
+                        <div class="summary-main">
+                            <span class="summary-count">${data.length}</span>
+                            <span class="summary-label">Fertigungsmittel geladen</span>
+                        </div>
+                        <div class="summary-stats">
+                            ${stats.countries ? `<span class="stat-pill">🌍 ${stats.countries} Länder</span>` : ''}
+                            ${stats.owners ? `<span class="stat-pill">🏢 ${stats.owners} Eigentümer</span>` : ''}
+                            ${stats.statuses ? `<span class="stat-pill">📊 ${stats.statuses} Status-Typen</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="data-actions">
+                        <button class="action-btn-small" id="refreshDataBtn" title="Daten neu laden">🔄</button>
+                        <button class="action-btn-small" id="exportAllBtn" title="Alle Daten exportieren">📥</button>
+                    </div>
+                </div>
 
-        // Detect column names from first item
-        const firstItem = gridData[0] || {};
-        const columns = Object.keys(firstItem);
+                <!-- Haupt-Layout: Daten links, Auswertungen rechts -->
+                <div class="data-layout">
+                    <!-- Linke Seite: Datentabelle -->
+                    <div class="data-panel">
+                        <div class="panel-header">
+                            <h3>📋 Ihre Daten</h3>
+                            <div class="view-tabs">
+                                <button class="view-tab ${this.currentView === 'data' ? 'active' : ''}" data-view="data">Tabelle</button>
+                                ${this.currentView !== 'data' ? `<button class="view-tab active" data-view="${this.currentView}">${this.getViewName(this.currentView)}</button>` : ''}
+                            </div>
+                        </div>
+                        <div class="panel-content" id="dataContent">
+                            ${this.currentView === 'data' ? this.renderDataTable(data) : this.renderAnalysisView(this.currentView, data)}
+                        </div>
+                    </div>
 
-        // Prioritize important columns
-        const priorityCols = ['assetNumber', 'number', 'name', 'description', 'status', 'location', 'responsible'];
-        const sortedColumns = [
-            ...priorityCols.filter(c => columns.includes(c)),
-            ...columns.filter(c => !priorityCols.includes(c))
-        ].slice(0, 8); // Max 8 columns
+                    <!-- Rechte Seite: Auswertungen -->
+                    <div class="analysis-panel">
+                        <div class="panel-header">
+                            <h3>📈 Auswertungen</h3>
+                        </div>
+                        <div class="panel-content">
+                            <p class="analysis-intro">Was möchten Sie aus Ihren Daten erfahren?</p>
 
-        container.innerHTML = `
-            <div class="report-header-bar">
-                <h2>Fertigungsmittel</h2>
-                <span class="report-date">${totalCount} Werkzeuge | Stand: ${new Date().toLocaleDateString('de-DE')}</span>
+                            <div class="analysis-category">
+                                <h4>⚙️ Operativ</h4>
+                                <div class="analysis-options">
+                                    <button class="analysis-btn" data-view="process-status">
+                                        <span class="btn-title">Prozess-Status</span>
+                                        <span class="btn-desc">Verteilung nach Status</span>
+                                    </button>
+                                    <button class="analysis-btn" data-view="location-result">
+                                        <span class="btn-title">Standort-Ergebnisse</span>
+                                        <span class="btn-desc">Gefunden / Nicht gefunden</span>
+                                    </button>
+                                    <button class="analysis-btn" data-view="due-dates">
+                                        <span class="btn-title">Fälligkeiten</span>
+                                        <span class="btn-desc">Überfällig / Anstehend</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="analysis-category">
+                                <h4>🌍 Geografisch</h4>
+                                <div class="analysis-options">
+                                    <button class="analysis-btn" data-view="by-country">
+                                        <span class="btn-title">Nach Land</span>
+                                        <span class="btn-desc">Geografische Verteilung</span>
+                                    </button>
+                                    <button class="analysis-btn" data-view="by-city">
+                                        <span class="btn-title">Nach Stadt</span>
+                                        <span class="btn-desc">Standort-Übersicht</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="analysis-category">
+                                <h4>🏢 Organisation</h4>
+                                <div class="analysis-options">
+                                    <button class="analysis-btn" data-view="by-owner">
+                                        <span class="btn-title">Nach Eigentümer</span>
+                                        <span class="btn-desc">Wer besitzt was?</span>
+                                    </button>
+                                    <button class="analysis-btn" data-view="by-lifecycle">
+                                        <span class="btn-title">Lifecycle-Status</span>
+                                        <span class="btn-desc">Aktiv / Inaktiv / etc.</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="export-section">
+                                <h4>📥 Export</h4>
+                                <div class="export-buttons">
+                                    <button class="export-btn" data-format="xlsx">Excel</button>
+                                    <button class="export-btn" data-format="csv">CSV</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="assets-grid-container">
-                <table class="assets-grid-table">
+        `;
+
+        this.attachDataViewListeners();
+    }
+
+    calculateStats(data) {
+        const stats = {};
+
+        // Zähle eindeutige Länder
+        const countries = new Set();
+        const owners = new Set();
+        const statuses = new Set();
+
+        data.forEach(item => {
+            if (item['Land'] && item['Land'] !== '-') countries.add(item['Land']);
+            if (item['Eigentümer'] && item['Eigentümer'] !== '-') owners.add(item['Eigentümer']);
+            if (item['Fertigungsmittel-Lifecyclestatus'] && item['Fertigungsmittel-Lifecyclestatus'] !== '-') {
+                statuses.add(item['Fertigungsmittel-Lifecyclestatus']);
+            }
+        });
+
+        stats.countries = countries.size || null;
+        stats.owners = owners.size || null;
+        stats.statuses = statuses.size || null;
+
+        return stats;
+    }
+
+    renderDataTable(data) {
+        if (!data || data.length === 0) {
+            return '<div class="no-data">Keine Daten vorhanden</div>';
+        }
+
+        // Wichtigste Spalten für die Übersicht
+        const displayColumns = [
+            { key: 'Inventarnummer', label: 'Inv.-Nr.' },
+            { key: 'Werkzeugbezeichnung', label: 'Bezeichnung' },
+            { key: 'Lieferantenname', label: 'Lieferant' },
+            { key: 'Stadt', label: 'Stadt' },
+            { key: 'Land', label: 'Land' },
+            { key: 'Fertigungsmittel-Lifecyclestatus', label: 'Status' }
+        ];
+
+        // Filtere nur existierende Spalten
+        const availableCols = displayColumns.filter(col =>
+            data.some(item => item[col.key] && item[col.key] !== '-')
+        );
+
+        return `
+            <div class="data-table-wrapper">
+                <table class="data-table">
                     <thead>
                         <tr>
-                            ${sortedColumns.map(col => `<th>${this.formatColumnName(col)}</th>`).join('')}
+                            ${availableCols.map(col => `<th>${col.label}</th>`).join('')}
                         </tr>
                     </thead>
                     <tbody>
-                        ${gridData.map(item => `
+                        ${data.slice(0, 100).map(item => `
                             <tr>
-                                ${sortedColumns.map(col => `<td>${this.formatCellValue(item[col], col)}</td>`).join('')}
+                                ${availableCols.map(col => `<td>${this.formatCell(item[col.key], col.key)}</td>`).join('')}
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
+                ${data.length > 100 ? `<div class="table-footer">Zeige 100 von ${data.length} Einträgen</div>` : ''}
             </div>
         `;
-
-        // Store for export
-        this.assetsGridData = gridData;
     }
 
-    formatColumnName(col) {
+    formatCell(value, key) {
+        if (!value || value === '-') return '<span class="empty">-</span>';
+
+        if (key === 'Fertigungsmittel-Lifecyclestatus' || key === 'Prozessstatus') {
+            return `<span class="status-badge">${value}</span>`;
+        }
+
+        // Kürze lange Werte
+        if (typeof value === 'string' && value.length > 30) {
+            return `<span title="${value}">${value.substring(0, 30)}...</span>`;
+        }
+
+        return value;
+    }
+
+    getViewName(view) {
         const names = {
-            assetNumber: 'Asset-Nr.',
-            number: 'Nummer',
-            name: 'Name',
-            description: 'Beschreibung',
-            status: 'Status',
-            location: 'Standort',
-            responsible: 'Verantwortlich',
-            lastInventory: 'Letzte Inventur',
-            supplier: 'Lieferant',
-            type: 'Typ'
+            'data': 'Tabelle',
+            'process-status': 'Prozess-Status',
+            'location-result': 'Standort-Ergebnisse',
+            'due-dates': 'Fälligkeiten',
+            'by-country': 'Nach Land',
+            'by-city': 'Nach Stadt',
+            'by-owner': 'Nach Eigentümer',
+            'by-lifecycle': 'Lifecycle-Status'
         };
-        return names[col] || col;
+        return names[view] || view;
     }
 
-    formatCellValue(value, col) {
-        if (value === null || value === undefined) return '-';
-
-        if (col === 'status') {
-            return `<span class="status-badge ${value}">${value}</span>`;
+    // =============== Auswertungs-Views ===============
+    renderAnalysisView(viewType, data) {
+        switch (viewType) {
+            case 'process-status':
+                return this.renderGroupedAnalysis(data, 'Prozessstatus', 'Prozess-Status');
+            case 'location-result':
+                return this.renderGroupedAnalysis(data, 'Standortergebnis', 'Standort-Ergebnisse');
+            case 'due-dates':
+                return this.renderDueDatesAnalysis(data);
+            case 'by-country':
+                return this.renderGroupedAnalysis(data, 'Land', 'Verteilung nach Land');
+            case 'by-city':
+                return this.renderGroupedAnalysis(data, 'Stadt', 'Verteilung nach Stadt');
+            case 'by-owner':
+                return this.renderGroupedAnalysis(data, 'Eigentümer', 'Verteilung nach Eigentümer');
+            case 'by-lifecycle':
+                return this.renderGroupedAnalysis(data, 'Fertigungsmittel-Lifecyclestatus', 'Lifecycle-Status');
+            default:
+                return this.renderDataTable(data);
         }
-
-        if (typeof value === 'object') {
-            return value.name || value.title || JSON.stringify(value);
-        }
-
-        return String(value);
     }
 
-    async loadReports() {
-        const activeType = document.querySelector('.report-type.active')?.dataset.type || 'inventory';
-        const status = document.getElementById('statusFilter')?.value || 'all';
+    renderGroupedAnalysis(data, groupField, title) {
+        // Gruppiere Daten
+        const groups = {};
+        let total = 0;
 
-        this.showLoading(true);
-
-        try {
-            let reports = [];
-
-            if (activeType === 'inventory') {
-                // Load inventories that have reports
-                const statusFilter = status === 'all' ? 'I3,I4' : status;
-                const response = await api.getInventoryList({ status: statusFilter, limit: 50 });
-                const inventories = response?.data || response || [];
-
-                reports = inventories.map(inv => ({
-                    key: inv.key,
-                    type: 'inventory',
-                    title: `Inventur ${inv.number || inv.key}`,
-                    subtitle: inv.supplier?.name || inv.supplierName || 'Unbekannt',
-                    status: inv.status,
-                    date: inv.dueDate || inv.modified,
-                    positionCount: inv.positionCount || inv.positions?.length || 0
-                }));
-            } else if (activeType === 'scrapping') {
-                // Load scrapping processes that have reports
-                const response = await api.getVerschrottungList({ limit: 50 });
-                const scrappings = response?.data || response || [];
-
-                reports = scrappings.map(scr => ({
-                    key: scr.key || scr.processKey,
-                    type: 'scrapping',
-                    title: `Verschrottung ${scr.number || scr.key}`,
-                    subtitle: scr.toolName || scr.asset?.name || 'Werkzeug',
-                    status: scr.status,
-                    date: scr.dueDate || scr.modified
-                }));
+        data.forEach(item => {
+            const key = item[groupField] || 'Nicht angegeben';
+            if (!groups[key]) {
+                groups[key] = { count: 0, items: [] };
             }
+            groups[key].count++;
+            groups[key].items.push(item);
+            total++;
+        });
 
-            this.availableReports = reports;
-            this.renderReportList(reports);
+        // Sortiere nach Anzahl
+        const sorted = Object.entries(groups).sort((a, b) => b[1].count - a[1].count);
+        const maxCount = sorted[0]?.[1].count || 1;
 
-        } catch (error) {
-            console.error('Error loading reports:', error);
-            this.showError('Fehler beim Laden der Reports: ' + error.message);
-        }
+        // Farben für die Bars
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-        this.showLoading(false);
-    }
-
-    renderReportList(reports) {
-        const listSection = document.getElementById('reportListSection');
-        const listContainer = document.getElementById('reportList');
-
-        if (reports.length === 0) {
-            listContainer.innerHTML = `
-                <div class="no-reports">
-                    <span class="no-reports-icon">📭</span>
-                    <p>Keine Reports verfügbar</p>
+        return `
+            <div class="analysis-result">
+                <div class="analysis-header">
+                    <h3>${title}</h3>
+                    <span class="analysis-total">${total} Einträge in ${sorted.length} Gruppen</span>
                 </div>
-            `;
-        } else {
-            listContainer.innerHTML = reports.map(report => `
-                <div class="report-item" data-key="${report.key}" data-type="${report.type}">
-                    <div class="report-item-icon">${report.type === 'inventory' ? '📋' : '🗑️'}</div>
-                    <div class="report-item-info">
-                        <div class="report-item-title">${report.title}</div>
-                        <div class="report-item-subtitle">${report.subtitle}</div>
-                    </div>
-                    <div class="report-item-meta">
-                        <span class="status-badge ${report.status}">${this.getStatusLabel(report.status)}</span>
-                    </div>
+
+                <div class="analysis-chart">
+                    ${sorted.map(([label, info], idx) => `
+                        <div class="chart-row" data-group="${label}">
+                            <div class="chart-label" title="${label}">${label.length > 25 ? label.substring(0, 25) + '...' : label}</div>
+                            <div class="chart-bar-container">
+                                <div class="chart-bar" style="width: ${(info.count / maxCount * 100)}%; background: ${colors[idx % colors.length]}"></div>
+                            </div>
+                            <div class="chart-value">${info.count}</div>
+                            <div class="chart-percent">${Math.round(info.count / total * 100)}%</div>
+                        </div>
+                    `).join('')}
                 </div>
-            `).join('');
 
-            // Add click handlers
-            listContainer.querySelectorAll('.report-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const key = item.dataset.key;
-                    const type = item.dataset.type;
-                    this.loadReport(key, type);
-
-                    // Mark as selected
-                    listContainer.querySelectorAll('.report-item').forEach(i => i.classList.remove('selected'));
-                    item.classList.add('selected');
-                });
-            });
-        }
-
-        listSection.style.display = 'block';
-    }
-
-    getStatusLabel(status) {
-        const labels = {
-            'I0': 'Entwurf',
-            'I1': 'Versendet',
-            'I2': 'Gemeldet',
-            'I3': 'Genehmigt',
-            'I4': 'Abgeschlossen',
-            'OPEN': 'Offen',
-            'COMPLETED': 'Abgeschlossen',
-            'DONE': 'Erledigt'
-        };
-        return labels[status] || status || 'Unbekannt';
-    }
-
-    async loadReport(key, type) {
-        this.showLoading(true);
-        this.selectedReport = { key, type };
-
-        try {
-            let reportData;
-
-            if (type === 'inventory') {
-                reportData = await api.getInventoryReport(key, 'HTML');
-            } else if (type === 'scrapping') {
-                reportData = await api.getScrappingReport(key, 'HTML');
-            }
-
-            this.reportData = reportData;
-            this.renderReport(reportData);
-
-            // Show actions sidebar
-            document.getElementById('reportActions').style.display = 'flex';
-
-        } catch (error) {
-            console.error('Error loading report:', error);
-            this.showError('Fehler beim Laden des Reports: ' + error.message);
-        }
-
-        this.showLoading(false);
-    }
-
-    renderReport(data) {
-        const container = document.getElementById('reportContent');
-        const placeholder = document.getElementById('reportPlaceholder');
-
-        placeholder.style.display = 'none';
-        container.style.display = 'block';
-
-        // Check if we have HTML content or structured data
-        if (data.content && typeof data.content === 'string') {
-            // HTML content from API - render in iframe for isolation
-            container.innerHTML = `
-                <div class="report-header-bar">
-                    <h2>${data.title || 'Report'}</h2>
-                    <span class="report-date">Erstellt: ${new Date(data.generatedAt || Date.now()).toLocaleDateString('de-DE')}</span>
+                <div class="back-to-data">
+                    <button class="back-btn" data-view="data">← Zurück zur Datentabelle</button>
                 </div>
-                <div class="report-html-container">
-                    <iframe id="reportFrame" srcdoc="${this.escapeHtml(data.content)}" frameborder="0"></iframe>
-                </div>
-            `;
-        } else if (data.summary) {
-            // Structured data - render as cards
-            container.innerHTML = `
-                <div class="report-header-bar">
-                    <h2>${data.title || 'Report'}</h2>
-                    <span class="report-date">Erstellt: ${new Date(data.generatedAt || Date.now()).toLocaleDateString('de-DE')}</span>
-                </div>
-                <div class="report-summary">
-                    <div class="summary-cards">
-                        ${this.renderSummaryCards(data.summary)}
-                    </div>
-                </div>
-                ${data.positions ? `
-                <div class="report-details">
-                    <h3>Positionen</h3>
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>Nummer</th>
-                                <th>Status</th>
-                                <th>Standort</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.positions.map(p => `
-                                <tr>
-                                    <td>${p.number || '-'}</td>
-                                    <td><span class="status-badge ${p.status}">${this.getStatusLabel(p.status)}</span></td>
-                                    <td>${p.location || '-'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                ` : ''}
-            `;
-        } else {
-            // Fallback
-            container.innerHTML = `
-                <div class="report-header-bar">
-                    <h2>Report</h2>
-                </div>
-                <div class="report-raw">
-                    <pre>${JSON.stringify(data, null, 2)}</pre>
-                </div>
-            `;
-        }
-    }
-
-    renderSummaryCards(summary) {
-        const cards = [];
-
-        if (summary.totalPositions !== undefined) {
-            cards.push({
-                label: 'Gesamt',
-                value: summary.totalPositions,
-                icon: '📋'
-            });
-        }
-        if (summary.completed !== undefined) {
-            cards.push({
-                label: 'Abgeschlossen',
-                value: summary.completed,
-                icon: '✅',
-                color: 'green'
-            });
-        }
-        if (summary.pending !== undefined) {
-            cards.push({
-                label: 'Offen',
-                value: summary.pending,
-                icon: '⏳',
-                color: 'orange'
-            });
-        }
-        if (summary.missing !== undefined) {
-            cards.push({
-                label: 'Fehlend',
-                value: summary.missing,
-                icon: '❌',
-                color: 'red'
-            });
-        }
-        if (summary.completionRate !== undefined) {
-            cards.push({
-                label: 'Quote',
-                value: summary.completionRate + '%',
-                icon: '📊',
-                color: summary.completionRate >= 80 ? 'green' : summary.completionRate >= 50 ? 'orange' : 'red'
-            });
-        }
-
-        return cards.map(card => `
-            <div class="summary-card ${card.color || ''}">
-                <span class="card-icon">${card.icon}</span>
-                <span class="card-value">${card.value}</span>
-                <span class="card-label">${card.label}</span>
             </div>
-        `).join('');
+        `;
     }
 
-    escapeHtml(html) {
-        return html
-            .replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+    renderDueDatesAnalysis(data) {
+        const now = new Date();
+        const categories = {
+            'Überfällig': { count: 0, items: [] },
+            'Diese Woche': { count: 0, items: [] },
+            'Dieser Monat': { count: 0, items: [] },
+            'Später': { count: 0, items: [] },
+            'Kein Datum': { count: 0, items: [] }
+        };
+
+        const oneWeek = 7 * 24 * 60 * 60 * 1000;
+        const oneMonth = 30 * 24 * 60 * 60 * 1000;
+
+        data.forEach(item => {
+            const dueDateStr = item['Fälligkeitsdatum'] || item['BMW Inventurfrist'];
+
+            if (!dueDateStr || dueDateStr === '-') {
+                categories['Kein Datum'].count++;
+                categories['Kein Datum'].items.push(item);
+                return;
+            }
+
+            try {
+                // Parse German date format (DD.MM.YYYY)
+                let date;
+                if (dueDateStr.includes('.')) {
+                    const parts = dueDateStr.split('.');
+                    date = new Date(parts[2], parts[1] - 1, parts[0]);
+                } else {
+                    date = new Date(dueDateStr);
+                }
+
+                const diff = date.getTime() - now.getTime();
+
+                if (diff < 0) {
+                    categories['Überfällig'].count++;
+                    categories['Überfällig'].items.push(item);
+                } else if (diff < oneWeek) {
+                    categories['Diese Woche'].count++;
+                    categories['Diese Woche'].items.push(item);
+                } else if (diff < oneMonth) {
+                    categories['Dieser Monat'].count++;
+                    categories['Dieser Monat'].items.push(item);
+                } else {
+                    categories['Später'].count++;
+                    categories['Später'].items.push(item);
+                }
+            } catch {
+                categories['Kein Datum'].count++;
+                categories['Kein Datum'].items.push(item);
+            }
+        });
+
+        const total = data.length;
+        const colors = {
+            'Überfällig': '#ef4444',
+            'Diese Woche': '#f59e0b',
+            'Dieser Monat': '#3b82f6',
+            'Später': '#10b981',
+            'Kein Datum': '#9ca3af'
+        };
+
+        const sorted = Object.entries(categories).filter(([_, info]) => info.count > 0);
+        const maxCount = Math.max(...sorted.map(([_, info]) => info.count)) || 1;
+
+        return `
+            <div class="analysis-result">
+                <div class="analysis-header">
+                    <h3>Fälligkeiten</h3>
+                    <span class="analysis-total">${total} Einträge</span>
+                </div>
+
+                <div class="analysis-chart">
+                    ${sorted.map(([label, info]) => `
+                        <div class="chart-row" data-group="${label}">
+                            <div class="chart-label">${label}</div>
+                            <div class="chart-bar-container">
+                                <div class="chart-bar" style="width: ${(info.count / maxCount * 100)}%; background: ${colors[label]}"></div>
+                            </div>
+                            <div class="chart-value">${info.count}</div>
+                            <div class="chart-percent">${Math.round(info.count / total * 100)}%</div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="back-to-data">
+                    <button class="back-btn" data-view="data">← Zurück zur Datentabelle</button>
+                </div>
+            </div>
+        `;
     }
 
-    async exportReport(format) {
-        // Check if we have assets grid data to export
-        if (this.assetsGridData && this.assetsGridData.length > 0) {
-            this.exportAssetsGrid(format);
+    // =============== Event Listeners ===============
+    attachDataViewListeners() {
+        // Refresh data
+        document.getElementById('refreshDataBtn')?.addEventListener('click', () => {
+            this.gridData = null;
+            this.loadData();
+        });
+
+        // Export all
+        document.getElementById('exportAllBtn')?.addEventListener('click', () => {
+            this.exportData('xlsx');
+        });
+
+        // View tabs
+        document.querySelectorAll('.view-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                this.currentView = tab.dataset.view;
+                this.renderDataView();
+            });
+        });
+
+        // Analysis buttons
+        document.querySelectorAll('.analysis-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.currentView = btn.dataset.view;
+                this.renderDataView();
+            });
+        });
+
+        // Back button
+        document.querySelectorAll('.back-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.currentView = btn.dataset.view;
+                this.renderDataView();
+            });
+        });
+
+        // Export buttons
+        document.querySelectorAll('.export-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.exportData(btn.dataset.format);
+            });
+        });
+    }
+
+    // =============== Export ===============
+    exportData(format) {
+        if (!this.gridData || this.gridData.length === 0) {
+            alert('Keine Daten zum Exportieren vorhanden.');
             return;
         }
 
-        if (!this.selectedReport) {
-            alert('Bitte wählen Sie zuerst einen Report aus.');
-            return;
-        }
-
-        this.showLoading(true);
-
-        try {
-            let blob;
-            const { key, type } = this.selectedReport;
-
-            if (type === 'inventory') {
-                blob = await api.getInventoryReport(key, format);
-            } else if (type === 'scrapping') {
-                blob = await api.getScrappingReport(key, format);
-            }
-
-            // Download the blob
-            if (blob instanceof Blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `report-${key}.${format.toLowerCase()}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            } else {
-                // For HTML/text formats, create blob from content
-                const content = blob.content || JSON.stringify(blob, null, 2);
-                const textBlob = new Blob([content], { type: 'text/html' });
-                const url = URL.createObjectURL(textBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `report-${key}.html`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-
-        } catch (error) {
-            console.error('Error exporting report:', error);
-            this.showError('Fehler beim Export: ' + error.message);
-        }
-
-        this.showLoading(false);
-    }
-
-    exportAssetsGrid(format) {
-        const data = this.assetsGridData;
         const timestamp = new Date().toISOString().split('T')[0];
+        const data = this.gridData;
 
-        if (format === 'CSV') {
-            // Export as CSV
-            const columns = Object.keys(data[0] || {});
+        if (format === 'csv') {
+            const columns = Object.keys(data[0] || {}).filter(k => !k.startsWith('_'));
             const header = columns.join(';');
             const rows = data.map(item =>
                 columns.map(col => {
@@ -793,19 +540,28 @@ class AgentReportingPage {
                 }).join(';')
             );
             const csv = [header, ...rows].join('\n');
-
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
             this.downloadBlob(blob, `fertigungsmittel-${timestamp}.csv`);
 
-        } else if (format === 'XLSX' && typeof XLSX !== 'undefined') {
-            // Export as Excel using SheetJS
-            const ws = XLSX.utils.json_to_sheet(data);
+        } else if (format === 'xlsx' && typeof XLSX !== 'undefined') {
+            // Filter out internal fields
+            const cleanData = data.map(item => {
+                const clean = {};
+                Object.keys(item).forEach(key => {
+                    if (!key.startsWith('_')) {
+                        clean[key] = item[key];
+                    }
+                });
+                return clean;
+            });
+
+            const ws = XLSX.utils.json_to_sheet(cleanData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Fertigungsmittel');
             XLSX.writeFile(wb, `fertigungsmittel-${timestamp}.xlsx`);
 
         } else {
-            // Fallback: JSON export
+            // Fallback JSON
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             this.downloadBlob(blob, `fertigungsmittel-${timestamp}.json`);
         }
@@ -822,449 +578,113 @@ class AgentReportingPage {
         URL.revokeObjectURL(url);
     }
 
-    async generateCustomReport() {
-        const dataSource = document.getElementById('dataSourceFilter')?.value || 'inventory';
-        const groupBy = document.getElementById('groupByFilter')?.value || 'status';
-
-        this.showLoading(true);
-
-        try {
-            // Load data based on source
-            let data = [];
-            if (dataSource === 'inventory') {
-                const response = await api.getInventoryList({ status: 'I0,I1,I2,I3,I4', limit: 1000 });
-                data = response?.data || response || [];
-            } else if (dataSource === 'tools') {
-                const response = await api.getAssetList({ limit: 1000 });
-                data = response?.data || response || [];
-            } else if (dataSource === 'processes') {
-                const response = await api.getVerlagerungList({ limit: 1000 });
-                data = response?.data || response || [];
-            }
-
-            // Group data
-            const grouped = this.groupData(data, groupBy);
-
-            // Render custom report
-            this.renderCustomReport(grouped, dataSource, groupBy);
-
-            // Show actions sidebar
-            document.getElementById('reportActions').style.display = 'flex';
-
-        } catch (error) {
-            console.error('Error generating custom report:', error);
-            this.showError('Fehler bei der Auswertung: ' + error.message);
-        }
-
-        this.showLoading(false);
-    }
-
-    groupData(data, groupBy) {
-        const grouped = {};
-
-        data.forEach(item => {
-            let key;
-            switch (groupBy) {
-                case 'status':
-                    key = item.status || 'Unbekannt';
-                    break;
-                case 'location':
-                    key = item.location?.title || item.locationName || 'Unbekannt';
-                    break;
-                case 'supplier':
-                    key = item.supplier?.name || item.supplierName || 'Unbekannt';
-                    break;
-                case 'month':
-                    const date = new Date(item.dueDate || item.created || item.modified);
-                    key = date.toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
-                    break;
-                default:
-                    key = 'Alle';
-            }
-
-            if (!grouped[key]) {
-                grouped[key] = [];
-            }
-            grouped[key].push(item);
-        });
-
-        return grouped;
-    }
-
-    renderCustomReport(grouped, dataSource, groupBy) {
-        const container = document.getElementById('reportContent');
-        const placeholder = document.getElementById('reportPlaceholder');
-
-        placeholder.style.display = 'none';
-        container.style.display = 'block';
-
-        const groupLabels = {
-            status: 'Status',
-            location: 'Standort',
-            supplier: 'Lieferant',
-            month: 'Monat'
-        };
-
-        const sourceLabels = {
-            inventory: 'Inventuren',
-            tools: 'Werkzeuge',
-            processes: 'Prozesse'
-        };
-
-        const total = Object.values(grouped).reduce((sum, items) => sum + items.length, 0);
-
-        container.innerHTML = `
-            <div class="report-header-bar">
-                <h2>Eigene Auswertung: ${sourceLabels[dataSource]} nach ${groupLabels[groupBy]}</h2>
-                <span class="report-date">Erstellt: ${new Date().toLocaleDateString('de-DE')}</span>
-            </div>
-            <div class="report-summary">
-                <div class="summary-cards">
-                    <div class="summary-card">
-                        <span class="card-icon">📊</span>
-                        <span class="card-value">${total}</span>
-                        <span class="card-label">Gesamt</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="card-icon">📁</span>
-                        <span class="card-value">${Object.keys(grouped).length}</span>
-                        <span class="card-label">Gruppen</span>
-                    </div>
-                </div>
-            </div>
-            <div class="report-groups">
-                ${Object.entries(grouped).sort((a, b) => b[1].length - a[1].length).map(([key, items]) => `
-                    <div class="report-group">
-                        <div class="group-header">
-                            <span class="group-name">${key}</span>
-                            <span class="group-count">${items.length} (${Math.round(items.length / total * 100)}%)</span>
-                        </div>
-                        <div class="group-bar">
-                            <div class="group-bar-fill" style="width: ${items.length / total * 100}%"></div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
-    showSummary() {
-        if (!this.reportData) return;
-
-        alert('Zusammenfassung:\n\n' + JSON.stringify(this.reportData.summary || this.reportData, null, 2));
-    }
-
-    compareReports() {
-        alert('Vergleichsfunktion wird noch entwickelt.\n\nHier können Sie mehrere Reports vergleichen.');
-    }
-
-    showLoading(show) {
-        this.isLoading = show;
-        const loading = document.getElementById('reportLoading');
-        const placeholder = document.getElementById('reportPlaceholder');
-        const content = document.getElementById('reportContent');
-
-        if (show) {
-            loading.style.display = 'flex';
-            placeholder.style.display = 'none';
-            content.style.display = 'none';
-        } else {
-            loading.style.display = 'none';
-        }
-    }
-
-    showError(message) {
-        const container = document.getElementById('reportContent');
-        const placeholder = document.getElementById('reportPlaceholder');
-
-        placeholder.style.display = 'none';
-        container.style.display = 'block';
-        container.innerHTML = `
-            <div class="report-error">
-                <span class="error-icon">⚠️</span>
-                <p>${message}</p>
-                <button class="agent-btn secondary" onclick="document.getElementById('reportPlaceholder').style.display='flex'; document.getElementById('reportContent').style.display='none';">
-                    Zurück
-                </button>
-            </div>
-        `;
-    }
-
+    // =============== Styles ===============
     addStyles() {
-        if (document.getElementById('agent-reporting-styles')) return;
+        if (document.getElementById('reporting-styles')) return;
 
         const styles = document.createElement('style');
-        styles.id = 'agent-reporting-styles';
+        styles.id = 'reporting-styles';
         styles.textContent = `
-            .agent-reporting-page {
-                height: calc(100vh - 140px);
-                padding: 1rem;
+            .reporting-page {
+                padding: 1.5rem;
+                max-width: 1400px;
+                margin: 0 auto;
             }
 
-            .reporting-layout {
-                display: grid;
-                grid-template-columns: 280px 1fr;
-                gap: 1rem;
-                height: 100%;
-            }
-
-            .reporting-layout.with-actions {
-                grid-template-columns: 280px 1fr 200px;
-            }
-
-            /* Sidebar */
-            .reporting-sidebar {
-                background: white;
-                border-radius: 12px;
-                padding: 1rem;
+            /* ===== Load View ===== */
+            .load-view {
                 display: flex;
-                flex-direction: column;
-                gap: 1rem;
-                overflow-y: auto;
-            }
-
-            .sidebar-section h3,
-            .sidebar-section h4 {
-                font-size: 0.9rem;
-                color: #374151;
-                margin-bottom: 0.75rem;
-            }
-
-            .report-types {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .report-type {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.75rem;
-                background: #f9fafb;
-                border: 2px solid #e5e7eb;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: all 0.2s;
-                text-align: left;
-            }
-
-            .report-type:hover {
-                border-color: #3b82f6;
-                background: #eff6ff;
-            }
-
-            .report-type.active {
-                border-color: #3b82f6;
-                background: #eff6ff;
-            }
-
-            .type-icon {
-                font-size: 1.25rem;
-            }
-
-            .type-label {
-                font-size: 0.875rem;
-                color: #374151;
-            }
-
-            .filter-group {
-                margin-bottom: 0.75rem;
-            }
-
-            .filter-group label {
-                display: block;
-                font-size: 0.75rem;
-                color: #6b7280;
-                margin-bottom: 0.25rem;
-            }
-
-            .agent-select {
-                width: 100%;
-                padding: 0.5rem;
-                border: 1px solid #d1d5db;
-                border-radius: 6px;
-                font-size: 0.875rem;
-                background: white;
-            }
-
-            .agent-btn {
-                width: 100%;
-                padding: 0.75rem;
-                border: none;
-                border-radius: 8px;
-                font-size: 0.875rem;
-                cursor: pointer;
-                transition: all 0.2s;
-                display: flex;
-                align-items: center;
                 justify-content: center;
-                gap: 0.5rem;
-            }
-
-            .agent-btn.primary {
-                background: #3b82f6;
-                color: white;
-            }
-
-            .agent-btn.primary:hover {
-                background: #2563eb;
-            }
-
-            .agent-btn.secondary {
-                background: #f3f4f6;
-                color: #374151;
-            }
-
-            .agent-btn.secondary:hover {
-                background: #e5e7eb;
-            }
-
-            /* Report list */
-            .report-list {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-                max-height: 300px;
-                overflow-y: auto;
-            }
-
-            .report-item {
-                display: flex;
                 align-items: center;
-                gap: 0.75rem;
-                padding: 0.75rem;
-                background: #f9fafb;
-                border: 2px solid transparent;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: all 0.2s;
+                min-height: 60vh;
             }
 
-            .report-item:hover {
-                background: #eff6ff;
-                border-color: #bfdbfe;
-            }
-
-            .report-item.selected {
-                background: #dbeafe;
-                border-color: #3b82f6;
-            }
-
-            .report-item-icon {
-                font-size: 1.25rem;
-            }
-
-            .report-item-info {
-                flex: 1;
-                min-width: 0;
-            }
-
-            .report-item-title {
-                font-size: 0.875rem;
-                font-weight: 500;
-                color: #1f2937;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .report-item-subtitle {
-                font-size: 0.75rem;
-                color: #6b7280;
-            }
-
-            .status-badge {
-                display: inline-block;
-                padding: 0.125rem 0.5rem;
-                border-radius: 9999px;
-                font-size: 0.625rem;
-                font-weight: 500;
-                background: #e5e7eb;
-                color: #374151;
-            }
-
-            .status-badge.I3, .status-badge.COMPLETED {
-                background: #dcfce7;
-                color: #166534;
-            }
-
-            .status-badge.I4, .status-badge.DONE {
-                background: #dbeafe;
-                color: #1e40af;
-            }
-
-            .no-reports {
-                text-align: center;
-                padding: 2rem 1rem;
-                color: #6b7280;
-            }
-
-            .no-reports-icon {
-                font-size: 2rem;
-                display: block;
-                margin-bottom: 0.5rem;
-            }
-
-            /* Main content */
-            .reporting-main {
+            .load-card {
                 background: white;
-                border-radius: 12px;
-                overflow: hidden;
-            }
-
-            .report-container {
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .report-placeholder {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 2rem;
+                border-radius: 16px;
+                padding: 3rem;
                 text-align: center;
-                color: #6b7280;
+                max-width: 500px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             }
 
-            .placeholder-icon {
+            .load-icon {
                 font-size: 4rem;
                 margin-bottom: 1rem;
             }
 
-            .placeholder-features {
+            .load-card h2 {
+                margin-bottom: 0.5rem;
+                color: #1f2937;
+            }
+
+            .load-card p {
+                color: #6b7280;
+                margin-bottom: 2rem;
+            }
+
+            .load-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 1rem 2.5rem;
+                background: #3b82f6;
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 1.1rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .load-btn:hover {
+                background: #2563eb;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            }
+
+            .load-info {
                 display: flex;
+                justify-content: center;
                 gap: 2rem;
                 margin-top: 2rem;
+                padding-top: 2rem;
+                border-top: 1px solid #e5e7eb;
             }
 
-            .feature {
+            .info-item {
                 display: flex;
-                flex-direction: column;
                 align-items: center;
                 gap: 0.5rem;
+                font-size: 0.9rem;
+                color: #6b7280;
             }
 
-            .feature-icon {
-                font-size: 1.5rem;
+            .info-icon {
+                font-size: 1.1rem;
             }
 
-            .report-loading {
-                flex: 1;
+            /* Loading Overlay */
+            .loading-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255,255,255,0.9);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 gap: 1rem;
+                z-index: 1000;
             }
 
             .loading-spinner {
-                width: 40px;
-                height: 40px;
-                border: 3px solid #e5e7eb;
+                width: 50px;
+                height: 50px;
+                border: 4px solid #e5e7eb;
                 border-top-color: #3b82f6;
                 border-radius: 50%;
                 animation: spin 1s linear infinite;
@@ -1274,567 +694,398 @@ class AgentReportingPage {
                 to { transform: rotate(360deg); }
             }
 
-            .report-content {
+            /* ===== Data View ===== */
+            .data-loaded {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .data-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: white;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            }
+
+            .summary-main {
+                display: flex;
+                align-items: baseline;
+                gap: 0.75rem;
+            }
+
+            .summary-count {
+                font-size: 2rem;
+                font-weight: 700;
+                color: #3b82f6;
+            }
+
+            .summary-label {
+                font-size: 1rem;
+                color: #6b7280;
+            }
+
+            .summary-stats {
+                display: flex;
+                gap: 0.75rem;
+                margin-top: 0.5rem;
+            }
+
+            .stat-pill {
+                background: #f3f4f6;
+                padding: 0.25rem 0.75rem;
+                border-radius: 9999px;
+                font-size: 0.8rem;
+                color: #4b5563;
+            }
+
+            .data-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .action-btn-small {
+                width: 40px;
+                height: 40px;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                background: white;
+                cursor: pointer;
+                font-size: 1.1rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+
+            .action-btn-small:hover {
+                background: #f3f4f6;
+                border-color: #d1d5db;
+            }
+
+            /* Layout */
+            .data-layout {
+                display: grid;
+                grid-template-columns: 1fr 320px;
+                gap: 1rem;
+                min-height: calc(100vh - 280px);
+            }
+
+            .data-panel, .analysis-panel {
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .panel-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.25rem;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .panel-header h3 {
+                margin: 0;
+                font-size: 1rem;
+                color: #374151;
+            }
+
+            .panel-content {
                 flex: 1;
                 overflow-y: auto;
                 padding: 1rem;
             }
 
-            .report-header-bar {
+            /* View Tabs */
+            .view-tabs {
                 display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding-bottom: 1rem;
-                border-bottom: 1px solid #e5e7eb;
+                gap: 0.25rem;
+            }
+
+            .view-tab {
+                padding: 0.4rem 0.75rem;
+                border: none;
+                background: transparent;
+                border-radius: 6px;
+                font-size: 0.8rem;
+                color: #6b7280;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .view-tab:hover {
+                background: #f3f4f6;
+            }
+
+            .view-tab.active {
+                background: #3b82f6;
+                color: white;
+            }
+
+            /* Data Table */
+            .data-table-wrapper {
+                overflow-x: auto;
+            }
+
+            .data-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.85rem;
+            }
+
+            .data-table th {
+                text-align: left;
+                padding: 0.75rem;
+                background: #f9fafb;
+                border-bottom: 2px solid #e5e7eb;
+                font-weight: 600;
+                color: #374151;
+                white-space: nowrap;
+                position: sticky;
+                top: 0;
+            }
+
+            .data-table td {
+                padding: 0.625rem 0.75rem;
+                border-bottom: 1px solid #f3f4f6;
+                color: #1f2937;
+            }
+
+            .data-table tbody tr:hover {
+                background: #f9fafb;
+            }
+
+            .data-table .empty {
+                color: #d1d5db;
+            }
+
+            .data-table .status-badge {
+                display: inline-block;
+                padding: 0.2rem 0.5rem;
+                background: #e0f2fe;
+                color: #0369a1;
+                border-radius: 4px;
+                font-size: 0.75rem;
+            }
+
+            .table-footer {
+                text-align: center;
+                padding: 0.75rem;
+                color: #6b7280;
+                font-size: 0.8rem;
+                background: #f9fafb;
+                border-top: 1px solid #e5e7eb;
+            }
+
+            /* Analysis Panel */
+            .analysis-intro {
+                color: #6b7280;
+                font-size: 0.9rem;
                 margin-bottom: 1rem;
             }
 
-            .report-header-bar h2 {
-                margin: 0;
-                font-size: 1.25rem;
-                color: #1f2937;
+            .analysis-category {
+                margin-bottom: 1.25rem;
             }
 
-            .report-date {
-                font-size: 0.875rem;
-                color: #6b7280;
+            .analysis-category h4 {
+                font-size: 0.8rem;
+                color: #9ca3af;
+                margin-bottom: 0.5rem;
+                font-weight: 500;
             }
 
-            .report-html-container {
-                flex: 1;
-                min-height: 400px;
+            .analysis-options {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
             }
 
-            .report-html-container iframe {
-                width: 100%;
-                height: 100%;
-                min-height: 400px;
+            .analysis-btn {
+                display: flex;
+                flex-direction: column;
+                padding: 0.75rem;
                 border: 1px solid #e5e7eb;
                 border-radius: 8px;
+                background: white;
+                cursor: pointer;
+                text-align: left;
+                transition: all 0.2s;
             }
 
-            .report-summary {
+            .analysis-btn:hover {
+                border-color: #3b82f6;
+                background: #eff6ff;
+            }
+
+            .btn-title {
+                font-weight: 500;
+                color: #1f2937;
+                font-size: 0.9rem;
+            }
+
+            .btn-desc {
+                font-size: 0.75rem;
+                color: #6b7280;
+                margin-top: 0.2rem;
+            }
+
+            /* Export Section */
+            .export-section {
+                margin-top: 1.5rem;
+                padding-top: 1rem;
+                border-top: 1px solid #e5e7eb;
+            }
+
+            .export-section h4 {
+                font-size: 0.8rem;
+                color: #9ca3af;
+                margin-bottom: 0.5rem;
+            }
+
+            .export-buttons {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .export-btn {
+                flex: 1;
+                padding: 0.6rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                background: white;
+                cursor: pointer;
+                font-size: 0.85rem;
+                color: #374151;
+                transition: all 0.2s;
+            }
+
+            .export-btn:hover {
+                background: #f3f4f6;
+                border-color: #d1d5db;
+            }
+
+            /* Analysis Result */
+            .analysis-result {
+                padding: 0.5rem;
+            }
+
+            .analysis-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 margin-bottom: 1.5rem;
             }
 
-            .summary-cards {
-                display: flex;
-                gap: 1rem;
-                flex-wrap: wrap;
-            }
-
-            .summary-card {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                padding: 1rem 1.5rem;
-                background: #f9fafb;
-                border-radius: 8px;
-                min-width: 100px;
-            }
-
-            .summary-card.green {
-                background: #dcfce7;
-            }
-
-            .summary-card.orange {
-                background: #fef3c7;
-            }
-
-            .summary-card.red {
-                background: #fee2e2;
-            }
-
-            .card-icon {
-                font-size: 1.5rem;
-                margin-bottom: 0.25rem;
-            }
-
-            .card-value {
-                font-size: 1.5rem;
-                font-weight: 600;
+            .analysis-header h3 {
+                margin: 0;
+                font-size: 1.1rem;
                 color: #1f2937;
             }
 
-            .card-label {
-                font-size: 0.75rem;
+            .analysis-total {
+                font-size: 0.85rem;
                 color: #6b7280;
             }
 
-            .report-table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-
-            .report-table th,
-            .report-table td {
-                padding: 0.75rem;
-                text-align: left;
-                border-bottom: 1px solid #e5e7eb;
-            }
-
-            .report-table th {
-                background: #f9fafb;
-                font-weight: 500;
-                font-size: 0.875rem;
-                color: #374151;
-            }
-
-            .report-groups {
+            .analysis-chart {
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
             }
 
-            .report-group {
-                background: #f9fafb;
-                border-radius: 8px;
-                padding: 1rem;
-            }
-
-            .group-header {
-                display: flex;
-                justify-content: space-between;
+            .chart-row {
+                display: grid;
+                grid-template-columns: 150px 1fr 50px 50px;
                 align-items: center;
-                margin-bottom: 0.5rem;
+                gap: 0.75rem;
             }
 
-            .group-name {
-                font-weight: 500;
-                color: #1f2937;
+            .chart-label {
+                font-size: 0.85rem;
+                color: #374151;
+                text-align: right;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
-            .group-count {
-                font-size: 0.875rem;
-                color: #6b7280;
-            }
-
-            .group-bar {
-                height: 8px;
-                background: #e5e7eb;
+            .chart-bar-container {
+                height: 24px;
+                background: #f3f4f6;
                 border-radius: 4px;
                 overflow: hidden;
             }
 
-            .group-bar-fill {
+            .chart-bar {
                 height: 100%;
-                background: linear-gradient(90deg, #3b82f6, #60a5fa);
                 border-radius: 4px;
                 transition: width 0.3s ease;
             }
 
-            .report-error {
-                text-align: center;
-                padding: 3rem;
+            .chart-value {
+                font-weight: 600;
+                color: #1f2937;
+                text-align: right;
             }
 
-            .error-icon {
-                font-size: 3rem;
-                display: block;
-                margin-bottom: 1rem;
-            }
-
-            /* Actions sidebar */
-            .reporting-actions {
-                background: white;
-                border-radius: 12px;
-                display: flex;
-                flex-direction: column;
-                padding: 1rem;
-            }
-
-            .actions-header {
-                padding-bottom: 0.75rem;
-                border-bottom: 1px solid #e5e7eb;
-                margin-bottom: 1rem;
-            }
-
-            .actions-header h3 {
-                margin: 0;
-                font-size: 0.9rem;
-                color: #374151;
-            }
-
-            .actions-content {
-                display: flex;
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-
-            .export-section h4,
-            .analysis-section h4 {
-                font-size: 0.75rem;
+            .chart-percent {
+                font-size: 0.8rem;
                 color: #6b7280;
-                margin-bottom: 0.5rem;
-                text-transform: uppercase;
+                text-align: right;
             }
 
-            .action-btn {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                width: 100%;
-                padding: 0.625rem 0.75rem;
+            .back-to-data {
+                margin-top: 2rem;
+                padding-top: 1rem;
+                border-top: 1px solid #e5e7eb;
+            }
+
+            .back-btn {
+                padding: 0.6rem 1rem;
                 border: 1px solid #e5e7eb;
                 border-radius: 6px;
                 background: white;
                 cursor: pointer;
+                font-size: 0.85rem;
+                color: #374151;
                 transition: all 0.2s;
-                font-size: 0.875rem;
-                color: #374151;
-                margin-bottom: 0.5rem;
             }
 
-            .action-btn:hover {
-                background: #f9fafb;
-                border-color: #d1d5db;
-            }
-
-            .btn-icon {
-                font-size: 1rem;
-            }
-
-            /* Assets Grid Table */
-            .assets-grid-container {
-                overflow-x: auto;
-                max-height: calc(100vh - 280px);
-            }
-
-            .assets-grid-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 0.875rem;
-            }
-
-            .assets-grid-table th {
-                position: sticky;
-                top: 0;
-                background: #f3f4f6;
-                padding: 0.75rem 1rem;
-                text-align: left;
-                font-weight: 600;
-                color: #374151;
-                border-bottom: 2px solid #e5e7eb;
-                white-space: nowrap;
-            }
-
-            .assets-grid-table td {
-                padding: 0.625rem 1rem;
-                border-bottom: 1px solid #e5e7eb;
-                color: #1f2937;
-            }
-
-            .assets-grid-table tbody tr:hover {
-                background: #f9fafb;
-            }
-
-            .assets-grid-table tbody tr:nth-child(even) {
-                background: #fafafa;
-            }
-
-            .assets-grid-table tbody tr:nth-child(even):hover {
+            .back-btn:hover {
                 background: #f3f4f6;
             }
 
-            /* Filter hint */
-            .filter-hint {
-                font-size: 0.8rem;
-                color: #6b7280;
-                margin-bottom: 1rem;
-                line-height: 1.4;
-            }
-
-            /* Report Categories */
-            .report-categories {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1.5rem;
-                margin: 2rem 0;
-                text-align: left;
-            }
-
-            .report-category h3 {
-                font-size: 0.9rem;
-                margin-bottom: 0.75rem;
-                color: #374151;
-            }
-
-            .report-examples {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .report-example {
-                display: flex;
-                flex-direction: column;
-                padding: 0.75rem;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                background: white;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                text-align: left;
-            }
-
-            .report-example:hover {
-                border-color: #3b82f6;
-                background: #eff6ff;
-                transform: translateX(4px);
-            }
-
-            .example-title {
-                font-weight: 500;
-                font-size: 0.85rem;
-                color: #1f2937;
-            }
-
-            .example-desc {
-                font-size: 0.7rem;
-                color: #6b7280;
-                margin-top: 0.25rem;
-            }
-
-            .placeholder-hint {
-                margin-top: 1.5rem;
-                padding: 1rem;
-                background: #fef3c7;
-                border-radius: 8px;
-                font-size: 0.85rem;
-            }
-
-            .placeholder-hint p {
-                margin: 0;
-                color: #92400e;
-            }
-
-            /* Aggregated Report Styles */
-            .agg-report {
-                padding: 1.5rem;
-            }
-
-            .agg-report h2 {
-                margin-bottom: 1rem;
-                font-size: 1.3rem;
-            }
-
-            .agg-summary {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                gap: 1rem;
-                margin-bottom: 1.5rem;
-            }
-
-            .summary-card {
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                padding: 1rem;
+            .no-data {
                 text-align: center;
+                padding: 3rem;
+                color: #9ca3af;
             }
 
-            .summary-value {
-                font-size: 1.8rem;
-                font-weight: bold;
-                color: #2563eb;
-            }
-
-            .summary-label {
-                font-size: 0.8rem;
-                color: #6b7280;
-                margin-top: 0.25rem;
-            }
-
-            .agg-chart {
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                padding: 1rem;
-                margin-bottom: 1rem;
-            }
-
-            .bar-chart {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .bar-row {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            }
-
-            .bar-label {
-                width: 150px;
-                font-size: 0.8rem;
-                text-align: right;
-            }
-
-            .bar-container {
-                flex: 1;
-                background: #e5e7eb;
-                border-radius: 4px;
-                height: 20px;
-            }
-
-            .bar-fill {
-                height: 100%;
-                border-radius: 4px;
-                background: linear-gradient(90deg, #3b82f6, #2563eb);
-            }
-
-            .bar-value {
-                width: 60px;
-                font-size: 0.8rem;
-                font-weight: 500;
-            }
-
+            /* Responsive */
             @media (max-width: 900px) {
-                .report-categories {
+                .data-layout {
                     grid-template-columns: 1fr;
+                }
+
+                .chart-row {
+                    grid-template-columns: 100px 1fr 40px 40px;
+                }
+
+                .load-info {
+                    flex-direction: column;
+                    gap: 0.75rem;
                 }
             }
         `;
         document.head.appendChild(styles);
-    }
-
-    // =============== Aggregated Report Renderers ===============
-
-    renderAggregatedReport(title, data, groupField, countField = null, valueField = null) {
-        const placeholder = document.getElementById('reportPlaceholder');
-        const content = document.getElementById('reportContent');
-        const actions = document.getElementById('reportActions');
-
-        if (placeholder) placeholder.style.display = 'none';
-        if (content) content.style.display = 'block';
-        if (actions) actions.style.display = 'flex';
-
-        // Group data
-        const groups = {};
-        data.forEach(item => {
-            const key = item[groupField] || 'Unbekannt';
-            if (!groups[key]) {
-                groups[key] = { count: 0, value: 0, items: [] };
-            }
-            groups[key].count++;
-            if (valueField && item[valueField]) {
-                const val = parseFloat(item[valueField]) || 0;
-                groups[key].value += val;
-            }
-            groups[key].items.push(item);
-        });
-
-        // Sort by count descending
-        const sorted = Object.entries(groups).sort((a, b) => b[1].count - a[1].count);
-        const maxCount = sorted[0]?.[1].count || 1;
-
-        // Build HTML
-        const summaryCards = sorted.slice(0, 4).map(([label, info]) => `
-            <div class="summary-card">
-                <div class="summary-value">${info.count}</div>
-                <div class="summary-label">${label}</div>
-            </div>
-        `).join('');
-
-        const barChart = sorted.map(([label, info]) => `
-            <div class="bar-row">
-                <div class="bar-label">${label.substring(0, 25)}${label.length > 25 ? '...' : ''}</div>
-                <div class="bar-container">
-                    <div class="bar-fill" style="width: ${(info.count / maxCount * 100).toFixed(1)}%"></div>
-                </div>
-                <div class="bar-value">${info.count}</div>
-            </div>
-        `).join('');
-
-        content.innerHTML = `
-            <div class="agg-report">
-                <h2>${title}</h2>
-                <div class="agg-summary">${summaryCards}</div>
-                <div class="agg-chart">
-                    <h4>Verteilung</h4>
-                    <div class="bar-chart">${barChart}</div>
-                </div>
-                <p style="color: #6b7280; font-size: 0.8rem;">Gesamt: ${data.length} Einträge in ${sorted.length} Gruppen</p>
-            </div>
-        `;
-    }
-
-    renderProcessProgressReport(data) {
-        this.renderAggregatedReport('Prozess-Fortschritt', data, 'Prozessstatus');
-    }
-
-    renderOverdueReport(data) {
-        // Filter for entries with due dates in the past
-        const now = new Date();
-        const overdue = data.filter(item => {
-            const dueDate = item['Fälligkeitsdatum'];
-            if (!dueDate || dueDate === '-') return false;
-            try {
-                const date = new Date(dueDate.split('.').reverse().join('-'));
-                return date < now;
-            } catch {
-                return false;
-            }
-        });
-        this.renderAggregatedReport('Überfällige Prozesse', overdue.length > 0 ? overdue : data, 'Prozessstatus');
-    }
-
-    renderLocationDiscrepancyReport(data) {
-        this.renderAggregatedReport('Standort-Ergebnisse', data, 'Standortergebnis');
-    }
-
-    renderImageStatusReport(data) {
-        // Note: The imported data has 'imageStatus' but might be mapped differently
-        // Check both possible field names
-        const hasImageStatus = data.some(item => item['Bildstatus'] || item['imageStatus']);
-        if (hasImageStatus) {
-            const mapped = data.map(d => ({ ...d, 'Bildstatus': d['Bildstatus'] || d['imageStatus'] || 'Unbekannt' }));
-            this.renderAggregatedReport('Bildstatus-Tracking', mapped, 'Bildstatus');
-        } else {
-            this.renderAggregatedReport('Bildstatus-Tracking', data, 'Standortergebnis');
-        }
-    }
-
-    renderGeoDistributionReport(data) {
-        this.renderAggregatedReport('Asset-Verteilung nach Land', data, 'Land');
-    }
-
-    renderValueByOwnerReport(data) {
-        this.renderAggregatedReport('Wertanalyse pro Eigentümer', data, 'Eigentümer', null, 'Anschaffungswert • EUR');
-    }
-
-    renderLifecycleStatusReport(data) {
-        this.renderAggregatedReport('Lifecycle-Status-Übersicht', data, 'Fertigungsmittel-Lifecyclestatus');
-    }
-
-    renderInventoryCalendarReport(data) {
-        // Group by year from Inventurfrist (if available)
-        const mapped = data.map(d => {
-            let year = 'Kein Datum';
-            const deadline = d['BMW Inventurfrist'] || d['inventoryDeadline'];
-            if (deadline && deadline !== '-') {
-                try {
-                    const date = new Date(deadline);
-                    year = date.getFullYear().toString();
-                } catch {}
-            }
-            return { ...d, 'Inventurjahr': year };
-        });
-        this.renderAggregatedReport('Inventurfrist-Kalender', mapped, 'Inventurjahr');
-    }
-
-    renderABLStatusReport(data) {
-        this.renderAggregatedReport('ABL-Status', data, 'Fertigungsmittel-Lifecyclestatus');
-    }
-
-    renderUnconfirmedReport(data) {
-        // Filter for unconfirmed assets
-        const unconfirmed = data.filter(item => {
-            const status = item['Fertigungsmittel-Prozessstatus'] || item['processStatus'] || '';
-            return status.toLowerCase().includes('unbestätigt') || status.toLowerCase().includes('unconfirmed');
-        });
-        this.renderAggregatedReport('Unbestätigte Assets', unconfirmed.length > 0 ? unconfirmed : data, 'Fertigungsmittel-Prozessstatus');
     }
 }
 
