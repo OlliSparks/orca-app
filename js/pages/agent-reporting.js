@@ -4,6 +4,7 @@ class AgentReportingPage {
         this.gridData = null;  // Die geladenen Basis-Daten
         this.isLoading = false;
         this.currentView = 'data'; // 'data' oder spezifische Auswertung
+        this.agGridInstance = null; // AG Grid instance
     }
 
     render() {
@@ -139,10 +140,32 @@ class AgentReportingPage {
                         <div class="panel-header">
                             <h3>📋 Ihre Daten</h3>
                             <div class="view-tabs">
-                                <button class="view-tab ${this.currentView === 'data' ? 'active' : ''}" data-view="data">Tabelle</button>
+                                <button class="view-tab ${this.currentView === 'data' ? 'active' : ''}" data-view="data">AG Grid</button>
                                 ${this.currentView !== 'data' ? `<button class="view-tab active" data-view="${this.currentView}">${this.getViewName(this.currentView)}</button>` : ''}
                             </div>
                         </div>
+                        ${this.currentView === 'data' ? `
+                        <div class="filter-toolbar">
+                            <div class="filter-info">
+                                <span id="filteredCount">${data.length} Einträge</span>
+                            </div>
+                            <div class="filter-actions">
+                                <select id="savedFiltersDropdown" class="filter-select">
+                                    <option value="">Filter laden...</option>
+                                </select>
+                                <button id="deleteFilterBtn" class="filter-btn small" title="Ausgewählten Filter löschen">🗑️</button>
+                                <button id="saveFilterBtn" class="filter-btn" title="Aktuellen Filter speichern">💾 Speichern</button>
+                                <button id="clearFiltersBtn" class="filter-btn" title="Alle Filter zurücksetzen">✖️ Reset</button>
+                                <div class="export-dropdown">
+                                    <button id="exportFilteredBtn" class="filter-btn primary">📥 Export</button>
+                                    <div class="export-menu" id="exportMenu">
+                                        <button data-format="xlsx">Excel (.xlsx)</button>
+                                        <button data-format="csv">CSV (.csv)</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
                         <div class="panel-content" id="dataContent">
                             ${this.currentView === 'data' ? this.renderDataTable(data) : this.renderAnalysisView(this.currentView, data)}
                         </div>
@@ -246,40 +269,261 @@ class AgentReportingPage {
             return '<div class="no-data">Keine Daten vorhanden</div>';
         }
 
-        // Wichtigste Spalten für die Übersicht
-        const displayColumns = [
-            { key: 'Inventarnummer', label: 'Inv.-Nr.' },
-            { key: 'Werkzeugbezeichnung', label: 'Bezeichnung' },
-            { key: 'Lieferantenname', label: 'Lieferant' },
-            { key: 'Stadt', label: 'Stadt' },
-            { key: 'Land', label: 'Land' },
-            { key: 'Fertigungsmittel-Lifecyclestatus', label: 'Status' }
+        // AG Grid Container mit Theme-Klasse zurückgeben
+        return `
+            <div id="agGridContainer" class="ag-grid-container ag-theme-alpine"></div>
+        `;
+    }
+
+    initializeAgGrid(data) {
+        // Destroy existing grid if present
+        if (this.agGridInstance) {
+            this.agGridInstance.destroy();
+            this.agGridInstance = null;
+        }
+
+        const gridContainer = document.getElementById('agGridContainer');
+        if (!gridContainer || !data || data.length === 0) return;
+
+        // Spalten-Definitionen basierend auf den Daten erstellen
+        const allColumns = Object.keys(data[0] || {}).filter(k => !k.startsWith('_'));
+
+        // Priorisierte Spalten (diese werden zuerst angezeigt)
+        const priorityColumns = [
+            'Inventarnummer',
+            'Werkzeugbezeichnung',
+            'Lieferantenname',
+            'Stadt',
+            'Land',
+            'Fertigungsmittel-Lifecyclestatus',
+            'Prozessstatus',
+            'Standortergebnis'
         ];
 
-        // Filtere nur existierende Spalten
-        const availableCols = displayColumns.filter(col =>
-            data.some(item => item[col.key] && item[col.key] !== '-')
-        );
+        // Sortiere Spalten: Priorität zuerst, dann alphabetisch
+        const sortedColumns = [
+            ...priorityColumns.filter(col => allColumns.includes(col)),
+            ...allColumns.filter(col => !priorityColumns.includes(col)).sort()
+        ];
 
-        return `
-            <div class="data-table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            ${availableCols.map(col => `<th>${col.label}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.slice(0, 100).map(item => `
-                            <tr>
-                                ${availableCols.map(col => `<td>${this.formatCell(item[col.key], col.key)}</td>`).join('')}
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                ${data.length > 100 ? `<div class="table-footer">Zeige 100 von ${data.length} Einträgen</div>` : ''}
-            </div>
-        `;
+        const columnDefs = sortedColumns.map(key => ({
+            field: key,
+            headerName: this.getColumnHeaderName(key),
+            sortable: true,
+            filter: 'agTextColumnFilter',
+            floatingFilter: true, // Filter direkt unter Header
+            resizable: true,
+            minWidth: 120,
+            flex: key === 'Werkzeugbezeichnung' ? 2 : 1,
+            filterParams: {
+                buttons: ['reset', 'apply'],
+                closeOnApply: true
+            },
+            cellRenderer: (params) => {
+                const value = params.value;
+                if (!value || value === '-') return '<span style="color: #d1d5db;">-</span>';
+                if (key === 'Fertigungsmittel-Lifecyclestatus' || key === 'Prozessstatus') {
+                    return `<span class="status-badge">${value}</span>`;
+                }
+                return value;
+            }
+        }));
+
+        // Store reference to this for callbacks
+        const self = this;
+
+        // AG Grid Optionen
+        this.gridOptions = {
+            columnDefs: columnDefs,
+            rowData: data,
+            defaultColDef: {
+                sortable: true,
+                filter: true,
+                floatingFilter: true,
+                resizable: true,
+                minWidth: 80
+            },
+            pagination: false,
+            domLayout: 'normal',
+            rowHeight: 40,
+            headerHeight: 44,
+            floatingFiltersHeight: 36,
+            animateRows: true,
+            enableCellTextSelection: true,
+            ensureDomOrder: true,
+            suppressRowClickSelection: true,
+            cacheQuickFilter: true,
+            // Event: Filter geändert - Update Zähler
+            onFilterChanged: () => {
+                self.updateFilteredCount();
+            }
+        };
+
+        // Grid initialisieren
+        this.agGridInstance = agGrid.createGrid(gridContainer, this.gridOptions);
+
+        // Initial count update
+        setTimeout(() => this.updateFilteredCount(), 100);
+
+        console.log(`AG Grid initialisiert mit ${data.length} Zeilen und ${columnDefs.length} Spalten`);
+    }
+
+    updateFilteredCount() {
+        const countEl = document.getElementById('filteredCount');
+        if (!countEl || !this.agGridInstance) return;
+
+        let filteredCount = 0;
+        this.agGridInstance.forEachNodeAfterFilter(() => filteredCount++);
+
+        const total = this.gridData?.length || 0;
+        if (filteredCount === total) {
+            countEl.textContent = `${total} Einträge`;
+        } else {
+            countEl.textContent = `${filteredCount} von ${total} gefiltert`;
+        }
+    }
+
+    // =============== Filter Management ===============
+    getSavedFilters() {
+        const saved = localStorage.getItem('orca_reporting_filters');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    saveCurrentFilter() {
+        if (!this.agGridInstance) return;
+
+        const filterModel = this.agGridInstance.getFilterModel();
+        if (!filterModel || Object.keys(filterModel).length === 0) {
+            alert('Keine aktiven Filter zum Speichern.');
+            return;
+        }
+
+        const name = prompt('Name für diesen Filter:');
+        if (!name) return;
+
+        const filters = this.getSavedFilters();
+        filters.push({
+            id: Date.now(),
+            name: name,
+            filter: filterModel,
+            created: new Date().toISOString()
+        });
+
+        localStorage.setItem('orca_reporting_filters', JSON.stringify(filters));
+        this.renderFilterDropdown();
+        alert(`Filter "${name}" gespeichert!`);
+    }
+
+    loadFilter(filterId) {
+        const filters = this.getSavedFilters();
+        const filter = filters.find(f => f.id === filterId);
+
+        if (filter && this.agGridInstance) {
+            this.agGridInstance.setFilterModel(filter.filter);
+            console.log(`Filter "${filter.name}" geladen`);
+        }
+    }
+
+    deleteFilter(filterId) {
+        let filters = this.getSavedFilters();
+        const filter = filters.find(f => f.id === filterId);
+
+        if (confirm(`Filter "${filter?.name}" wirklich löschen?`)) {
+            filters = filters.filter(f => f.id !== filterId);
+            localStorage.setItem('orca_reporting_filters', JSON.stringify(filters));
+            this.renderFilterDropdown();
+        }
+    }
+
+    clearAllFilters() {
+        if (this.agGridInstance) {
+            this.agGridInstance.setFilterModel(null);
+        }
+    }
+
+    renderFilterDropdown() {
+        const dropdown = document.getElementById('savedFiltersDropdown');
+        if (!dropdown) return;
+
+        const filters = this.getSavedFilters();
+
+        if (filters.length === 0) {
+            dropdown.innerHTML = '<option value="">Keine gespeicherten Filter</option>';
+            dropdown.disabled = true;
+        } else {
+            dropdown.disabled = false;
+            dropdown.innerHTML = `
+                <option value="">Filter laden...</option>
+                ${filters.map(f => `<option value="${f.id}">${f.name}</option>`).join('')}
+            `;
+        }
+    }
+
+    // =============== Export Filtered Data ===============
+    exportFilteredData(format) {
+        if (!this.agGridInstance) {
+            alert('Keine Daten zum Exportieren.');
+            return;
+        }
+
+        // Sammle nur gefilterte/sichtbare Zeilen
+        const filteredData = [];
+        this.agGridInstance.forEachNodeAfterFilter(node => {
+            if (node.data) {
+                // Entferne interne Felder
+                const cleanData = {};
+                Object.keys(node.data).forEach(key => {
+                    if (!key.startsWith('_')) {
+                        cleanData[key] = node.data[key];
+                    }
+                });
+                filteredData.push(cleanData);
+            }
+        });
+
+        if (filteredData.length === 0) {
+            alert('Keine Daten nach Filterung vorhanden.');
+            return;
+        }
+
+        const timestamp = new Date().toISOString().split('T')[0];
+        const suffix = filteredData.length < this.gridData.length ? '-gefiltert' : '';
+
+        if (format === 'xlsx' && typeof XLSX !== 'undefined') {
+            const ws = XLSX.utils.json_to_sheet(filteredData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Fertigungsmittel');
+            XLSX.writeFile(wb, `fertigungsmittel${suffix}-${timestamp}.xlsx`);
+        } else if (format === 'csv') {
+            const columns = Object.keys(filteredData[0] || {});
+            const header = columns.join(';');
+            const rows = filteredData.map(item =>
+                columns.map(col => {
+                    let val = item[col];
+                    if (typeof val === 'object') val = val?.name || JSON.stringify(val);
+                    return `"${String(val || '').replace(/"/g, '""')}"`;
+                }).join(';')
+            );
+            const csv = [header, ...rows].join('\n');
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+            this.downloadBlob(blob, `fertigungsmittel${suffix}-${timestamp}.csv`);
+        }
+
+        console.log(`Exportiert: ${filteredData.length} Zeilen als ${format.toUpperCase()}`);
+    }
+
+    getColumnHeaderName(key) {
+        // Spalten-Übersetzungen
+        const translations = {
+            'Inventarnummer': 'Inv.-Nr.',
+            'Werkzeugbezeichnung': 'Bezeichnung',
+            'Lieferantenname': 'Lieferant',
+            'Fertigungsmittel-Lifecyclestatus': 'Lifecycle-Status',
+            'Prozessstatus': 'Prozess-Status',
+            'Standortergebnis': 'Standort-Ergebnis',
+            'BMW Inventurfrist': 'Inventurfrist'
+        };
+        return translations[key] || key;
     }
 
     formatCell(value, key) {
@@ -476,15 +720,73 @@ class AgentReportingPage {
 
     // =============== Event Listeners ===============
     attachDataViewListeners() {
+        // Initialize AG Grid if we're in data view
+        if (this.currentView === 'data' && this.gridData) {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                this.initializeAgGrid(this.gridData);
+                this.renderFilterDropdown();
+            }, 50);
+        }
+
         // Refresh data
         document.getElementById('refreshDataBtn')?.addEventListener('click', () => {
             this.gridData = null;
+            if (this.agGridInstance) {
+                this.agGridInstance.destroy();
+                this.agGridInstance = null;
+            }
             this.loadData();
         });
 
         // Export all
         document.getElementById('exportAllBtn')?.addEventListener('click', () => {
-            this.exportData('xlsx');
+            this.exportFilteredData('xlsx');
+        });
+
+        // Filter Toolbar Listeners
+        document.getElementById('saveFilterBtn')?.addEventListener('click', () => {
+            this.saveCurrentFilter();
+        });
+
+        document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
+            this.clearAllFilters();
+        });
+
+        document.getElementById('savedFiltersDropdown')?.addEventListener('change', (e) => {
+            if (e.target.value) {
+                this.loadFilter(parseInt(e.target.value));
+            }
+        });
+
+        document.getElementById('deleteFilterBtn')?.addEventListener('click', () => {
+            const dropdown = document.getElementById('savedFiltersDropdown');
+            if (dropdown?.value) {
+                this.deleteFilter(parseInt(dropdown.value));
+            }
+        });
+
+        // Export dropdown toggle
+        document.getElementById('exportFilteredBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const menu = document.getElementById('exportMenu');
+            if (menu) {
+                menu.classList.toggle('show');
+            }
+        });
+
+        // Export menu options
+        document.querySelectorAll('#exportMenu button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.exportFilteredData(btn.dataset.format);
+                document.getElementById('exportMenu')?.classList.remove('show');
+            });
+        });
+
+        // Close export menu on outside click
+        document.addEventListener('click', () => {
+            document.getElementById('exportMenu')?.classList.remove('show');
         });
 
         // View tabs
@@ -511,10 +813,10 @@ class AgentReportingPage {
             });
         });
 
-        // Export buttons
+        // Export buttons (analysis panel)
         document.querySelectorAll('.export-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                this.exportData(btn.dataset.format);
+                this.exportFilteredData(btn.dataset.format);
             });
         });
     }
@@ -803,6 +1105,11 @@ class AgentReportingPage {
                 padding: 1rem;
             }
 
+            .data-panel .panel-content {
+                padding: 0;
+                overflow: hidden;
+            }
+
             /* View Tabs */
             .view-tabs {
                 display: flex;
@@ -882,6 +1189,158 @@ class AgentReportingPage {
                 font-size: 0.8rem;
                 background: #f9fafb;
                 border-top: 1px solid #e5e7eb;
+            }
+
+            /* ===== AG Grid Container ===== */
+            .ag-grid-container {
+                width: 100%;
+                height: 100%;
+                min-height: 500px;
+            }
+
+            .data-panel .panel-content .ag-grid-container {
+                height: calc(100vh - 340px);
+            }
+
+            .ag-theme-alpine {
+                --ag-header-background-color: #f9fafb;
+                --ag-header-foreground-color: #374151;
+                --ag-border-color: #e5e7eb;
+                --ag-row-hover-color: #f3f4f6;
+                --ag-selected-row-background-color: #eff6ff;
+            }
+
+            /* AG Grid Status Badge */
+            .ag-cell .status-badge {
+                display: inline-block;
+                padding: 0.2rem 0.5rem;
+                background: #e0f2fe;
+                color: #0369a1;
+                border-radius: 4px;
+                font-size: 0.75rem;
+            }
+
+            /* ===== Filter Toolbar ===== */
+            .filter-toolbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 1.25rem;
+                background: #f9fafb;
+                border-bottom: 1px solid #e5e7eb;
+                gap: 1rem;
+            }
+
+            .filter-info {
+                font-size: 0.9rem;
+                color: #374151;
+                font-weight: 500;
+            }
+
+            #filteredCount {
+                color: #3b82f6;
+            }
+
+            .filter-actions {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .filter-select {
+                padding: 0.4rem 0.75rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                background: white;
+                cursor: pointer;
+                min-width: 160px;
+            }
+
+            .filter-select:disabled {
+                background: #f3f4f6;
+                color: #9ca3af;
+                cursor: not-allowed;
+            }
+
+            .filter-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0.4rem 0.75rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                background: white;
+                font-size: 0.85rem;
+                cursor: pointer;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
+
+            .filter-btn:hover {
+                background: #f3f4f6;
+                border-color: #d1d5db;
+            }
+
+            .filter-btn.small {
+                padding: 0.4rem 0.5rem;
+            }
+
+            .filter-btn.primary {
+                background: #3b82f6;
+                color: white;
+                border-color: #3b82f6;
+            }
+
+            .filter-btn.primary:hover {
+                background: #2563eb;
+            }
+
+            /* Export Dropdown */
+            .export-dropdown {
+                position: relative;
+            }
+
+            .export-menu {
+                display: none;
+                position: absolute;
+                right: 0;
+                top: 100%;
+                margin-top: 0.25rem;
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                z-index: 100;
+                min-width: 140px;
+            }
+
+            .export-menu.show {
+                display: block;
+            }
+
+            .export-menu button {
+                display: block;
+                width: 100%;
+                padding: 0.6rem 1rem;
+                border: none;
+                background: transparent;
+                text-align: left;
+                font-size: 0.85rem;
+                cursor: pointer;
+                transition: background 0.15s;
+            }
+
+            .export-menu button:hover {
+                background: #f3f4f6;
+            }
+
+            .export-menu button:first-child {
+                border-radius: 8px 8px 0 0;
+            }
+
+            .export-menu button:last-child {
+                border-radius: 0 0 8px 8px;
             }
 
             /* Analysis Panel */
