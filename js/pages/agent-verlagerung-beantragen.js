@@ -148,10 +148,21 @@ class AgentVerlagerungBeantragenPage {
                 }
             }
 
-            // Load assets
-            const assetsResult = await api.getAssets({ limit: 10000 });
-            if (assetsResult.success && assetsResult.data) {
-                this.assets = assetsResult.data;
+            // Load assets using grid report (same as ABL-Agent)
+            const supplierNumber = this.companyData?.supplierNumber || this.companyData?.lieferantenNummer;
+            if (supplierNumber) {
+                const assetsResult = await api.getAssetsGridReport(supplierNumber);
+                if (assetsResult.success && assetsResult.data) {
+                    this.assets = assetsResult.data;
+                    console.log(`Verlagerung-Agent: ${this.assets.length} Assets geladen`);
+                }
+            } else {
+                // Fallback: Try to get all tools from FM list
+                const fmResult = await api.getFertigungsmittelList({ limit: 10000 });
+                if (fmResult.success && fmResult.data) {
+                    this.assets = fmResult.data;
+                    console.log(`Verlagerung-Agent: ${this.assets.length} FM geladen (Fallback)`);
+                }
             }
         } catch (error) {
             console.error('Fehler beim Laden der Daten:', error);
