@@ -218,6 +218,126 @@ class PlanungPage {
                 selected: false
             }));
         }
+
+        // Check if coming from Inventurplanungs-Agent with a target date
+        this.applyAgentPlanningDate();
+    }
+
+    applyAgentPlanningDate() {
+        const planningDataStr = localStorage.getItem('inventur_planning_date');
+        if (!planningDataStr) return;
+
+        try {
+            const planningData = JSON.parse(planningDataStr);
+
+            // Check if data is recent (within last 5 minutes)
+            const timestamp = new Date(planningData.timestamp);
+            const now = new Date();
+            const diffMinutes = (now - timestamp) / (1000 * 60);
+
+            if (diffMinutes > 5) {
+                localStorage.removeItem('inventur_planning_date');
+                return;
+            }
+
+            // Apply target date to all tools
+            const targetDate = planningData.targetDate;
+            if (targetDate) {
+                this.tools.forEach(tool => {
+                    tool.startDate = targetDate;
+                    tool.status = this.calculateInventoryStatus(targetDate);
+                    tool.selected = true; // Select all for bulk confirmation
+                });
+
+                // Show notification
+                this.showPlanningNotification(planningData.count, targetDate);
+            }
+
+            // Clear the planning data
+            localStorage.removeItem('inventur_planning_date');
+        } catch (e) {
+            console.error('Error applying planning date:', e);
+        }
+    }
+
+    showPlanningNotification(count, targetDate) {
+        const formattedDate = new Date(targetDate).toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'planning-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span class="notification-icon">📅</span>
+                <span class="notification-text">
+                    <strong>${count} Inventuren</strong> auf <strong>${formattedDate}</strong> terminiert
+                </span>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+            <div class="notification-hint">
+                Prüfe die Einträge und klicke auf "Inventurplanung aktualisieren" um den OEM zu informieren.
+            </div>
+        `;
+
+        // Add styles for notification
+        const style = document.createElement('style');
+        style.textContent = `
+            .planning-notification {
+                position: fixed;
+                top: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #f0fdf4;
+                border: 2px solid #86efac;
+                border-radius: 12px;
+                padding: 1rem 1.5rem;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                z-index: 1000;
+                max-width: 500px;
+                animation: slideDown 0.3s ease;
+            }
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+            .notification-content {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            .notification-icon {
+                font-size: 1.5rem;
+            }
+            .notification-text {
+                flex: 1;
+                color: #166534;
+            }
+            .notification-close {
+                background: none;
+                border: none;
+                font-size: 1.25rem;
+                color: #6b7280;
+                cursor: pointer;
+                padding: 0 0.25rem;
+            }
+            .notification-close:hover {
+                color: #1f2937;
+            }
+            .notification-hint {
+                margin-top: 0.5rem;
+                font-size: 0.85rem;
+                color: #6b7280;
+            }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(notification);
+
+        // Auto-remove after 10 seconds
+        setTimeout(() => notification.remove(), 10000);
     }
 
     calculateInventoryStatus(startDateString) {
