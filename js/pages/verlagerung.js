@@ -58,6 +58,18 @@ class VerlagerungPage {
                     </div>
                 </div>
 
+                
+                <!-- KI-Agent Button -->
+                <div class="agent-link-wrapper" style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                    <button class="agent-btn-integrated" id="agentVerlagerungBtn">
+                        <span class="agent-btn-icon">🤖</span>
+                        <div class="agent-btn-content">
+                            <strong>KI-Agent</strong>
+                            <small>Verlagerung</small>
+                        </div>
+                    </button>
+                </div>
+
                 <!-- API MODE INDICATOR -->
                 <div class="api-mode-indicator" id="apiModeIndicator" style="margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
                     <span id="apiModeIcon">●</span>
@@ -250,6 +262,12 @@ class VerlagerungPage {
             helpIcon.addEventListener('click', () => {
                 document.getElementById('helpTooltipVerlagerung').classList.toggle('visible');
             });
+
+        // Agent Button Event Listener
+        const agentBtn = document.getElementById('agentVerlagerungBtn');
+        if (agentBtn) {
+            agentBtn.addEventListener('click', () => router.navigate('/agent-verlagerung'));
+        }
         }
     }
 
