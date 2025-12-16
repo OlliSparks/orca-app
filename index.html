@@ -48,15 +48,31 @@
                 </div>
             </div>
 
-            <!-- Search Button -->
-            <button class="header-search-btn" onclick="searchService.open()" title="Suche (Strg+K)">
-                🔍 Suche <kbd>⌘K</kbd>
-            </button>
-
-            <!-- Help Button -->
-            <button class="header-help-btn" onclick="router.navigate('/glossar')" title="Hilfe & Glossar">
-                ?
-            </button>
+            <!-- Header Action Buttons (uniform round) -->
+            <div class="header-actions">
+                <button class="header-action-btn" onclick="searchService.open()" title="Suche (Strg+K)" aria-label="Suche">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                </button>
+                <button class="header-action-btn" onclick="themeService.toggle()" title="Design wechseln" aria-label="Design wechseln" id="themeToggleBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-sun">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-moon" style="display:none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+                <button class="header-action-btn" onclick="router.navigate('/glossar')" title="Hilfe & Glossar" aria-label="Hilfe">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <circle cx="12" cy="17" r="0.5" fill="currentColor"></circle>
+                    </svg>
+                </button>
+            </div>
 
             <!-- Navigation Dropdown -->
             <div class="nav-dropdown-container">
@@ -123,6 +139,10 @@
     <script src="js/services/bulk-actions-service.js" defer></script>
     <script src="js/services/offline-service.js" defer></script>
     <script src="js/services/notification-service.js" defer></script>
+    <script src="js/services/form-service.js" defer></script>
+    <script src="js/services/dragdrop-service.js" defer></script>
+    <script src="js/services/animation-service.js" defer></script>
+    <script src="js/services/accessibility-service.js" defer></script>
     <script src="js/services/message-service.js" defer></script>
     <script src="js/services/onboarding.js" defer></script>
     <script src="js/router.js" defer></script>
