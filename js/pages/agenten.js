@@ -69,9 +69,9 @@ class AgentenPage {
                 id: 'inventurplanung',
                 name: 'Inventurplanungs-Agent',
                 icon: '📅',
-                description: 'Planen Sie Ihre Inventuren effizient. Der Agent hilft bei der Terminierung und Ressourcenplanung.',
-                features: ['Terminvorschläge', 'Kapazitätsplanung', 'Automatische Zuweisung'],
-                status: 'coming-soon',
+                description: 'Was weißt du schon? Erledige am Rechner, was geht - plane den Rest als Tour.',
+                features: ['Daten-Import', 'Sofort bestätigen', 'Tour planen'],
+                status: 'active',
                 route: '/agent-inventurplanung'
             },
             {
