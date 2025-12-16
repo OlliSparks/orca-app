@@ -162,23 +162,249 @@ class AgentVerlagerungBeantragenPage {
 
     showGreeting() {
         const companyName = this.companyData?.name || 'Ihrem Unternehmen';
-        this.addMessage('agent', `Willkommen zum Verlagerungs-Assistenten! 🚚
+
+        // Check for drafts
+        const drafts = this.loadDrafts();
+
+        if (drafts.length > 0) {
+            this.addMessage('agent', `Willkommen zurück zum Verlagerungs-Assistenten! 🚚
+
+**Ihr Unternehmen:** ${companyName}
+
+Sie haben **${drafts.length} Entwurf/Entwürfe** gespeichert.
+
+Möchten Sie einen Entwurf fortsetzen oder neu beginnen?`);
+
+            this.showDraftSelection(drafts);
+        } else {
+            this.addMessage('agent', `Willkommen zum Verlagerungs-Assistenten! 🚚
 
 Ich helfe Ihnen, einen Verlagerungsantrag für Werkzeuge zu erstellen.
 
 **Ihr Unternehmen:** ${companyName}
 
-Der Antrag durchläuft folgende Schritte:
-1. Werkzeug(e) für Verlagerung auswählen
-2. Maße und Zolltarifnummer prüfen/erfassen
-3. Ziel-Standort festlegen
-4. Abschlussdatum und Details
+**Tipp:** Sie können jederzeit Felder überspringen und später ergänzen. Speichern Sie zwischendurch als Entwurf.
 
 Bereit? Dann starten wir mit der Auswahl des Werkzeugs.`);
 
+            this.currentStep = 'tool_selection';
+            this.updateProgress();
+            this.showToolSelection();
+        }
+    }
+
+    loadDrafts() {
+        try {
+            const drafts = JSON.parse(localStorage.getItem('verlagerung_drafts') || '[]');
+            return drafts.filter(d => d.status === 'draft');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    saveDraft() {
+        const drafts = JSON.parse(localStorage.getItem('verlagerung_drafts') || '[]');
+
+        const draft = {
+            id: this.verlagerungData.id || `VL-DRAFT-${Date.now()}`,
+            ...this.verlagerungData,
+            tools: this.tools,
+            status: 'draft',
+            updatedAt: new Date().toISOString()
+        };
+
+        // Update existing or add new
+        const existingIndex = drafts.findIndex(d => d.id === draft.id);
+        if (existingIndex >= 0) {
+            drafts[existingIndex] = draft;
+        } else {
+            this.verlagerungData.id = draft.id;
+            drafts.push(draft);
+        }
+
+        localStorage.setItem('verlagerung_drafts', JSON.stringify(drafts));
+        return draft;
+    }
+
+    showDraftSelection(drafts) {
+        const inputArea = document.getElementById('inputArea');
+
+        const draftCards = drafts.map((d, i) => {
+            const toolCount = d.tools?.length || 0;
+            const date = new Date(d.updatedAt || d.createdAt).toLocaleDateString('de-DE');
+            const completeness = this.calculateCompleteness(d);
+
+            return `
+                <div class="draft-card" onclick="agentVerlagerungBeantragenPage.loadDraft(${i})">
+                    <div class="draft-title">${d.bezeichnung || 'Unbenannter Entwurf'}</div>
+                    <div class="draft-info">
+                        <span>${toolCount} Werkzeug(e)</span>
+                        <span>•</span>
+                        <span>${completeness}% vollständig</span>
+                        <span>•</span>
+                        <span>${date}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        inputArea.innerHTML = `
+            <div class="draft-selection">
+                <div class="drafts-list">${draftCards}</div>
+                <button class="agent-btn primary" onclick="agentVerlagerungBeantragenPage.startNew()">
+                    + Neue Verlagerung beginnen
+                </button>
+            </div>
+        `;
+    }
+
+    calculateCompleteness(data) {
+        const fields = ['bezeichnung', 'quellStandort', 'zielStandort', 'abschlussDatum'];
+        const toolFields = ['gewicht', 'hoehe', 'breite', 'laenge', 'zolltarifnummer'];
+
+        let filled = 0;
+        let total = fields.length;
+
+        fields.forEach(f => { if (data[f]) filled++; });
+
+        // Check tools
+        if (data.tools && data.tools.length > 0) {
+            filled++; // Has at least one tool
+            total++;
+
+            // Check first tool completeness
+            const tool = data.tools[0];
+            toolFields.forEach(f => {
+                total++;
+                if (tool[f]) filled++;
+            });
+        } else {
+            total++; // Missing tool
+        }
+
+        return Math.round((filled / total) * 100);
+    }
+
+    loadDraft(index) {
+        const drafts = this.loadDrafts();
+        const draft = drafts[index];
+
+        if (!draft) return;
+
+        // Restore data
+        this.verlagerungData = { ...draft };
+        delete this.verlagerungData.tools;
+        this.tools = draft.tools || [];
+
+        this.addMessage('user', `Entwurf "${draft.bezeichnung || 'Unbenannt'}" laden`);
+        this.addMessage('agent', `✓ Entwurf geladen!
+
+**Gespeicherte Daten:**
+${draft.bezeichnung ? `- Bezeichnung: ${draft.bezeichnung}` : ''}
+${draft.quellStandort ? `- Von: ${draft.quellStandort}` : ''}
+${draft.zielStandort ? `- Nach: ${draft.zielStandort}` : ''}
+- Werkzeuge: ${this.tools.length}
+
+Was möchten Sie bearbeiten?`);
+
+        this.showEditMenu();
+    }
+
+    startNew() {
+        this.addMessage('user', 'Neue Verlagerung beginnen');
         this.currentStep = 'tool_selection';
         this.updateProgress();
         this.showToolSelection();
+    }
+
+    showEditMenu() {
+        const inputArea = document.getElementById('inputArea');
+
+        const hasTools = this.tools.length > 0;
+        const hasBezeichnung = !!this.verlagerungData.bezeichnung;
+        const hasTarget = !!this.verlagerungData.zielStandort;
+        const hasDate = !!this.verlagerungData.abschlussDatum;
+
+        // Check completeness for submit
+        const canSubmit = hasTools && hasBezeichnung && hasTarget;
+
+        inputArea.innerHTML = `
+            <div class="edit-menu">
+                <div class="edit-options">
+                    <button class="edit-option ${hasTools ? 'filled' : ''}" onclick="agentVerlagerungBeantragenPage.editTools()">
+                        <span class="icon">🔧</span>
+                        <span class="label">Werkzeuge</span>
+                        <span class="status">${this.tools.length} erfasst</span>
+                    </button>
+                    <button class="edit-option ${hasBezeichnung ? 'filled' : ''}" onclick="agentVerlagerungBeantragenPage.editBezeichnung()">
+                        <span class="icon">📝</span>
+                        <span class="label">Bezeichnung</span>
+                        <span class="status">${hasBezeichnung ? '✓' : 'fehlt'}</span>
+                    </button>
+                    <button class="edit-option ${hasTarget ? 'filled' : ''}" onclick="agentVerlagerungBeantragenPage.editTarget()">
+                        <span class="icon">📍</span>
+                        <span class="label">Ziel-Standort</span>
+                        <span class="status">${hasTarget ? '✓' : 'fehlt'}</span>
+                    </button>
+                    <button class="edit-option ${hasDate ? 'filled' : ''}" onclick="agentVerlagerungBeantragenPage.editDate()">
+                        <span class="icon">📅</span>
+                        <span class="label">Abschlussdatum</span>
+                        <span class="status">${hasDate ? '✓' : 'optional'}</span>
+                    </button>
+                </div>
+                <div class="edit-actions">
+                    <button class="agent-btn secondary" onclick="agentVerlagerungBeantragenPage.saveDraftAndNotify()">
+                        💾 Als Entwurf speichern
+                    </button>
+                    <button class="agent-btn primary ${canSubmit ? '' : 'disabled'}"
+                            onclick="agentVerlagerungBeantragenPage.showSummary()"
+                            ${canSubmit ? '' : 'disabled'}>
+                        ${canSubmit ? '🚀 Zur Zusammenfassung' : '⚠️ Pflichtfelder fehlen'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    editTools() {
+        this.addMessage('user', 'Werkzeuge bearbeiten');
+        this.currentStep = 'tool_selection';
+        this.updateProgress();
+        this.showToolSelection();
+    }
+
+    editBezeichnung() {
+        this.addMessage('user', 'Bezeichnung bearbeiten');
+        this.currentStep = 'bezeichnung';
+        this.updateProgress();
+        this.showBezeichnungInput();
+    }
+
+    editTarget() {
+        this.addMessage('user', 'Ziel bearbeiten');
+        this.currentStep = 'target_company';
+        this.updateProgress();
+        this.showTargetCompanySelection();
+    }
+
+    editDate() {
+        this.addMessage('user', 'Datum bearbeiten');
+        this.currentStep = 'completion_date';
+        this.updateProgress();
+        this.showCompletionDateInput();
+    }
+
+    saveDraftAndNotify() {
+        const draft = this.saveDraft();
+        this.addMessage('user', 'Als Entwurf speichern');
+        this.addMessage('agent', `✓ **Entwurf gespeichert!**
+
+ID: ${draft.id}
+Vollständigkeit: ${this.calculateCompleteness(draft)}%
+
+Sie können jederzeit zurückkehren und den Entwurf fortsetzen.`);
+
+        this.showEditMenu();
     }
 
     showSourceLocationSelection() {
@@ -388,11 +614,11 @@ Bitte geben Sie die verlagerungsrelevanten Daten ein.`);
         if (hasPrefilledData) {
             this.addMessage('agent', `Bitte **prüfen und ergänzen** Sie die Maße:
 
-Die vorhandenen Daten wurden übernommen.`);
+Die vorhandenen Daten wurden übernommen. Sie können auch überspringen und später ergänzen.`);
         } else {
             this.addMessage('agent', `Bitte geben Sie die **Maße und das Gewicht** des Werkzeugs ein:
 
-Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
+Diese Daten werden für die Zoll- und Steuerprüfung benötigt. Sie können auch überspringen und später ergänzen.`);
         }
 
         const inputArea = document.getElementById('inputArea');
@@ -400,14 +626,14 @@ Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
             <div class="dimensions-form">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Gewicht (kg) *</label>
+                        <label>Gewicht (kg)</label>
                         <input type="number" id="gewichtInput" class="agent-input"
                                placeholder="z.B. 1500" step="0.1"
                                value="${this.currentTool.gewicht || ''}"
                                onkeypress="if(event.key==='Enter') document.getElementById('hoeheInput').focus()">
                     </div>
                     <div class="form-group">
-                        <label>Höhe (cm) *</label>
+                        <label>Höhe (cm)</label>
                         <input type="number" id="hoeheInput" class="agent-input"
                                placeholder="z.B. 200" step="0.1"
                                value="${this.currentTool.hoehe || ''}"
@@ -416,14 +642,14 @@ Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Breite (cm) *</label>
+                        <label>Breite (cm)</label>
                         <input type="number" id="breiteInput" class="agent-input"
                                placeholder="z.B. 150" step="0.1"
                                value="${this.currentTool.breite || ''}"
                                onkeypress="if(event.key==='Enter') document.getElementById('laengeInput').focus()">
                     </div>
                     <div class="form-group">
-                        <label>Länge (cm) *</label>
+                        <label>Länge (cm)</label>
                         <input type="number" id="laengeInput" class="agent-input"
                                placeholder="z.B. 300" step="0.1"
                                value="${this.currentTool.laenge || ''}"
@@ -432,7 +658,7 @@ Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
                 </div>
                 <div class="form-row">
                     <div class="form-group full-width">
-                        <label>Zolltarifnummer (8-stellig) *</label>
+                        <label>Zolltarifnummer (8-stellig)</label>
                         <input type="text" id="zollInput" class="agent-input"
                                placeholder="z.B. 84672100" maxlength="8"
                                value="${this.currentTool.zolltarifnummer || ''}"
@@ -440,8 +666,11 @@ Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
                     </div>
                 </div>
                 <div class="form-actions">
+                    <button class="agent-btn secondary" onclick="agentVerlagerungBeantragenPage.skipDimensions()">
+                        Überspringen →
+                    </button>
                     <button class="agent-btn primary" onclick="agentVerlagerungBeantragenPage.processDimensions()">
-                        Daten bestätigen
+                        Werkzeug hinzufügen
                     </button>
                 </div>
             </div>
@@ -453,6 +682,16 @@ Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
         }, 100);
     }
 
+    skipDimensions() {
+        // Add tool without dimensions
+        this.tools.push({ ...this.currentTool });
+        this.addMessage('user', `${this.currentTool.number} ohne Maße hinzugefügt`);
+        this.addMessage('agent', `✓ Werkzeug **${this.currentTool.number}** hinzugefügt (Maße können später ergänzt werden).`);
+        this.currentTool = null;
+        this.updateSidebar();
+        this.showMoreToolsQuestion();
+    }
+
     processDimensions() {
         const gewicht = document.getElementById('gewichtInput')?.value?.trim();
         const hoehe = document.getElementById('hoeheInput')?.value?.trim();
@@ -460,13 +699,8 @@ Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
         const laenge = document.getElementById('laengeInput')?.value?.trim();
         const zoll = document.getElementById('zollInput')?.value?.trim();
 
-        // Validation
-        if (!gewicht || !hoehe || !breite || !laenge || !zoll) {
-            this.addMessage('system', 'Bitte füllen Sie alle Pflichtfelder aus.');
-            return;
-        }
-
-        if (zoll.length !== 8 || !/^\d+$/.test(zoll)) {
+        // Validate zoll format if provided
+        if (zoll && (zoll.length !== 8 || !/^\d+$/.test(zoll))) {
             this.addMessage('system', 'Die Zolltarifnummer muss 8 Ziffern haben.');
             return;
         }
@@ -501,21 +735,31 @@ Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
             ? `\n**Quell-Standort:** ${this.verlagerungData.quellStandort}`
             : '';
 
-        this.addMessage('agent', `Möchten Sie **weitere Werkzeuge** zu dieser Verlagerung hinzufügen?
+        this.addMessage('agent', `Möchten Sie **weitere Werkzeuge** hinzufügen oder zur Übersicht wechseln?
 
 Aktuell: **${this.tools.length} Werkzeug(e)** erfasst.${locationInfo}`);
 
         const inputArea = document.getElementById('inputArea');
         inputArea.innerHTML = `
-            <div class="choice-buttons">
+            <div class="choice-buttons-vertical">
                 <button class="agent-btn secondary" onclick="agentVerlagerungBeantragenPage.addMoreTools()">
                     + Weiteres Werkzeug hinzufügen
                 </button>
-                <button class="agent-btn primary" onclick="agentVerlagerungBeantragenPage.continueToBezeichnung()">
+                <button class="agent-btn secondary" onclick="agentVerlagerungBeantragenPage.continueToBezeichnung()">
                     Weiter zur Bezeichnung →
+                </button>
+                <button class="agent-btn primary" onclick="agentVerlagerungBeantragenPage.goToEditMenu()">
+                    💾 Speichern & Übersicht
                 </button>
             </div>
         `;
+    }
+
+    goToEditMenu() {
+        this.saveDraft();
+        this.addMessage('user', 'Zur Übersicht');
+        this.addMessage('agent', `✓ Entwurf gespeichert. Was möchten Sie bearbeiten?`);
+        this.showEditMenu();
     }
 
     addMoreTools() {
@@ -1302,6 +1546,124 @@ Nach Genehmigung können Sie die Verlagerung mit dem **Agent "Verlagerung durchf
                 justify-content: center;
             }
 
+            .choice-buttons-vertical {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+                max-width: 300px;
+                margin: 0 auto;
+            }
+
+            /* Draft Selection */
+            .draft-selection {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .drafts-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+
+            .draft-card {
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 0.75rem 1rem;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .draft-card:hover {
+                border-color: #3b82f6;
+                background: #eff6ff;
+            }
+
+            .draft-title {
+                font-weight: 500;
+                color: #1f2937;
+                margin-bottom: 0.25rem;
+            }
+
+            .draft-info {
+                font-size: 0.8rem;
+                color: #6b7280;
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            /* Edit Menu */
+            .edit-menu {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .edit-options {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .edit-option {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 1rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 10px;
+                background: white;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .edit-option:hover {
+                border-color: #3b82f6;
+                background: #eff6ff;
+            }
+
+            .edit-option.filled {
+                border-color: #22c55e;
+                background: #f0fdf4;
+            }
+
+            .edit-option .icon {
+                font-size: 1.5rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .edit-option .label {
+                font-weight: 500;
+                color: #1f2937;
+                font-size: 0.9rem;
+            }
+
+            .edit-option .status {
+                font-size: 0.75rem;
+                color: #6b7280;
+            }
+
+            .edit-option.filled .status {
+                color: #16a34a;
+            }
+
+            .edit-actions {
+                display: flex;
+                gap: 0.75rem;
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+
+            .agent-btn.disabled {
+                background: #e5e7eb;
+                color: #9ca3af;
+                cursor: not-allowed;
+            }
+
             .dimensions-form {
                 background: #f9fafb;
                 padding: 1.5rem;
@@ -1333,6 +1695,7 @@ Nach Genehmigung können Sie die Verlagerung mit dem **Agent "Verlagerung durchf
             .form-actions {
                 display: flex;
                 justify-content: flex-end;
+                gap: 0.75rem;
                 margin-top: 1rem;
             }
 
