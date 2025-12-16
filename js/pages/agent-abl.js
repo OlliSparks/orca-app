@@ -165,19 +165,61 @@ class AgentABLPage {
                 }
             }
 
-            // Lade Asset-Feldwerte (Projekte, Commodities, etc.)
-            const fieldsResult = await api.getAssetListFields();
-            if (fieldsResult.success && fieldsResult.data) {
-                this.dropdownData.projects = fieldsResult.data.projects || [];
-                this.dropdownData.commodities = fieldsResult.data.commodities || [];
-                this.dropdownData.owners = fieldsResult.data.owners || [];
-            }
+            // Lade Asset-Daten des Lieferanten und extrahiere eindeutige Werte für Dropdowns
+            const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+            const supplierNumber = config.supplierNumber || config.supplierId || config.companyKey;
 
-            // Lade OEM/Companies für Owner-Dropdown falls keine Owners aus fields
-            if (this.dropdownData.owners.length === 0) {
-                const companiesResult = await api.searchCompanies();
-                if (companiesResult.success && companiesResult.data) {
-                    this.dropdownData.owners = companiesResult.data.map(c => c.name);
+            if (supplierNumber) {
+                try {
+                    const assetsResult = await api.getAssetsGridReport(supplierNumber);
+                    const assets = assetsResult.gridData || assetsResult.content || [];
+
+                    if (assets.length > 0) {
+                        // Extrahiere eindeutige Werte aus den Assets
+                        const uniqueOwners = new Set();
+                        const uniqueProjects = new Set();
+                        const uniqueCommodities = new Set();
+                        const uniqueFEK = new Set();
+
+                        assets.forEach(asset => {
+                            if (asset['Eigentümer'] && asset['Eigentümer'] !== '-') {
+                                uniqueOwners.add(asset['Eigentümer']);
+                            }
+                            if (asset['Commodity'] && asset['Commodity'] !== '-') {
+                                uniqueCommodities.add(asset['Commodity']);
+                            }
+                            if (asset['Facheinkäufer'] && asset['Facheinkäufer'] !== '-') {
+                                uniqueFEK.add(asset['Facheinkäufer']);
+                            }
+                            // Projekt könnte in verschiedenen Feldern sein
+                            if (asset['Projekt'] && asset['Projekt'] !== '-') {
+                                uniqueProjects.add(asset['Projekt']);
+                            }
+                            if (asset['Teilenummerbezeichnung'] && asset['Teilenummerbezeichnung'] !== '-') {
+                                // Manchmal enthält Teilenummer den Projektnamen
+                                const match = asset['Teilenummerbezeichnung'].match(/^([A-Z]\d{1,2})/);
+                                if (match) uniqueProjects.add(match[1]);
+                            }
+                        });
+
+                        this.dropdownData.owners = Array.from(uniqueOwners).sort();
+                        this.dropdownData.projects = Array.from(uniqueProjects).sort();
+                        this.dropdownData.commodities = Array.from(uniqueCommodities).sort();
+                        this.dropdownData.fekUsers = Array.from(uniqueFEK).map(name => ({
+                            key: name,
+                            fullName: name,
+                            email: ''
+                        }));
+
+                        console.log('ABL-Agent: Dropdown-Daten aus Assets extrahiert:', {
+                            owners: this.dropdownData.owners.length,
+                            projects: this.dropdownData.projects.length,
+                            commodities: this.dropdownData.commodities.length,
+                            fek: this.dropdownData.fekUsers.length
+                        });
+                    }
+                } catch (error) {
+                    console.warn('ABL-Agent: Konnte Asset-Daten nicht laden:', error);
                 }
             }
         } catch (error) {
@@ -471,10 +513,10 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                 inputArea.innerHTML = this.getLocationInputHtml(canSkip);
                 break;
             case 'commodity':
-                inputArea.innerHTML = this.getTextInputWithSkip('Commodity eingeben...', 'Falls bekannt, z.B. A2', canSkip);
+                inputArea.innerHTML = this.getCommodityInputHtml(canSkip);
                 break;
             case 'fek':
-                inputArea.innerHTML = this.getTextInputWithSkip('FEK eingeben...', 'Fertigungseinzelkosten in EUR (falls bekannt)', canSkip);
+                inputArea.innerHTML = this.getFEKInputHtml(canSkip);
                 break;
             case 'tool_number':
                 inputArea.innerHTML = this.getTextInputWithSkip('Inventarnummer eingeben...', 'z.B. 0010120920', false);
@@ -931,6 +973,28 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                 if (e.target.value) {
                     this.addUserMessage(e.target.value);
                     this.processProject(e.target.value);
+                }
+            });
+        }
+
+        // Commodity select (aus Asset-Daten)
+        const commoditySelect = document.getElementById('commoditySelect');
+        if (commoditySelect) {
+            commoditySelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    this.addUserMessage(e.target.value);
+                    this.processCommodity(e.target.value);
+                }
+            });
+        }
+
+        // FEK select (aus Asset-Daten)
+        const fekSelect = document.getElementById('fekSelect');
+        if (fekSelect) {
+            fekSelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    this.addUserMessage(e.target.value);
+                    this.processFEK(e.target.value);
                 }
             });
         }
