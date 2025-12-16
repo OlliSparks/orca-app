@@ -1,4 +1,120 @@
 // ORCA 2.0 - Reporting Agent (Daten-zentrierter Ansatz)
+
+// Custom Dropdown Filter für AG Grid Community
+class CustomDropdownFilter {
+    init(params) {
+        this.params = params;
+        this.filterValue = null;
+        this.values = params.values || [];
+
+        // Create filter UI
+        this.gui = document.createElement('div');
+        this.gui.className = 'custom-dropdown-filter';
+        this.gui.innerHTML = `
+            <select class="filter-dropdown">
+                <option value="">Alle</option>
+                ${this.values.map(v => `<option value="${this.escapeHtml(v)}">${this.escapeHtml(v)}</option>`).join('')}
+            </select>
+        `;
+
+        this.select = this.gui.querySelector('select');
+        this.select.addEventListener('change', () => {
+            this.filterValue = this.select.value || null;
+            this.params.filterChangedCallback();
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    getGui() {
+        return this.gui;
+    }
+
+    doesFilterPass(params) {
+        if (!this.filterValue) return true;
+        const value = params.data[this.params.colDef.field];
+        return String(value) === this.filterValue;
+    }
+
+    isFilterActive() {
+        return this.filterValue !== null && this.filterValue !== '';
+    }
+
+    getModel() {
+        if (!this.isFilterActive()) return null;
+        return { value: this.filterValue };
+    }
+
+    setModel(model) {
+        this.filterValue = model ? model.value : null;
+        if (this.select) {
+            this.select.value = this.filterValue || '';
+        }
+    }
+
+    destroy() {}
+
+    // Floating filter support
+    getModelAsString() {
+        return this.filterValue || '';
+    }
+}
+
+// Floating Filter Component für Custom Dropdown
+class CustomDropdownFloatingFilter {
+    init(params) {
+        this.params = params;
+        this.gui = document.createElement('div');
+        this.gui.className = 'custom-floating-filter';
+
+        const values = params.filterParams?.values || [];
+
+        this.gui.innerHTML = `
+            <select class="floating-filter-select">
+                <option value="">Alle</option>
+                ${values.map(v => `<option value="${this.escapeHtml(v)}">${this.truncate(v, 20)}</option>`).join('')}
+            </select>
+        `;
+
+        this.select = this.gui.querySelector('select');
+        this.select.addEventListener('change', () => {
+            this.params.parentFilterInstance(instance => {
+                instance.setModel(this.select.value ? { value: this.select.value } : null);
+            });
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    truncate(text, maxLen) {
+        if (!text) return '';
+        return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
+    }
+
+    getGui() {
+        return this.gui;
+    }
+
+    onParentModelChanged(parentModel) {
+        if (this.select) {
+            this.select.value = parentModel ? parentModel.value : '';
+        }
+    }
+}
+
+// Registriere Floating Filter für Custom Dropdown
+CustomDropdownFilter.prototype.getFloatingFilterComponent = function() {
+    return CustomDropdownFloatingFilter;
+};
+
 class AgentReportingPage {
     constructor() {
         this.gridData = null;  // Die geladenen Basis-Daten
@@ -174,53 +290,49 @@ class AgentReportingPage {
                     <!-- Rechte Seite: Auswertungen -->
                     <div class="analysis-panel">
                         <div class="panel-header">
-                            <h3>📈 Auswertungen</h3>
+                            <h3>📈 Schnell-Auswertungen</h3>
                         </div>
                         <div class="panel-content">
-                            <p class="analysis-intro">Was möchten Sie aus Ihren Daten erfahren?</p>
+                            <p class="analysis-intro">Klick für sofortige Übersicht</p>
 
                             <div class="analysis-category">
-                                <h4>⚙️ Operativ</h4>
+                                <h4>🚨 Handlungsbedarf</h4>
                                 <div class="analysis-options">
-                                    <button class="analysis-btn" data-view="process-status">
-                                        <span class="btn-title">Prozess-Status</span>
-                                        <span class="btn-desc">Verteilung nach Status</span>
-                                    </button>
-                                    <button class="analysis-btn" data-view="location-result">
-                                        <span class="btn-title">Standort-Ergebnisse</span>
-                                        <span class="btn-desc">Gefunden / Nicht gefunden</span>
-                                    </button>
-                                    <button class="analysis-btn" data-view="due-dates">
+                                    <button class="analysis-btn priority" data-view="due-dates">
                                         <span class="btn-title">Fälligkeiten</span>
-                                        <span class="btn-desc">Überfällig / Anstehend</span>
+                                        <span class="btn-desc">Was ist überfällig?</span>
+                                    </button>
+                                    <button class="analysis-btn" data-view="process-status">
+                                        <span class="btn-title">Offene Prozesse</span>
+                                        <span class="btn-desc">Was ist noch zu tun?</span>
                                     </button>
                                 </div>
                             </div>
 
                             <div class="analysis-category">
-                                <h4>🌍 Geografisch</h4>
+                                <h4>📍 Mein Bestand</h4>
                                 <div class="analysis-options">
-                                    <button class="analysis-btn" data-view="by-country">
-                                        <span class="btn-title">Nach Land</span>
-                                        <span class="btn-desc">Geografische Verteilung</span>
-                                    </button>
                                     <button class="analysis-btn" data-view="by-city">
-                                        <span class="btn-title">Nach Stadt</span>
-                                        <span class="btn-desc">Standort-Übersicht</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="analysis-category">
-                                <h4>🏢 Organisation</h4>
-                                <div class="analysis-options">
-                                    <button class="analysis-btn" data-view="by-owner">
-                                        <span class="btn-title">Nach Eigentümer</span>
-                                        <span class="btn-desc">Wer besitzt was?</span>
+                                        <span class="btn-title">Nach Standort</span>
+                                        <span class="btn-desc">Wo sind meine Werkzeuge?</span>
                                     </button>
                                     <button class="analysis-btn" data-view="by-lifecycle">
-                                        <span class="btn-title">Lifecycle-Status</span>
-                                        <span class="btn-desc">Aktiv / Inaktiv / etc.</span>
+                                        <span class="btn-title">Aktiv / Inaktiv</span>
+                                        <span class="btn-desc">Lifecycle-Status</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="analysis-category collapsed-section">
+                                <h4 class="collapsible">🌍 Weitere <span class="toggle-icon">▼</span></h4>
+                                <div class="analysis-options hidden" id="moreAnalysis">
+                                    <button class="analysis-btn" data-view="by-country">
+                                        <span class="btn-title">Nach Land</span>
+                                        <span class="btn-desc">Internationale Verteilung</span>
+                                    </button>
+                                    <button class="analysis-btn" data-view="location-result">
+                                        <span class="btn-title">Inventur-Ergebnis</span>
+                                        <span class="btn-desc">Gefunden / Nicht gefunden</span>
                                     </button>
                                 </div>
                             </div>
@@ -285,8 +397,20 @@ class AgentReportingPage {
         const gridContainer = document.getElementById('agGridContainer');
         if (!gridContainer || !data || data.length === 0) return;
 
-        // Spalten-Definitionen basierend auf den Daten erstellen
+        // Extrahiere einzigartige Werte für jede Spalte (für Dropdown-Filter)
+        const uniqueValues = {};
         const allColumns = Object.keys(data[0] || {}).filter(k => !k.startsWith('_'));
+
+        allColumns.forEach(col => {
+            const values = new Set();
+            data.forEach(row => {
+                const val = row[col];
+                if (val && val !== '-' && val !== '') {
+                    values.add(String(val));
+                }
+            });
+            uniqueValues[col] = Array.from(values).sort();
+        });
 
         // Priorisierte Spalten (diese werden zuerst angezeigt)
         const priorityColumns = [
@@ -306,31 +430,51 @@ class AgentReportingPage {
             ...allColumns.filter(col => !priorityColumns.includes(col)).sort()
         ];
 
-        const columnDefs = sortedColumns.map(key => ({
-            field: key,
-            headerName: this.getColumnHeaderName(key),
-            sortable: true,
-            filter: 'agTextColumnFilter',
-            floatingFilter: true, // Filter direkt unter Header
-            resizable: true,
-            minWidth: 120,
-            flex: key === 'Werkzeugbezeichnung' ? 2 : 1,
-            filterParams: {
-                buttons: ['reset', 'apply'],
-                closeOnApply: true
-            },
-            cellRenderer: (params) => {
-                const value = params.value;
-                if (!value || value === '-') return '<span style="color: #d1d5db;">-</span>';
-                if (key === 'Fertigungsmittel-Lifecyclestatus' || key === 'Prozessstatus') {
-                    return `<span class="status-badge">${value}</span>`;
-                }
-                return value;
-            }
-        }));
-
-        // Store reference to this for callbacks
+        // Custom Filter Component für Dropdown mit vorhandenen Werten
         const self = this;
+
+        const columnDefs = sortedColumns.map(key => {
+            const colUniqueValues = uniqueValues[key] || [];
+            // Use dropdown for columns with <= 50 unique values (not too many options)
+            const useDropdown = colUniqueValues.length > 0 && colUniqueValues.length <= 50;
+
+            const colDef = {
+                field: key,
+                headerName: this.getColumnHeaderName(key),
+                sortable: true,
+                resizable: true,
+                minWidth: 120,
+                flex: key === 'Werkzeugbezeichnung' ? 2 : 1,
+                cellRenderer: (params) => {
+                    const value = params.value;
+                    if (!value || value === '-') return '<span style="color: #d1d5db;">-</span>';
+                    if (key === 'Fertigungsmittel-Lifecyclestatus' || key === 'Prozessstatus') {
+                        return `<span class="status-badge">${value}</span>`;
+                    }
+                    return value;
+                }
+            };
+
+            if (useDropdown) {
+                colDef.filter = CustomDropdownFilter;
+                colDef.floatingFilter = true;
+                colDef.floatingFilterComponent = CustomDropdownFloatingFilter;
+                colDef.filterParams = {
+                    values: colUniqueValues,
+                    fieldName: key
+                };
+            } else {
+                // Text filter for columns with many unique values (like Inventarnummer)
+                colDef.filter = 'agTextColumnFilter';
+                colDef.floatingFilter = true;
+                colDef.filterParams = {
+                    filterOptions: ['contains', 'equals', 'startsWith'],
+                    defaultOption: 'contains'
+                };
+            }
+
+            return colDef;
+        });
 
         // AG Grid Optionen
         this.gridOptions = {
@@ -353,7 +497,6 @@ class AgentReportingPage {
             ensureDomOrder: true,
             suppressRowClickSelection: true,
             cacheQuickFilter: true,
-            // Event: Filter geändert - Update Zähler
             onFilterChanged: () => {
                 self.updateFilteredCount();
             }
@@ -817,6 +960,21 @@ class AgentReportingPage {
         document.querySelectorAll('.export-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.exportFilteredData(btn.dataset.format);
+            });
+        });
+
+        // Collapsible section toggle
+        document.querySelectorAll('.collapsible').forEach(header => {
+            header.addEventListener('click', () => {
+                const section = header.closest('.collapsed-section');
+                const content = section?.querySelector('.analysis-options');
+                const icon = header.querySelector('.toggle-icon');
+                if (content) {
+                    content.classList.toggle('hidden');
+                    if (icon) {
+                        icon.textContent = content.classList.contains('hidden') ? '▼' : '▲';
+                    }
+                }
             });
         });
     }
@@ -1343,6 +1501,37 @@ class AgentReportingPage {
                 border-radius: 0 0 8px 8px;
             }
 
+            /* Custom Dropdown Filter Styles */
+            .custom-dropdown-filter,
+            .custom-floating-filter {
+                padding: 0.25rem;
+                width: 100%;
+            }
+
+            .filter-dropdown,
+            .floating-filter-select {
+                width: 100%;
+                padding: 0.35rem 0.5rem;
+                border: 1px solid #d1d5db;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                background: white;
+                cursor: pointer;
+                color: #374151;
+            }
+
+            .filter-dropdown:focus,
+            .floating-filter-select:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            }
+
+            .floating-filter-select {
+                height: 28px;
+                font-size: 0.75rem;
+            }
+
             /* Analysis Panel */
             .analysis-intro {
                 color: #6b7280;
@@ -1382,6 +1571,38 @@ class AgentReportingPage {
             .analysis-btn:hover {
                 border-color: #3b82f6;
                 background: #eff6ff;
+            }
+
+            .analysis-btn.priority {
+                border-color: #fbbf24;
+                background: #fffbeb;
+            }
+
+            .analysis-btn.priority:hover {
+                border-color: #f59e0b;
+                background: #fef3c7;
+            }
+
+            /* Collapsible Section */
+            .collapsible {
+                cursor: pointer;
+                user-select: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .collapsible:hover {
+                color: #3b82f6;
+            }
+
+            .toggle-icon {
+                font-size: 0.7rem;
+                transition: transform 0.2s;
+            }
+
+            .hidden {
+                display: none !important;
             }
 
             .btn-title {

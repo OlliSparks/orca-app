@@ -218,15 +218,19 @@ class AgentInventurplanungPage {
     }
 
     getMockPlanningData() {
+        // Dynamische Daten basierend auf aktuellem Datum
+        const today = new Date();
+        const addDays = (d, days) => { const r = new Date(d); r.setDate(r.getDate() + days); return r.toISOString().split('T')[0]; };
+
         return [
-            { id: 1, number: '0010120920', name: 'Spritzgießwerkzeug A', location: 'Werk München - Halle A', dueDate: '2025-01-15', status: 'offen' },
-            { id: 2, number: '0010052637', name: 'Spritzgießwerkzeug B', location: 'Werk München - Halle A', dueDate: '2025-01-20', status: 'offen' },
-            { id: 3, number: '0010052648', name: 'Spritzgießwerkzeug C', location: 'Werk München - Halle B', dueDate: '2025-01-25', status: 'offen' },
-            { id: 4, number: '10006841', name: 'Schäumform 1', location: 'Werk Stuttgart', dueDate: '2025-02-01', status: 'offen' },
-            { id: 5, number: '10006842', name: 'Schäumform 2', location: 'Werk Stuttgart', dueDate: '2025-02-05', status: 'offen' },
-            { id: 6, number: '10006843', name: 'Schäumform 3', location: 'Werk Leipzig', dueDate: '2025-02-10', status: 'offen' },
-            { id: 7, number: '0010254378', name: 'Presswerkzeug X', location: 'Lager Augsburg', dueDate: '2025-02-15', status: 'offen' },
-            { id: 8, number: '10447851', name: 'Stanzwerkzeug Y', location: 'Werk München - Halle A', dueDate: '2025-02-20', status: 'offen' }
+            { id: 1, number: '0010120920', name: 'Spritzgießwerkzeug A', location: 'Werk München - Halle A', dueDate: addDays(today, 5), status: 'offen' },
+            { id: 2, number: '0010052637', name: 'Spritzgießwerkzeug B', location: 'Werk München - Halle A', dueDate: addDays(today, 8), status: 'offen' },
+            { id: 3, number: '0010052648', name: 'Spritzgießwerkzeug C', location: 'Werk München - Halle B', dueDate: addDays(today, 12), status: 'offen' },
+            { id: 4, number: '10006841', name: 'Schäumform 1', location: 'Werk Stuttgart', dueDate: addDays(today, 18), status: 'offen' },
+            { id: 5, number: '10006842', name: 'Schäumform 2', location: 'Werk Stuttgart', dueDate: addDays(today, 22), status: 'offen' },
+            { id: 6, number: '10006843', name: 'Schäumform 3', location: 'Werk Leipzig', dueDate: addDays(today, 30), status: 'offen' },
+            { id: 7, number: '0010254378', name: 'Presswerkzeug X', location: 'Lager Augsburg', dueDate: addDays(today, 45), status: 'offen' },
+            { id: 8, number: '10447851', name: 'Stanzwerkzeug Y', location: 'Werk München - Halle A', dueDate: addDays(today, 60), status: 'offen' }
         ];
     }
 
@@ -445,6 +449,10 @@ class AgentInventurplanungPage {
                 <div class="no-locations">
                     <p>Keine Inventuren im gewählten Zeitraum.</p>
                     <button class="back-btn" onclick="agentInventurplanungPage.goToStep(2)">← Zeitraum ändern</button>
+                    <div class="divider-or"><span>oder</span></div>
+                    <button class="jump-to-inventur-btn" onclick="router.navigate('/inventur')">
+                        → Direkt zur Inventur-Übersicht
+                    </button>
                 </div>
             `;
             return;
