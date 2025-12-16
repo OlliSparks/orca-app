@@ -42,6 +42,11 @@
                 </div>
             </div>
 
+            <!-- Search Button -->
+            <button class="header-search-btn" onclick="searchService.open()" title="Suche (Strg+K)">
+                🔍 Suche <kbd>⌘K</kbd>
+            </button>
+
             <!-- Help Button -->
             <button class="header-help-btn" onclick="router.navigate('/glossar')" title="Hilfe & Glossar">
                 ?
@@ -103,6 +108,12 @@
     <script src="js/config/api-config.js" defer></script>
     <script src="js/services/auth.js" defer></script>
     <script src="js/services/api.js?v=20251215b" defer></script>
+    <script src="js/services/error-service.js" defer></script>
+    <script src="js/services/loading-service.js" defer></script>
+    <script src="js/services/keyboard-service.js" defer></script>
+    <script src="js/services/breadcrumb-service.js" defer></script>
+    <script src="js/services/search-service.js" defer></script>
+    <script src="js/services/theme-service.js" defer></script>
     <script src="js/services/message-service.js" defer></script>
     <script src="js/services/onboarding.js" defer></script>
     <script src="js/router.js" defer></script>

@@ -291,19 +291,19 @@ class FMListPage {
     }
 
     showAddModal() {
-        alert('➕ Werkzeug Hinzufügen - Diese Funktion wird später implementiert');
+        errorService.info('Diese Funktion wird später implementiert.', 'Werkzeug hinzufügen');
     }
 
     loadFromAPI() {
-        alert('🔄 API-Anbindung wird geladen...\n\nEndpoint: /api/fm/fertigungsmittel\nStatus: Wird implementiert');
+        errorService.info('API-Anbindung wird geladen...', 'API Status');
     }
 
     exportData() {
-        alert(`📥 Export wird vorbereitet...\n\nFormat: CSV\nDatensätze: ${this.filteredTools.length}`);
+        errorService.info(`Export wird vorbereitet: ${this.filteredTools.length} Datensätze`, "CSV Export");
     }
 
     showSettings() {
-        alert('⚙️ Einstellungen\n\n- API-Konfiguration\n- Export-Optionen\n- Filter-Präferenzen\n- Ansichts-Einstellungen');
+        router.navigate('/settings');
     }
 
     showError(message) {

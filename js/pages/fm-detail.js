@@ -476,15 +476,15 @@ class FMDetailPage {
     }
 
     edit() {
-        alert('✏️ Bearbeitungsmodus - Diese Funktion wird später implementiert');
+        errorService.info('Diese Funktion wird später implementiert.', 'Bearbeiten');
     }
 
     exportPDF() {
-        alert('📥 PDF Export wird vorbereitet...');
+        errorService.info('PDF Export wird vorbereitet...', 'Export');
     }
 
     saveDetails() {
-        alert('💾 Änderungen gespeichert (Mock)');
+        errorService.success('Änderungen gespeichert.', 'Gespeichert');
     }
 
     showError(message) {

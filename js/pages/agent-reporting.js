@@ -199,7 +199,7 @@ class AgentReportingPage {
             const supplierNumber = config.supplierNumber || config.supplierId || config.companyKey;
 
             if (!supplierNumber) {
-                alert('Bitte konfigurieren Sie eine Lieferantennummer in den Einstellungen.');
+                errorService.show('auth_invalid', 'Bitte konfigurieren Sie eine Lieferantennummer in den Einstellungen.');
                 if (overlay) overlay.style.display = 'none';
                 return;
             }
@@ -215,7 +215,7 @@ class AgentReportingPage {
 
         } catch (error) {
             console.error('Error loading data:', error);
-            alert('Fehler beim Laden: ' + error.message);
+            errorService.show(error);
             if (overlay) overlay.style.display = 'none';
         }
     }
@@ -537,7 +537,7 @@ class AgentReportingPage {
 
         const filterModel = this.agGridInstance.getFilterModel();
         if (!filterModel || Object.keys(filterModel).length === 0) {
-            alert('Keine aktiven Filter zum Speichern.');
+            errorService.info('Keine aktiven Filter zum Speichern.', 'Filter');
             return;
         }
 
@@ -554,7 +554,7 @@ class AgentReportingPage {
 
         localStorage.setItem('orca_reporting_filters', JSON.stringify(filters));
         this.renderFilterDropdown();
-        alert(`Filter "${name}" gespeichert!`);
+        errorService.success(`Filter "${name}" gespeichert.`, "Filter gespeichert");
     }
 
     loadFilter(filterId) {
@@ -605,7 +605,7 @@ class AgentReportingPage {
     // =============== Export Filtered Data ===============
     exportFilteredData(format) {
         if (!this.agGridInstance) {
-            alert('Keine Daten zum Exportieren.');
+            errorService.show('data_empty', 'Keine Daten zum Exportieren.');
             return;
         }
 
@@ -625,7 +625,7 @@ class AgentReportingPage {
         });
 
         if (filteredData.length === 0) {
-            alert('Keine Daten nach Filterung vorhanden.');
+            errorService.show('data_empty', 'Keine Daten nach Filterung vorhanden.');
             return;
         }
 
@@ -982,7 +982,7 @@ class AgentReportingPage {
     // =============== Export ===============
     exportData(format) {
         if (!this.gridData || this.gridData.length === 0) {
-            alert('Keine Daten zum Exportieren vorhanden.');
+            errorService.show('data_empty', 'Keine Daten zum Exportieren vorhanden.');
             return;
         }
 

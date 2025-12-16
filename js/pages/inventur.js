@@ -1336,7 +1336,7 @@ class InventurPage {
         const pending = filtered.filter(t => t.status === 'pending');
 
         if (pending.length === 0) {
-            alert('Keine offenen Werkzeuge zum Bestätigen gefunden.');
+            errorService.show('inventur_no_selection', 'Keine offenen Werkzeuge zum Bestätigen gefunden.');
             return;
         }
 
@@ -1367,7 +1367,7 @@ class InventurPage {
         const locationId = select.value;
 
         if (!locationId) {
-            alert('Bitte wählen Sie einen Standort aus.');
+            errorService.show('inventur_no_selection', 'Bitte wählen Sie einen Standort aus.');
             return;
         }
 
@@ -1397,7 +1397,7 @@ class InventurPage {
         const responsibleId = select.value;
 
         if (!responsibleId) {
-            alert('Bitte wählen Sie einen Verantwortlichen aus.');
+            errorService.show('inventur_no_selection', 'Bitte wählen Sie einen Verantwortlichen aus.');
             return;
         }
 
@@ -1456,7 +1456,7 @@ class InventurPage {
         const newLocationId = select.value;
 
         if (!newLocationId) {
-            alert('Bitte wählen Sie einen Standort aus.');
+            errorService.show('inventur_no_selection', 'Bitte wählen Sie einen Standort aus.');
             return;
         }
 
@@ -1679,7 +1679,7 @@ class InventurPage {
     confirmPhoto() {
         if (this.currentTool && this.selectedPhoto) {
             this.currentTool.photo = this.selectedPhoto;
-            alert(`✅ Foto wurde für "${this.currentTool.name}" gespeichert.`);
+            errorService.success(`Foto für "${this.currentTool.name}" gespeichert.`, "Foto gespeichert");
         }
         this.closePhotoModal();
     }
@@ -1769,14 +1769,14 @@ class InventurPage {
         const newResponsible = inputValue || selectValue;
 
         if (!newResponsible) {
-            alert('Bitte wählen Sie einen Verantwortlichen aus oder geben Sie einen neuen Namen ein.');
+            errorService.show('inventur_no_selection', 'Bitte wählen Sie einen Verantwortlichen aus oder geben Sie einen neuen Namen ein.');
             return;
         }
 
         // Finde das Tool im Array und aktualisiere es direkt
         const toolIndex = this.tools.findIndex(t => t.id === this.currentTool.id);
         if (toolIndex === -1) {
-            alert('Fehler: Werkzeug nicht gefunden.');
+            errorService.show('api_404', 'Werkzeug nicht gefunden.');
             return;
         }
 
@@ -1813,7 +1813,7 @@ class InventurPage {
         const filteredTools = this.getFilteredTools();
 
         if (filteredTools.length === 0) {
-            alert('Keine Daten zum Exportieren vorhanden.');
+            errorService.show('data_empty', 'Keine Daten zum Exportieren vorhanden.');
             return;
         }
 
@@ -1848,7 +1848,7 @@ class InventurPage {
     exportToExcel(data) {
         // Nutze SheetJS (bereits eingebunden)
         if (typeof XLSX === 'undefined') {
-            alert('Excel-Export nicht verfügbar. Bitte nutzen Sie CSV.');
+            errorService.info('Excel-Export nicht verfügbar. Bitte nutzen Sie CSV.', 'Export');
             return;
         }
 

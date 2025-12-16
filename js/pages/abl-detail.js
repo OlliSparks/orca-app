@@ -658,18 +658,18 @@ class ABLDetailPage {
                 // Reload data
                 await this.loadData();
             } else {
-                alert('Fehler beim Melden: ' + (result.error || 'Unbekannter Fehler'));
+                errorService.show('data_save', 'Fehler beim Melden: ' + (result.error || 'Unbekannter Fehler'));
             }
         } catch (error) {
             console.error('Error reporting position:', error);
-            alert('Fehler beim Melden: ' + error.message);
+            errorService.show(error);
         }
     }
 
     async reportAll() {
         const pendingPositions = this.positions.filter(p => p.positionStatus === 'P1' || p.positionStatus === 'P2');
         if (pendingPositions.length === 0) {
-            alert('Keine offenen Positionen zum Melden.');
+            errorService.show('inventur_no_selection', 'Keine offenen Positionen zum Melden.');
             return;
         }
 
@@ -685,7 +685,7 @@ class ABLDetailPage {
             await this.loadData();
         } catch (error) {
             console.error('Error reporting all:', error);
-            alert('Fehler beim Melden: ' + error.message);
+            errorService.show(error);
         }
     }
 

@@ -1245,7 +1245,7 @@ Wählen Sie links eine Option und laden Sie Ihre Daten hoch.`
         const matchedTools = this.recognizedTools.filter(t => t.inventoryId !== null);
 
         if (matchedTools.length === 0) {
-            alert('Keine zugeordneten Werkzeuge zum Übernehmen vorhanden.\n\nNur Werkzeuge mit erkanntem Standort können einer Inventur zugeordnet werden.');
+            errorService.show('data_empty', 'Keine zugeordneten Werkzeuge zum Übernehmen vorhanden. Nur Werkzeuge mit erkanntem Standort können einer Inventur zugeordnet werden.');
             return;
         }
 

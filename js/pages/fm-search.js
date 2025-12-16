@@ -94,7 +94,7 @@ class FMSearchPage {
         const query = searchInput.value.trim();
 
         if (!query) {
-            alert('Bitte geben Sie einen Suchbegriff ein.');
+            errorService.info('Bitte geben Sie einen Suchbegriff ein.', 'Suche');
             return;
         }
 

@@ -41,6 +41,13 @@ class Router {
             }
         }
 
+        // Update breadcrumbs
+        if (typeof breadcrumbService !== 'undefined') {
+            const matchedRoute = this.matchDynamicRoute(hash);
+            const params = matchedRoute ? matchedRoute.params : {};
+            breadcrumbService.render(hash, params);
+        }
+
         // Scroll to top on route change
         window.scrollTo(0, 0);
     }
