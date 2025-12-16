@@ -175,29 +175,45 @@ class AgentABLPage {
                     const assets = assetsResult.gridData || assetsResult.content || [];
 
                     if (assets.length > 0) {
+                        // Debug: Zeige verfügbare Felder
+                        console.log('ABL-Agent: Asset-Felder verfügbar:', Object.keys(assets[0]));
+
                         // Extrahiere eindeutige Werte aus den Assets
                         const uniqueOwners = new Set();
                         const uniqueProjects = new Set();
                         const uniqueCommodities = new Set();
                         const uniqueFEK = new Set();
 
+                        // Flexible Feld-Suche (verschiedene mögliche Feldnamen)
+                        const getField = (asset, ...fieldNames) => {
+                            for (const name of fieldNames) {
+                                const value = asset[name];
+                                if (value && value !== '-' && value !== '') return value;
+                            }
+                            return null;
+                        };
+
                         assets.forEach(asset => {
-                            if (asset['Eigentümer'] && asset['Eigentümer'] !== '-') {
-                                uniqueOwners.add(asset['Eigentümer']);
-                            }
-                            if (asset['Commodity'] && asset['Commodity'] !== '-') {
-                                uniqueCommodities.add(asset['Commodity']);
-                            }
-                            if (asset['Facheinkäufer'] && asset['Facheinkäufer'] !== '-') {
-                                uniqueFEK.add(asset['Facheinkäufer']);
-                            }
-                            // Projekt könnte in verschiedenen Feldern sein
-                            if (asset['Projekt'] && asset['Projekt'] !== '-') {
-                                uniqueProjects.add(asset['Projekt']);
-                            }
-                            if (asset['Teilenummerbezeichnung'] && asset['Teilenummerbezeichnung'] !== '-') {
-                                // Manchmal enthält Teilenummer den Projektnamen
-                                const match = asset['Teilenummerbezeichnung'].match(/^([A-Z]\d{1,2})/);
+                            // Owner: verschiedene mögliche Feldnamen
+                            const owner = getField(asset, 'Eigentümer', 'Owner', 'owner', 'Auftraggeber', 'OEM', 'Betreiber Name', 'Betreiber');
+                            if (owner) uniqueOwners.add(owner);
+
+                            // Commodity
+                            const commodity = getField(asset, 'Commodity', 'commodity', 'Warengruppe');
+                            if (commodity) uniqueCommodities.add(commodity);
+
+                            // FEK (Facheinkäufer)
+                            const fek = getField(asset, 'Facheinkäufer', 'FEK', 'fek', 'Einkäufer');
+                            if (fek) uniqueFEK.add(fek);
+
+                            // Projekt
+                            const project = getField(asset, 'Projekt', 'Project', 'project', 'Baureihe');
+                            if (project) uniqueProjects.add(project);
+
+                            // Projekt aus Teilenummer extrahieren (z.B. "G70-123" -> "G70")
+                            const partName = getField(asset, 'Teilenummerbezeichnung', 'Teilenummer', 'PartNumber');
+                            if (partName) {
+                                const match = partName.match(/^([A-Z]\d{1,2})/);
                                 if (match) uniqueProjects.add(match[1]);
                             }
                         });
