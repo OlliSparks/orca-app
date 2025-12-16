@@ -8017,3 +8017,29 @@ body.high-contrast .card {
     background: #374151;
     color: #9ca3af;
 }
+
+/* === FIX: Hide old theme toggle button === */
+#themeToggle.theme-toggle {
+    display: none !important;
+}
+
+/* === FIX: Header action button SVG icons === */
+.header-action-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.header-action-btn svg circle,
+.header-action-btn svg path {
+    fill: none;
+}
+
+/* Small filled dot for help icon */
+.header-action-btn svg circle[r="0.5"] {
+    fill: currentColor;
+}

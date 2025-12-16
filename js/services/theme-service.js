@@ -26,9 +26,6 @@ class ThemeService {
                 this.applyTheme();
             }
         });
-
-        // Create theme toggle button
-        this.createToggleButton();
     }
 
     applyTheme() {
@@ -42,10 +39,10 @@ class ThemeService {
             metaTheme.name = 'theme-color';
             document.head.appendChild(metaTheme);
         }
-        metaTheme.content = this.currentTheme === 'dark' ? '#1a1a2e' : '#ffffff';
+        metaTheme.content = this.currentTheme === 'dark' ? '#1a1a2e' : '#2c4a8c';
 
-        // Update toggle button
-        this.updateToggleButton();
+        // Update SVG icons in header button
+        this.updateIcons();
     }
 
     toggle() {
@@ -53,9 +50,25 @@ class ThemeService {
         localStorage.setItem('orca_theme', this.currentTheme);
         this.applyTheme();
 
-        // Announce change
-        if (typeof keyboardService !== 'undefined' && keyboardService.announce) {
-            keyboardService.announce(`${this.currentTheme === 'dark' ? 'Dunkelmodus' : 'Hellmodus'} aktiviert`);
+        // Announce change for accessibility
+        if (typeof a11yService !== 'undefined') {
+            a11yService.announce(this.currentTheme === 'dark' ? 'Dunkelmodus aktiviert' : 'Hellmodus aktiviert');
+        }
+    }
+
+    updateIcons() {
+        // Update the header button icons
+        const sunIcon = document.querySelector('.header-action-btn .icon-sun');
+        const moonIcon = document.querySelector('.header-action-btn .icon-moon');
+
+        if (sunIcon && moonIcon) {
+            if (this.currentTheme === 'dark') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
         }
     }
 
@@ -73,43 +86,6 @@ class ThemeService {
 
     isDark() {
         return this.currentTheme === 'dark';
-    }
-
-    createToggleButton() {
-        // Wait for DOM to be ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.insertToggleButton());
-        } else {
-            this.insertToggleButton();
-        }
-    }
-
-    insertToggleButton() {
-        // Find header-stats or header for insertion
-        const headerStats = document.getElementById('headerStats');
-        if (!headerStats) return;
-
-        const toggleBtn = document.createElement('button');
-        toggleBtn.id = 'themeToggle';
-        toggleBtn.className = 'theme-toggle';
-        toggleBtn.title = 'Dunkelmodus umschalten';
-        toggleBtn.onclick = () => this.toggle();
-        toggleBtn.innerHTML = `
-            <span class="theme-icon-light">☀️</span>
-            <span class="theme-icon-dark">🌙</span>
-        `;
-
-        // Insert before header stats
-        headerStats.parentNode.insertBefore(toggleBtn, headerStats);
-        this.updateToggleButton();
-    }
-
-    updateToggleButton() {
-        const btn = document.getElementById('themeToggle');
-        if (btn) {
-            btn.classList.toggle('dark-active', this.currentTheme === 'dark');
-            btn.title = this.currentTheme === 'dark' ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren';
-        }
     }
 }
 
