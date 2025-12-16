@@ -191,52 +191,46 @@ class AgentInventurplanungPage {
     async loadOpenInventories() {
         try {
             const response = await api.getPlanningData();
-            if (response.success) {
+            if (response.success && response.data) {
                 this.openInventories = response.data;
+            } else {
+                this.openInventories = [];
             }
         } catch (e) {
-            this.openInventories = this.getMockPlanningData();
+            console.error('Fehler beim Laden der Inventuren:', e);
+            this.openInventories = [];
         }
     }
 
     async loadAvailableUsers() {
         try {
-            // Versuche Benutzer aus API zu laden
             const companyKey = localStorage.getItem('orca_company_key');
             if (companyKey) {
                 const users = await api.getCompanyUsers(companyKey);
                 this.availableUsers = users || [];
+            } else {
+                this.availableUsers = [];
             }
         } catch (e) {
-            // Mock-Benutzer
-            this.availableUsers = [
-                { id: 'user1', name: 'Max Müller', email: 'max.mueller@example.com' },
-                { id: 'user2', name: 'Anna Schmidt', email: 'anna.schmidt@example.com' },
-                { id: 'user3', name: 'Peter Weber', email: 'peter.weber@example.com' }
-            ];
+            console.error('Fehler beim Laden der Benutzer:', e);
+            this.availableUsers = [];
         }
-    }
-
-    getMockPlanningData() {
-        // Dynamische Daten basierend auf aktuellem Datum
-        const today = new Date();
-        const addDays = (d, days) => { const r = new Date(d); r.setDate(r.getDate() + days); return r.toISOString().split('T')[0]; };
-
-        return [
-            { id: 1, number: '0010120920', name: 'Spritzgießwerkzeug A', location: 'Werk München - Halle A', dueDate: addDays(today, 5), status: 'offen' },
-            { id: 2, number: '0010052637', name: 'Spritzgießwerkzeug B', location: 'Werk München - Halle A', dueDate: addDays(today, 8), status: 'offen' },
-            { id: 3, number: '0010052648', name: 'Spritzgießwerkzeug C', location: 'Werk München - Halle B', dueDate: addDays(today, 12), status: 'offen' },
-            { id: 4, number: '10006841', name: 'Schäumform 1', location: 'Werk Stuttgart', dueDate: addDays(today, 18), status: 'offen' },
-            { id: 5, number: '10006842', name: 'Schäumform 2', location: 'Werk Stuttgart', dueDate: addDays(today, 22), status: 'offen' },
-            { id: 6, number: '10006843', name: 'Schäumform 3', location: 'Werk Leipzig', dueDate: addDays(today, 30), status: 'offen' },
-            { id: 7, number: '0010254378', name: 'Presswerkzeug X', location: 'Lager Augsburg', dueDate: addDays(today, 45), status: 'offen' },
-            { id: 8, number: '10447851', name: 'Stanzwerkzeug Y', location: 'Werk München - Halle A', dueDate: addDays(today, 60), status: 'offen' }
-        ];
     }
 
     showGreeting() {
         const openCount = this.openInventories.length;
         const locations = [...new Set(this.openInventories.map(t => t.location))];
+
+        if (openCount === 0) {
+            this.addAssistantMessage(`Keine offenen Inventuren gefunden.
+
+**Mögliche Gründe:**
+• API nicht verbunden
+• Keine Inventuren zugewiesen
+
+→ Gehe direkt zur **Inventur-Übersicht** um den aktuellen Stand zu sehen.`);
+            return;
+        }
 
         this.addAssistantMessage(`**${openCount} offene Inventuren** an **${locations.length} Standorten**.
 
@@ -1120,6 +1114,10 @@ Ich bringe dich direkt zur **Zeitraum-Auswahl**.`);
             .jump-to-inventur-btn:hover { background: #2563eb; }
 
             .no-locations { text-align: center; padding: 1rem; color: #6b7280; }
+            .no-locations .divider-or { display: flex; align-items: center; gap: 0.5rem; margin: 1rem 0; }
+            .no-locations .divider-or::before, .no-locations .divider-or::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+            .no-locations .divider-or span { font-size: 0.75rem; color: #9ca3af; }
+            .no-locations .jump-to-inventur-btn { margin-top: 0; }
             .back-btn { margin-top: 0.5rem; padding: 0.5rem 1rem; background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer; }
 
             /* Chat */
