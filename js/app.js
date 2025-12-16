@@ -14,10 +14,26 @@ class OrcaApp {
         // Start the router
         router.handleRouteChange();
 
+        // Initialize onboarding (tooltips, first-visit check)
+        this.initOnboarding();
+
         // Check for new messages after a short delay
         setTimeout(() => this.checkNewMessages(), 1000);
 
         console.log('ORCA 2.0 App initialized');
+    }
+
+    initOnboarding() {
+        // Show first visit modal if this is user's first visit
+        if (onboardingService.isFirstVisit()) {
+            // Small delay to ensure page is fully rendered
+            setTimeout(() => {
+                onboardingService.showFirstVisitModal();
+            }, 500);
+        }
+
+        // Initialize tooltips
+        onboardingService.initTooltips();
     }
 
     async checkNewMessages() {
@@ -194,6 +210,11 @@ class OrcaApp {
         // Verlagerung durchführen Agent
         router.addRoute('/agent-verlagerung-durchfuehren', () => {
             agentVerlagerungDurchfuehrenPage.render();
+        });
+
+        // Glossar & Hilfe
+        router.addRoute('/glossar', () => {
+            glossarPage.render();
         });
     }
 

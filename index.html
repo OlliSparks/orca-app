@@ -42,6 +42,11 @@
                 </div>
             </div>
 
+            <!-- Help Button -->
+            <button class="header-help-btn" onclick="router.navigate('/glossar')" title="Hilfe & Glossar">
+                ?
+            </button>
+
             <!-- Navigation Dropdown -->
             <div class="nav-dropdown-container">
                 <select id="navDropdown" class="nav-dropdown" onchange="router.navigate(this.value)">
@@ -58,6 +63,7 @@
                     <option value="/partnerwechsel">🔄 Vertragspartnerwechsel</option>
                     <option value="/verschrottung">♻️ Verschrottung</option>
                     <option value="/unternehmen">🏢 Unternehmen</option>
+                    <option value="/glossar">📖 Glossar & Hilfe</option>
                     <option value="/settings">⚙️ Einstellungen</option>
                 </select>
             </div>
@@ -98,6 +104,7 @@
     <script src="js/services/auth.js" defer></script>
     <script src="js/services/api.js?v=20251215b" defer></script>
     <script src="js/services/message-service.js" defer></script>
+    <script src="js/services/onboarding.js" defer></script>
     <script src="js/router.js" defer></script>
     <script src="js/pages/dashboard.js" defer></script>
     <script src="js/pages/fm-list.js" defer></script>
@@ -129,6 +136,7 @@
     <script src="js/pages/messages.js" defer></script>
     <script src="js/pages/agent-verlagerung-beantragen.js" defer></script>
     <script src="js/pages/agent-verlagerung-durchfuehren.js" defer></script>
+    <script src="js/pages/glossar.js" defer></script>
     <script src="js/app.js" defer></script>
 </body>
 </html>

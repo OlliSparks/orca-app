@@ -27,6 +27,7 @@ class Dashboard {
                     <h3 class="section-title must-do">
                         <span class="section-icon">⚠️</span>
                         Was MUSS ich tun?
+                        <span class="help-icon" onclick="event.stopPropagation(); onboardingService.showHelpModal('dashboard-must')">?</span>
                     </h3>
                     <div class="dashboard-cards" id="mustDoCards">
                         <div class="dashboard-card loading">
@@ -43,6 +44,7 @@ class Dashboard {
                     <h3 class="section-title should-do">
                         <span class="section-icon">📋</span>
                         Was SOLL ich tun?
+                        <span class="help-icon" onclick="event.stopPropagation(); onboardingService.showHelpModal('dashboard-should')">?</span>
                     </h3>
                     <div class="dashboard-cards" id="canDoCards">
                         <div class="dashboard-card loading">
@@ -59,6 +61,7 @@ class Dashboard {
                     <h3 class="section-title can-do">
                         <span class="section-icon">🎯</span>
                         Was KANN ich tun?
+                        <span class="help-icon" onclick="event.stopPropagation(); onboardingService.showHelpModal('dashboard-can')">?</span>
                     </h3>
                     <div class="dashboard-cards">
                         <div class="dashboard-card clickable" onclick="router.navigate('/tools')">
