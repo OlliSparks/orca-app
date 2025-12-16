@@ -473,35 +473,46 @@ Sie können jederzeit zurückkehren und den Entwurf fortsetzen.`);
 
         this.addMessage('agent', `Welches Werkzeug soll verlagert werden?
 
-${availableAssets.length > 0 ? `**${availableAssets.length} Werkzeuge** verfügbar.` : ''}
-
-Geben Sie die **Inventarnummer** ein oder wählen Sie aus der Liste:`);
+${availableAssets.length > 0 ? `**${availableAssets.length} Werkzeuge** verfügbar.` : 'Keine Werkzeuge geladen.'}`);
 
         const inputArea = document.getElementById('inputArea');
 
-        if (availableAssets.length > 0 && availableAssets.length <= 100) {
-            const assetOptions = availableAssets.slice(0, 50).map(asset =>
-                `<option value="${asset.inventoryNumber || asset.toolNumber}">${asset.inventoryNumber || asset.toolNumber} - ${asset.name || 'Werkzeug'}</option>`
-            ).join('');
+        if (availableAssets.length > 0) {
+            // Build dropdown options with location info
+            const assetOptions = availableAssets.map(asset => {
+                const invNr = asset.inventoryNumber || asset.toolNumber || 'N/A';
+                const name = asset.name || asset.bezeichnung || 'Werkzeug';
+                const location = asset.location || asset.standort || '';
+                const displayText = location
+                    ? `${invNr} - ${name} (${location})`
+                    : `${invNr} - ${name}`;
+                return `<option value="${invNr}">${displayText}</option>`;
+            }).join('');
 
             inputArea.innerHTML = `
-                <div class="tool-selection-container">
-                    <div class="input-with-select">
-                        <input type="text" id="toolNumberInput" class="agent-input"
-                               placeholder="Inventarnummer eingeben..."
-                               onkeypress="if(event.key==='Enter') agentVerlagerungBeantragenPage.processToolNumber()">
-                        <span class="input-divider">oder</span>
-                        <select id="toolSelect" class="agent-select" onchange="agentVerlagerungBeantragenPage.selectToolFromList()">
-                            <option value="">Aus Liste wählen...</option>
-                            ${assetOptions}
-                        </select>
-                    </div>
-                    <button class="agent-btn primary" onclick="agentVerlagerungBeantragenPage.processToolNumber()">
+                <div class="tool-dropdown-container">
+                    <select id="toolSelect" class="agent-select large">
+                        <option value="">Werkzeug auswählen...</option>
+                        ${assetOptions}
+                    </select>
+                    <button class="agent-btn primary" onclick="agentVerlagerungBeantragenPage.processToolFromDropdown()">
                         Werkzeug hinzufügen
                     </button>
                 </div>
+                <div class="manual-entry-hint">
+                    <span>Nicht in der Liste?</span>
+                    <button class="link-btn" onclick="agentVerlagerungBeantragenPage.showManualToolEntry()">
+                        Manuell eingeben
+                    </button>
+                </div>
             `;
+
+            setTimeout(() => {
+                const select = document.getElementById('toolSelect');
+                if (select) select.focus();
+            }, 100);
         } else {
+            // No assets loaded - show manual entry
             inputArea.innerHTML = `
                 <div class="simple-input-container">
                     <input type="text" id="toolNumberInput" class="agent-input"
@@ -512,20 +523,104 @@ Geben Sie die **Inventarnummer** ein oder wählen Sie aus der Liste:`);
                     </button>
                 </div>
             `;
-        }
 
+            setTimeout(() => {
+                const input = document.getElementById('toolNumberInput');
+                if (input) input.focus();
+            }, 100);
+        }
+    }
+
+    showManualToolEntry() {
+        const inputArea = document.getElementById('inputArea');
+        inputArea.innerHTML = `
+            <div class="simple-input-container">
+                <input type="text" id="toolNumberInput" class="agent-input"
+                       placeholder="Inventarnummer eingeben..."
+                       onkeypress="if(event.key==='Enter') agentVerlagerungBeantragenPage.processToolNumber()">
+                <button class="agent-btn primary" onclick="agentVerlagerungBeantragenPage.processToolNumber()">
+                    Werkzeug hinzufügen
+                </button>
+            </div>
+            <div class="manual-entry-hint">
+                <button class="link-btn" onclick="agentVerlagerungBeantragenPage.showToolSelection()">
+                    ← Zurück zur Liste
+                </button>
+            </div>
+        `;
         setTimeout(() => {
             const input = document.getElementById('toolNumberInput');
             if (input) input.focus();
         }, 100);
     }
 
-    selectToolFromList() {
+    processToolFromDropdown() {
         const select = document.getElementById('toolSelect');
-        const input = document.getElementById('toolNumberInput');
-        if (select && input && select.value) {
-            input.value = select.value;
+        const value = select?.value;
+
+        if (!value) {
+            this.addMessage('system', 'Bitte wählen Sie ein Werkzeug aus.');
+            return;
         }
+
+        this.addMessage('user', value);
+
+        // Find the asset
+        const asset = this.assets.find(a =>
+            a.inventoryNumber === value ||
+            a.toolNumber === value
+        );
+
+        // Create tool entry with pre-filled data
+        this.currentTool = {
+            number: value,
+            name: asset?.name || asset?.bezeichnung || 'Werkzeug',
+            assetKey: asset?.key || null,
+            gewicht: asset?.weight || asset?.gewicht || null,
+            hoehe: asset?.height || asset?.hoehe || null,
+            breite: asset?.width || asset?.breite || null,
+            laenge: asset?.length || asset?.laenge || null,
+            zolltarifnummer: asset?.customsTariffNumber || asset?.zolltarifnummer || null
+        };
+
+        // Auto-set source location from first tool
+        if (!this.verlagerungData.quellStandort && this.tools.length === 0 && asset) {
+            const assetLocation = asset.location || asset.standort;
+            const assetLocationKey = asset.locationKey || asset.standortKey;
+
+            if (assetLocation || assetLocationKey) {
+                this.verlagerungData.quellStandort = assetLocation;
+                this.verlagerungData.quellStandortKey = assetLocationKey;
+
+                const loc = this.locations.find(l =>
+                    l.key === assetLocationKey ||
+                    l.title === assetLocation ||
+                    l.name === assetLocation
+                );
+                if (loc) {
+                    this.verlagerungData.quellStadt = loc.city;
+                    this.verlagerungData.quellLand = loc.country;
+                }
+            }
+        }
+
+        // Check what data is pre-filled
+        const hasData = this.currentTool.gewicht || this.currentTool.hoehe ||
+                       this.currentTool.breite || this.currentTool.laenge;
+
+        let locationInfo = '';
+        if (asset?.location || asset?.standort) {
+            locationInfo = `\n**Standort:** ${asset.location || asset.standort}`;
+        }
+
+        this.addMessage('agent', `✓ Werkzeug ausgewählt: **${asset?.name || value}**${locationInfo}
+
+${hasData ? 'Die vorhandenen Maße wurden übernommen. Bitte prüfen und bestätigen.' : 'Bitte geben Sie die Maße ein.'}`);
+
+        this.currentStep = 'tool_dimensions';
+        this.updateProgress();
+        this.updateSidebar();
+        this.showDimensionsInput();
     }
 
     async processToolNumber() {
@@ -1662,6 +1757,43 @@ Nach Genehmigung können Sie die Verlagerung mit dem **Agent "Verlagerung durchf
                 background: #e5e7eb;
                 color: #9ca3af;
                 cursor: not-allowed;
+            }
+
+            /* Tool Dropdown */
+            .tool-dropdown-container {
+                display: flex;
+                gap: 0.75rem;
+                align-items: center;
+            }
+
+            .agent-select.large {
+                flex: 1;
+                padding: 0.875rem 1rem;
+                font-size: 1rem;
+            }
+
+            .manual-entry-hint {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-top: 0.75rem;
+                font-size: 0.85rem;
+                color: #6b7280;
+            }
+
+            .link-btn {
+                background: none;
+                border: none;
+                color: #3b82f6;
+                cursor: pointer;
+                font-size: 0.85rem;
+                text-decoration: underline;
+                padding: 0;
+            }
+
+            .link-btn:hover {
+                color: #2563eb;
             }
 
             .dimensions-form {
