@@ -413,9 +413,11 @@ class AgentAPISetupPage {
                                 </div>
                                 <div class="download-columns">
                                     <span class="column-tag">Inventarnummer</span>
-                                    <span class="column-tag">Standort (Adresse)</span>
+                                    <span class="column-tag">Straße</span>
+                                    <span class="column-tag">PLZ</span>
+                                    <span class="column-tag">Ort</span>
                                     <span class="column-tag optional">Bezeichnung</span>
-                                    <span class="column-tag optional">Zustand</span>
+                                    <span class="column-tag">Vorhanden</span>
                                 </div>
                             </div>
 
@@ -1034,11 +1036,29 @@ class AgentAPISetupPage {
             }
         }
 
-        // Standort erkennen
-        const locationPatterns = ['standort', 'location', 'ort', 'gebäude', 'halle', 'building', 'site', 'adresse'];
+        // Straße erkennen
+        const streetPatterns = ['straße', 'strasse', 'street', 'adresse', 'address'];
         for (let i = 0; i < headers.length; i++) {
-            if (locationPatterns.some(p => normalizedHeaders[i].includes(p))) {
-                mapping.location = headers[i];
+            if (streetPatterns.some(p => normalizedHeaders[i].includes(p))) {
+                mapping.street = headers[i];
+                break;
+            }
+        }
+
+        // PLZ erkennen
+        const plzPatterns = ['plz', 'postleitzahl', 'postalcode', 'zip'];
+        for (let i = 0; i < headers.length; i++) {
+            if (plzPatterns.some(p => normalizedHeaders[i].includes(p))) {
+                mapping.postalCode = headers[i];
+                break;
+            }
+        }
+
+        // Ort erkennen
+        const cityPatterns = ['ort', 'stadt', 'city', 'location', 'standort'];
+        for (let i = 0; i < headers.length; i++) {
+            if (cityPatterns.some(p => normalizedHeaders[i].includes(p))) {
+                mapping.city = headers[i];
                 break;
             }
         }
@@ -1052,11 +1072,11 @@ class AgentAPISetupPage {
             }
         }
 
-        // Zustand erkennen
-        const conditionPatterns = ['zustand', 'condition', 'status', 'state'];
+        // Vorhanden erkennen
+        const presentPatterns = ['vorhanden', 'present', 'verfügbar', 'available', 'exists'];
         for (let i = 0; i < headers.length; i++) {
-            if (conditionPatterns.some(p => normalizedHeaders[i].includes(p))) {
-                mapping.condition = headers[i];
+            if (presentPatterns.some(p => normalizedHeaders[i].includes(p))) {
+                mapping.present = headers[i];
                 break;
             }
         }
@@ -1078,7 +1098,7 @@ class AgentAPISetupPage {
                     <th>Status</th>
                 </tr>
                 <tr>
-                    <td>Werkzeugnummer</td>
+                    <td>Inventarnummer</td>
                     <td>
                         <select id="mapToolNumber" class="mapping-select">
                             <option value="">-- Wählen --</option>
@@ -1088,14 +1108,34 @@ class AgentAPISetupPage {
                     <td>${this.detectedColumns.toolNumber ? '✅ Erkannt' : '⚠️ Bitte wählen'}</td>
                 </tr>
                 <tr>
-                    <td>Standort</td>
+                    <td>Straße</td>
                     <td>
-                        <select id="mapLocation" class="mapping-select">
+                        <select id="mapStreet" class="mapping-select">
                             <option value="">-- Wählen --</option>
-                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.location === h ? 'selected' : ''}>${h}</option>`).join('')}
+                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.street === h ? 'selected' : ''}>${h}</option>`).join('')}
                         </select>
                     </td>
-                    <td>${this.detectedColumns.location ? '✅ Erkannt' : '⚠️ Bitte wählen'}</td>
+                    <td>${this.detectedColumns.street ? '✅ Erkannt' : '⚠️ Bitte wählen'}</td>
+                </tr>
+                <tr>
+                    <td>PLZ</td>
+                    <td>
+                        <select id="mapPostalCode" class="mapping-select">
+                            <option value="">-- Wählen --</option>
+                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.postalCode === h ? 'selected' : ''}>${h}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>${this.detectedColumns.postalCode ? '✅ Erkannt' : '⚠️ Bitte wählen'}</td>
+                </tr>
+                <tr>
+                    <td>Ort</td>
+                    <td>
+                        <select id="mapCity" class="mapping-select">
+                            <option value="">-- Wählen --</option>
+                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.city === h ? 'selected' : ''}>${h}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>${this.detectedColumns.city ? '✅ Erkannt' : '⚠️ Bitte wählen'}</td>
                 </tr>
                 <tr>
                     <td>Bezeichnung</td>
@@ -1108,14 +1148,14 @@ class AgentAPISetupPage {
                     <td>${this.detectedColumns.name ? '✅ Erkannt' : '➖ Optional'}</td>
                 </tr>
                 <tr>
-                    <td>Zustand</td>
+                    <td>Vorhanden</td>
                     <td>
-                        <select id="mapCondition" class="mapping-select">
-                            <option value="">-- Optional --</option>
-                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.condition === h ? 'selected' : ''}>${h}</option>`).join('')}
+                        <select id="mapPresent" class="mapping-select">
+                            <option value="">-- Wählen --</option>
+                            ${headers.map(h => `<option value="${h}" ${this.detectedColumns.present === h ? 'selected' : ''}>${h}</option>`).join('')}
                         </select>
                     </td>
-                    <td>${this.detectedColumns.condition ? '✅ Erkannt' : '➖ Optional'}</td>
+                    <td>${this.detectedColumns.present ? '✅ Erkannt' : '⚠️ Bitte wählen'}</td>
                 </tr>
             </table>
         `;
@@ -1290,23 +1330,28 @@ Lieferanten-Nr.: ${supplierInfo.number}`
 
         // Excel-Daten mit Header
         const templateData = [
-            ['Inventarnummer', 'Standort (Adresse)', 'Bezeichnung', 'Zustand']
+            ['Inventarnummer', 'Straße', 'PLZ', 'Ort', 'Bezeichnung', 'Vorhanden']
         ];
 
         // Echte Werkzeugdaten hinzufügen (nur inventurrelevante Felder)
         if (assets && assets.length > 0) {
             assets.forEach(asset => {
+                // Adresse parsen (falls vorhanden)
+                const addressParts = this.parseAddress(asset.locationDetail || asset.location || '');
+
                 templateData.push([
                     asset.inventoryNumber || asset.toolNumber || '',
-                    asset.locationDetail || asset.location || '', // Adresse
+                    addressParts.street || '',
+                    addressParts.postalCode || '',
+                    addressParts.city || '',
                     asset.name || '',
-                    'OK' // Standard-Zustand, Lieferant kann ändern
+                    'Ja' // Standard: Vorhanden, Lieferant kann auf "Nein" ändern
                 ]);
             });
         } else {
             // Fallback: Leere Zeilen wenn keine Daten
             for (let i = 0; i < 10; i++) {
-                templateData.push(['', '', '', 'OK']);
+                templateData.push(['', '', '', '', '', 'Ja']);
             }
         }
 
@@ -1317,9 +1362,11 @@ Lieferanten-Nr.: ${supplierInfo.number}`
         // Spaltenbreiten
         ws['!cols'] = [
             { wch: 18 }, // Inventarnummer
-            { wch: 40 }, // Standort (Adresse)
+            { wch: 30 }, // Straße
+            { wch: 8 },  // PLZ
+            { wch: 20 }, // Ort
             { wch: 30 }, // Bezeichnung
-            { wch: 12 }  // Zustand
+            { wch: 12 }  // Vorhanden
         ];
 
         XLSX.utils.book_append_sheet(wb, ws, 'Stammdaten');
@@ -1329,6 +1376,48 @@ Lieferanten-Nr.: ${supplierInfo.number}`
         XLSX.writeFile(wb, fileName);
 
         console.log(`📥 Excel mit ${assets?.length || 0} Werkzeugen heruntergeladen: ${fileName}`);
+    }
+
+    // Adresse in Komponenten parsen
+    parseAddress(address) {
+        if (!address) return { street: '', postalCode: '', city: '' };
+
+        // Versuche verschiedene Adressformate zu parsen
+        // Format 1: "Straße 123, 12345 Stadt"
+        // Format 2: "12345 Stadt, Straße 123"
+        // Format 3: "Stadt, Straße" (ohne PLZ)
+
+        const result = { street: '', postalCode: '', city: '' };
+
+        // PLZ finden (5 Ziffern in DE)
+        const plzMatch = address.match(/\b(\d{5})\b/);
+        if (plzMatch) {
+            result.postalCode = plzMatch[1];
+        }
+
+        // Versuche "Straße Nr, PLZ Ort" Format
+        const fullMatch = address.match(/^(.+?),?\s*(\d{5})?\s*(.+)?$/);
+        if (fullMatch) {
+            const part1 = fullMatch[1]?.trim() || '';
+            const part3 = fullMatch[3]?.trim() || '';
+
+            // Wenn Teil 1 eine Nummer enthält, ist es die Straße
+            if (/\d/.test(part1) && !/^\d{5}$/.test(part1)) {
+                result.street = part1;
+                result.city = part3;
+            } else {
+                // Sonst umgekehrt versuchen
+                result.city = part1;
+                result.street = part3;
+            }
+        }
+
+        // Falls nichts geparst werden konnte, alles als Stadt behandeln
+        if (!result.street && !result.city) {
+            result.city = address;
+        }
+
+        return result;
     }
 
     // Echte Werkzeugdaten des Lieferanten laden
