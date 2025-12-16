@@ -69,25 +69,20 @@ class AgentInventurplanungPage {
 
                         <!-- Step 1: Daten laden -->
                         <div class="sidebar-section step-content" id="step1Content">
-                            <h3>Daten laden</h3>
-                            <p class="step-hint">Was weißt du bereits über deine Werkzeuge?</p>
+                            <h3>Hast du Werkzeugdaten?</h3>
 
-                            <div class="upload-options">
-                                <button class="upload-option active" data-type="file">
+                            <div class="upload-options-small">
+                                <button class="upload-option-sm active" data-type="file">
                                     <span class="option-icon">📊</span>
-                                    <span class="option-label">Excel / CSV</span>
+                                    <span>Excel</span>
                                 </button>
-                                <button class="upload-option" data-type="stammdaten">
-                                    <span class="option-icon">💾</span>
-                                    <span class="option-label">Stammdaten</span>
-                                </button>
-                                <button class="upload-option" data-type="screenshot">
+                                <button class="upload-option-sm" data-type="screenshot">
                                     <span class="option-icon">📷</span>
-                                    <span class="option-label">Screenshot</span>
+                                    <span>Screenshot</span>
                                 </button>
-                                <button class="upload-option" data-type="skip">
-                                    <span class="option-icon">⏭️</span>
-                                    <span class="option-label">Überspringen</span>
+                                <button class="upload-option-sm" data-type="stammdaten">
+                                    <span class="option-icon">💾</span>
+                                    <span>Stammdaten</span>
                                 </button>
                             </div>
 
@@ -97,6 +92,13 @@ class AgentInventurplanungPage {
                                 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.png,.jpg,.jpeg" multiple hidden>
                             </div>
                             <div class="uploaded-files" id="uploadedFiles"></div>
+
+                            <div class="skip-section">
+                                <div class="skip-divider"><span>oder</span></div>
+                                <button class="skip-btn" data-type="skip">
+                                    Keine Daten → Direkt zum Zeitraum
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Step 2: Zeitraum wählen -->
@@ -232,18 +234,13 @@ class AgentInventurplanungPage {
         const openCount = this.openInventories.length;
         const locations = [...new Set(this.openInventories.map(t => t.location))];
 
-        this.addAssistantMessage(`Willkommen! 👋
+        this.addAssistantMessage(`**${openCount} offene Inventuren** an **${locations.length} Standorten**.
 
-Du hast **${openCount} offene Inventuren** an **${locations.length} Standorten**.
+**Hast du eine Werkzeugliste?** (Excel, CSV, Screenshot)
+→ Dann lade sie hoch - ich zeige dir, welche du direkt bestätigen kannst.
 
-**So geht's:**
-1. **Daten laden** - Was weißt du schon über deine Werkzeuge?
-2. **Zeitraum wählen** - Wann willst du dich darum kümmern?
-3. **Standorte organisieren** - Wer macht welchen Standort?
-
-Dann springst du direkt in die Inventursicht und kannst loslegen.
-
-Hast du Daten (Excel, Screenshot)? Oder wähle links "Überspringen" um direkt zum Zeitraum zu gehen.`);
+**Keine Daten zur Hand?**
+→ Kein Problem! Klicke auf **"Überspringen"** und wähle direkt deinen Zeitraum.`);
     }
 
     // ==================== KALENDER ====================
@@ -650,9 +647,14 @@ Du kannst jetzt für jeden Standort zur Inventur springen.`);
     // ==================== DATEN IMPORT ====================
 
     attachEventListeners() {
-        // Upload options
-        document.querySelectorAll('.upload-option').forEach(btn => {
+        // Upload options (small buttons)
+        document.querySelectorAll('.upload-option-sm').forEach(btn => {
             btn.addEventListener('click', () => this.selectUploadOption(btn));
+        });
+
+        // Skip button
+        document.querySelector('.skip-btn')?.addEventListener('click', (e) => {
+            this.selectUploadOption(e.target);
         });
 
         // File upload
@@ -711,17 +713,15 @@ Klicke dann auf "Zur Inventur" um direkt loszulegen.`);
     }
 
     selectUploadOption(btn) {
-        document.querySelectorAll('.upload-option').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        document.querySelectorAll('.upload-option-sm').forEach(b => b.classList.remove('active'));
+        if (btn.classList.contains('upload-option-sm')) {
+            btn.classList.add('active');
+        }
 
         const type = btn.dataset.type;
 
         if (type === 'skip') {
-            this.addAssistantMessage(`Okay, wir überspringen den Daten-Import.
-
-Du kannst trotzdem planen - du wirst nur nicht sehen, welche Werkzeuge direkt bestätigbar sind.
-
-Wähle jetzt links im Kalender den **Zeitraum**, in dem du dich um Inventuren kümmern willst.`);
+            this.addAssistantMessage(`Okay! Dann wähle jetzt deinen **Zeitraum** im Kalender.`);
             this.goToStep(2);
             return;
         }
@@ -957,12 +957,50 @@ Wähle jetzt links den **Zeitraum**, in dem du dich darum kümmern willst.`);
         await new Promise(r => setTimeout(r, 500));
         this.hideTypingIndicator();
 
-        this.addAssistantMessage(`Ich bin gerade im Schritt ${this.currentStep}.
+        const lower = msg.toLowerCase();
 
-Nutze die Optionen links in der Sidebar:
-• Schritt 1: Daten laden
-• Schritt 2: Zeitraum im Kalender wählen
-• Schritt 3: Standorte organisieren und zur Inventur springen`);
+        // Keine Daten / Überspringen
+        if (lower.includes('keine') || lower.includes('kein') || lower.includes('nix') ||
+            lower.includes('nichts') || lower.includes('nur system') || lower.includes('überspringen')) {
+            this.addAssistantMessage(`Alles klar, dann überspringen wir den Daten-Import.
+
+Ich bringe dich direkt zur **Zeitraum-Auswahl**.`);
+            setTimeout(() => this.goToStep(2), 800);
+            return;
+        }
+
+        // Hilfe / Was soll ich tun
+        if (lower.includes('hilf') || lower.includes('help') || lower.includes('was soll') || lower.includes('wie geht')) {
+            this.addAssistantMessage(`**Kurz erklärt:**
+
+1. **Hast du Daten?** (Excel-Liste, Screenshot)
+   → Lade sie hoch, dann siehst du was du direkt bestätigen kannst
+
+2. **Keine Daten?**
+   → Klick auf "Überspringen" oder schreib "keine Daten"
+
+3. **Dann wählst du einen Zeitraum** im Kalender
+
+4. **Und springst zur Inventur** für jeden Standort`);
+            return;
+        }
+
+        // Zeitraum / Kalender
+        if (lower.includes('zeitraum') || lower.includes('kalender') || lower.includes('wann')) {
+            if (this.currentStep === 1) {
+                this.addAssistantMessage(`Um zum Kalender zu kommen, erst "Überspringen" wählen oder Daten hochladen.`);
+            } else {
+                this.addAssistantMessage(`Wähle im Kalender links Start- und Enddatum aus. Oder nutze die Schnellauswahl darunter.`);
+            }
+            return;
+        }
+
+        // Fallback
+        this.addAssistantMessage(`Ich verstehe.
+
+**Was möchtest du tun?**
+• "Keine Daten" → Direkt zum Zeitraum
+• "Hilfe" → Erklärung wie's geht`);
     }
 
     showTypingIndicator() {
@@ -1005,18 +1043,25 @@ Nutze die Optionen links in der Sidebar:
             .step.active .step-label { color: #3b82f6; font-weight: 500; }
             .step-line { flex: 1; height: 2px; background: #e5e7eb; margin: 0 0.25rem; margin-bottom: 1rem; }
 
-            /* Upload */
-            .upload-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
-            .upload-option { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.6rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-            .upload-option:hover, .upload-option.active { border-color: #3b82f6; background: #eff6ff; }
-            .option-icon { font-size: 1.1rem; }
-            .option-label { font-size: 0.7rem; color: #4b5563; }
+            /* Upload - Small buttons */
+            .upload-options-small { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+            .upload-option-sm { display: flex; align-items: center; gap: 0.35rem; padding: 0.5rem 0.75rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 0.8rem; }
+            .upload-option-sm:hover, .upload-option-sm.active { border-color: #3b82f6; background: #eff6ff; }
+            .upload-option-sm .option-icon { font-size: 1rem; }
 
-            .upload-area { border: 2px dashed #d1d5db; border-radius: 8px; padding: 1.25rem 1rem; text-align: center; cursor: pointer; }
+            .upload-area { border: 2px dashed #d1d5db; border-radius: 8px; padding: 1rem; text-align: center; cursor: pointer; }
             .upload-area:hover, .upload-area.drag-over { border-color: #3b82f6; background: #eff6ff; }
-            .upload-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+            .upload-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
             .upload-area p { font-size: 0.8rem; color: #6b7280; margin: 0; }
             .upload-link { color: #3b82f6; text-decoration: underline; }
+
+            /* Skip Section */
+            .skip-section { margin-top: 1rem; }
+            .skip-divider { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+            .skip-divider::before, .skip-divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+            .skip-divider span { font-size: 0.75rem; color: #9ca3af; }
+            .skip-btn { width: 100%; padding: 0.75rem; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-size: 0.85rem; color: #374151; transition: all 0.2s; }
+            .skip-btn:hover { background: #e5e7eb; border-color: #d1d5db; }
 
             .files-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
             .file-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f3f4f6; border-radius: 6px; font-size: 0.8rem; }
