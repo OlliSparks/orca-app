@@ -1,0 +1,46 @@
+{
+    "name": "ORCA 2.0 - Werkzeug Management",
+    "short_name": "ORCA",
+    "description": "Lieferanten-App für das Asset-Management-System",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#3b82f6",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "assets/orca-logo.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["business", "productivity"],
+    "lang": "de-DE",
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Inventur",
+            "short_name": "Inventur",
+            "description": "Zur Inventur-Übersicht",
+            "url": "/#/inventur",
+            "icons": [{ "src": "assets/orca-logo.svg", "sizes": "96x96" }]
+        },
+        {
+            "name": "Verlagerung",
+            "short_name": "Verlagerung",
+            "description": "Zur Verlagerung",
+            "url": "/#/verlagerung",
+            "icons": [{ "src": "assets/orca-logo.svg", "sizes": "96x96" }]
+        },
+        {
+            "name": "Nachrichten",
+            "short_name": "Nachrichten",
+            "description": "Zu den Nachrichten",
+            "url": "/#/messages",
+            "icons": [{ "src": "assets/orca-logo.svg", "sizes": "96x96" }]
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false
+}
