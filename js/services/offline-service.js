@@ -6,27 +6,38 @@ class OfflineService {
         this.isOnline = navigator.onLine;
         this.swRegistration = null;
         this.pendingActions = [];
-        this.init();
+        // Wait for DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
     }
 
     async init() {
-        // Register Service Worker
-        await this.registerServiceWorker();
+        try {
+            // Register Service Worker
+            await this.registerServiceWorker();
 
-        // Listen for online/offline events
-        window.addEventListener('online', () => this.handleOnline());
-        window.addEventListener('offline', () => this.handleOffline());
+            // Listen for online/offline events
+            window.addEventListener('online', () => this.handleOnline());
+            window.addEventListener('offline', () => this.handleOffline());
 
-        // Load pending actions from storage
-        this.loadPendingActions();
+            // Load pending actions from storage
+            this.loadPendingActions();
 
-        // Create offline indicator
-        this.createOfflineIndicator();
+            // Create offline indicator
+            if (document.body) {
+                this.createOfflineIndicator();
+            }
 
-        // Initial status check
-        this.updateOnlineStatus();
+            // Initial status check
+            this.updateOnlineStatus();
 
-        console.log('[OfflineService] Initialized');
+            console.log('[OfflineService] Initialized');
+        } catch (e) {
+            console.warn('[Offline] Init error:', e);
+        }
     }
 
     async registerServiceWorker() {

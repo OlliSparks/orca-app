@@ -6,29 +6,40 @@ class NotificationService {
         this.permission = 'default';
         this.subscription = null;
         this.notificationQueue = [];
-        this.init();
+        // Wait for DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
     }
 
     async init() {
-        // Check notification support
-        if (!('Notification' in window)) {
-            console.warn('[NotificationService] Notifications not supported');
-            return;
+        try {
+            // Check notification support
+            if (!('Notification' in window)) {
+                console.warn('[NotificationService] Notifications not supported');
+                return;
+            }
+
+            this.permission = Notification.permission;
+            console.log('[NotificationService] Permission status:', this.permission);
+
+            // If already granted, get subscription
+            if (this.permission === 'granted') {
+                await this.getSubscription();
+            }
+
+            // Create notification center UI
+            if (document.body) {
+                this.createNotificationCenter();
+            }
+
+            // Load stored notifications
+            this.loadNotifications();
+        } catch (e) {
+            console.warn('[Notification] Init error:', e);
         }
-
-        this.permission = Notification.permission;
-        console.log('[NotificationService] Permission status:', this.permission);
-
-        // If already granted, get subscription
-        if (this.permission === 'granted') {
-            await this.getSubscription();
-        }
-
-        // Create notification center UI
-        this.createNotificationCenter();
-
-        // Load stored notifications
-        this.loadNotifications();
     }
 
     // Request permission for notifications

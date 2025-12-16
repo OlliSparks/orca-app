@@ -8,22 +8,32 @@ class SearchService {
         this.recentSearches = this.loadRecentSearches();
         this.selectedIndex = 0;
         this.debounceTimer = null;
-        this.init();
+        // Wait for DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
     }
 
     init() {
-        this.createSearchModal();
+        try {
+            if (!document.body) return;
+            this.createSearchModal();
 
-        // Global keyboard shortcut (Ctrl+K or /)
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && !this.isInputFocused())) {
-                e.preventDefault();
-                this.open();
-            }
-            if (e.key === 'Escape' && this.isOpen) {
-                this.close();
-            }
-        });
+            // Global keyboard shortcut (Ctrl+K or /)
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && !this.isInputFocused())) {
+                    e.preventDefault();
+                    this.open();
+                }
+                if (e.key === 'Escape' && this.isOpen) {
+                    this.close();
+                }
+            });
+        } catch (e) {
+            console.warn('[Search] Init error:', e);
+        }
     }
 
     isInputFocused() {

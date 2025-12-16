@@ -5,20 +5,29 @@ class KeyboardService {
     constructor() {
         this.shortcuts = new Map();
         this.focusableElements = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-        this.init();
+        // Wait for DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
     }
 
     init() {
-        // Global keyboard event handler
-        document.addEventListener('keydown', (e) => this.handleKeydown(e));
+        try {
+            // Global keyboard event handler
+            document.addEventListener('keydown', (e) => this.handleKeydown(e));
 
-        // Register default shortcuts
-        this.registerDefaultShortcuts();
+            // Register default shortcuts
+            this.registerDefaultShortcuts();
 
-        // Initialize focus trap for modals
-        this.initModalFocusTrap();
+            // Initialize focus trap for modals
+            this.initModalFocusTrap();
 
-        console.log('KeyboardService initialized');
+            console.log('KeyboardService initialized');
+        } catch (e) {
+            console.warn('[Keyboard] Init error:', e);
+        }
     }
 
     // Register default application shortcuts
