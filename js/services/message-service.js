@@ -119,14 +119,228 @@ class MessageService {
     }
 
     // ========================================
-    // SYNC METHOD (no auto-generation)
+    // API SYNC - Erkennt Änderungen vom Backend
     // ========================================
 
-    // Sync just reloads messages from storage - no auto-generation
+    // Storage key for last known process states
+    get processStatesKey() {
+        return 'orca_process_states';
+    }
+
+    // Load last known states
+    loadProcessStates() {
+        try {
+            const saved = localStorage.getItem(this.processStatesKey);
+            return saved ? JSON.parse(saved) : { inventories: {}, relocations: {} };
+        } catch (e) {
+            return { inventories: {}, relocations: {} };
+        }
+    }
+
+    // Save process states
+    saveProcessStates(states) {
+        localStorage.setItem(this.processStatesKey, JSON.stringify(states));
+    }
+
+    // Main sync method - checks API for changes
     async syncWithProcesses() {
-        // Only reload from storage, don't auto-generate messages
+        // Reload messages from storage first
         this.messages = this.loadMessages();
-        console.log('Messages loaded from storage. Total:', this.messages.length);
+
+        // Only sync with API in live mode
+        const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+        if (config.mode !== 'live' || !config.bearerToken) {
+            console.log('Messages: Skip API sync (not in live mode)');
+            return;
+        }
+
+        console.log('Messages: Syncing with API...');
+
+        try {
+            const lastStates = this.loadProcessStates();
+            const newStates = { inventories: {}, relocations: {} };
+            let newMessagesCount = 0;
+
+            // 1. Sync Inventories (includes ABL)
+            newMessagesCount += await this.syncInventories(lastStates.inventories, newStates.inventories);
+
+            // 2. Sync Relocations
+            newMessagesCount += await this.syncRelocations(lastStates.relocations, newStates.relocations);
+
+            // Save new states
+            this.saveProcessStates(newStates);
+
+            console.log(`Messages: Sync complete. ${newMessagesCount} new messages.`);
+        } catch (error) {
+            console.error('Messages: Sync error:', error);
+        }
+    }
+
+    // Sync inventories - detect new and status changes
+    async syncInventories(lastStates, newStates) {
+        if (typeof api === 'undefined') return 0;
+
+        let newMessages = 0;
+
+        try {
+            // Fetch all relevant inventories (I0-I4)
+            const result = await api.getInventoryList({
+                status: ['I0', 'I1', 'I2', 'I3', 'I4'],
+                limit: 1000
+            });
+
+            if (!result.success || !result.data) return 0;
+
+            for (const inv of result.data) {
+                const key = inv.inventoryKey || inv.id;
+                const currentStatus = inv.status;
+                const lastStatus = lastStates[key];
+
+                // Store current state
+                newStates[key] = currentStatus;
+
+                // Skip if we've already seen this exact state
+                if (lastStatus === currentStatus) continue;
+
+                // New inventory (not seen before)
+                if (!lastStatus && (currentStatus === 'I0' || currentStatus === 'I1')) {
+                    // Only create message if we haven't already
+                    if (!this.messageExists(key, 'inventur', 'incoming')) {
+                        this.createIncomingMessage(
+                            'inventur',
+                            'Neue Inventur eingegangen',
+                            `Inventur "${inv.name || 'Inventur'}" für ${inv.location || 'Standort'} mit ${inv.assetCount || 0} Werkzeugen`,
+                            [],
+                            {
+                                processId: key,
+                                location: inv.location,
+                                dueDate: inv.dueDate,
+                                assetCount: inv.assetCount
+                            }
+                        );
+                        newMessages++;
+                    }
+                }
+                // Status change - confirmation from OEM
+                else if (lastStatus && currentStatus !== lastStatus) {
+                    const statusChange = `${lastStatus}→${currentStatus}`;
+                    let title = '';
+                    let content = '';
+
+                    switch (currentStatus) {
+                        case 'I2':
+                            title = 'Inventur gemeldet';
+                            content = `Inventur "${inv.name || key}" wurde als gemeldet markiert`;
+                            break;
+                        case 'I3':
+                            title = 'Inventur genehmigt';
+                            content = `Inventur "${inv.name || key}" wurde vom OEM genehmigt`;
+                            break;
+                        case 'I4':
+                            title = 'Inventur abgeschlossen';
+                            content = `Inventur "${inv.name || key}" wurde erfolgreich abgeschlossen`;
+                            break;
+                        default:
+                            continue; // Skip other status changes
+                    }
+
+                    const msgKey = `${key}-${currentStatus}`;
+                    if (!this.messageExists(msgKey, 'inventur', 'incoming')) {
+                        this.createIncomingMessage(
+                            'inventur',
+                            title,
+                            content,
+                            [],
+                            {
+                                processId: msgKey,
+                                inventoryKey: key,
+                                oldStatus: lastStatus,
+                                newStatus: currentStatus
+                            }
+                        );
+                        newMessages++;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Sync inventories error:', error);
+        }
+
+        return newMessages;
+    }
+
+    // Sync relocations - detect status changes
+    async syncRelocations(lastStates, newStates) {
+        if (typeof api === 'undefined') return 0;
+
+        let newMessages = 0;
+
+        try {
+            // Fetch relocations
+            const result = await api.getVerlagerungList({ limit: 1000 });
+
+            if (!result.success || !result.data) return 0;
+
+            for (const rel of result.data) {
+                const key = rel.key || rel.id;
+                const currentStatus = rel.status;
+                const lastStatus = lastStates[key];
+
+                // Store current state
+                newStates[key] = currentStatus;
+
+                // Skip if same state
+                if (lastStatus === currentStatus) continue;
+
+                // Status change detection
+                if (lastStatus && currentStatus !== lastStatus) {
+                    let title = '';
+                    let content = '';
+
+                    // Map status to user-friendly message
+                    if (currentStatus === 'P2' || currentStatus === 'Durchgeführt' || currentStatus === 'completed') {
+                        title = 'Verlagerung bestätigt';
+                        content = `Verlagerung "${rel.name || rel.identifier || key}" wurde bestätigt`;
+                    } else if (currentStatus === 'P3' || currentStatus === 'Genehmigt' || currentStatus === 'approved') {
+                        title = 'Verlagerung genehmigt';
+                        content = `Verlagerung "${rel.name || rel.identifier || key}" wurde vom OEM genehmigt`;
+                    } else if (currentStatus === 'Abgelehnt' || currentStatus === 'rejected') {
+                        title = 'Verlagerung abgelehnt';
+                        content = `Verlagerung "${rel.name || rel.identifier || key}" wurde abgelehnt`;
+                    } else {
+                        continue; // Skip other changes
+                    }
+
+                    const msgKey = `${key}-${currentStatus}`;
+                    if (!this.messageExists(msgKey, 'verlagerung', 'incoming')) {
+                        this.createIncomingMessage(
+                            'verlagerung',
+                            title,
+                            content,
+                            [rel.inventoryNumber].filter(Boolean),
+                            {
+                                processId: msgKey,
+                                relocationKey: key,
+                                oldStatus: lastStatus,
+                                newStatus: currentStatus
+                            }
+                        );
+                        newMessages++;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Sync relocations error:', error);
+        }
+
+        return newMessages;
+    }
+
+    // Force initial sync (for first time or reset)
+    async forceInitialSync() {
+        // Clear stored states to trigger fresh detection
+        localStorage.removeItem(this.processStatesKey);
+        await this.syncWithProcesses();
     }
 
     // ========================================

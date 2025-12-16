@@ -53,9 +53,13 @@ class MessagesPage {
                     <div class="messages-header-left">
                         <h2>Nachrichten</h2>
                         ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount} ungelesen</span>` : ''}
+                        ${this.isLiveMode() ?
+                            `<span class="api-badge live">🔗 Live API</span>` :
+                            `<span class="api-badge mock">🧪 Offline</span>`
+                        }
                     </div>
                     <div class="messages-header-actions">
-                        <button class="btn-icon" onclick="messagesPage.syncMessages()" title="Aktualisieren">
+                        <button class="btn-icon" onclick="messagesPage.syncMessages()" title="${this.isLiveMode() ? 'Mit API synchronisieren' : 'Aktualisieren'}">
                             <span>🔄</span>
                         </button>
                         ${unreadCount > 0 ? `
@@ -157,6 +161,23 @@ class MessagesPage {
                     border-radius: 9999px;
                     font-size: 0.875rem;
                     font-weight: 500;
+                }
+
+                .api-badge {
+                    padding: 0.25rem 0.5rem;
+                    border-radius: 6px;
+                    font-size: 0.75rem;
+                    font-weight: 500;
+                }
+
+                .api-badge.live {
+                    background: #dcfce7;
+                    color: #166534;
+                }
+
+                .api-badge.mock {
+                    background: #fef3c7;
+                    color: #92400e;
                 }
 
                 .messages-header-actions {
@@ -589,13 +610,22 @@ class MessagesPage {
         this.renderPage();
     }
 
+    isLiveMode() {
+        const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+        return config.mode === 'live' && !!config.bearerToken;
+    }
+
     async syncMessages() {
+        const config = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+        const isLiveMode = config.mode === 'live' && config.bearerToken;
+
         const app = document.getElementById('app');
         app.innerHTML = `
             <div class="container">
                 <div class="messages-loading">
                     <div class="loading-spinner"></div>
-                    <p>Synchronisiere Nachrichten...</p>
+                    <p>${isLiveMode ? 'Synchronisiere mit API...' : 'Lade Nachrichten...'}</p>
+                    ${isLiveMode ? '<p style="font-size: 0.875rem; color: #6b7280;">Prüfe Inventuren und Verlagerungen auf Änderungen</p>' : ''}
                 </div>
             </div>
         `;
