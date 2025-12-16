@@ -5,20 +5,31 @@ class FormService {
     constructor() {
         this.autoSaveTimers = {};
         this.validationRules = {};
-        this.init();
+        // Wait for DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
     }
 
     init() {
-        // Observer fuer neue Formulare im DOM
-        this.setupMutationObserver();
+        try {
+            // Observer fuer neue Formulare im DOM
+            this.setupMutationObserver();
 
-        // Event-Delegation fuer Formulare
-        document.addEventListener('input', (e) => this.handleInput(e), true);
-        document.addEventListener('blur', (e) => this.handleBlur(e), true);
-        document.addEventListener('focus', (e) => this.handleFocus(e), true);
+            // Event-Delegation fuer Formulare
+            document.addEventListener('input', (e) => this.handleInput(e), true);
+            document.addEventListener('blur', (e) => this.handleBlur(e), true);
+            document.addEventListener('focus', (e) => this.handleFocus(e), true);
+        } catch (e) {
+            console.warn('[Form] Init error:', e);
+        }
     }
 
     setupMutationObserver() {
+        if (!document.body) return;
+
         const observer = new MutationObserver((mutations) => {
             mutations.forEach(mutation => {
                 mutation.addedNodes.forEach(node => {
@@ -38,73 +49,42 @@ class FormService {
         observer.observe(document.body, { childList: true, subtree: true });
     }
 
-    // Formular verbessern
     enhanceForm(form) {
-        if (form.dataset.enhanced) return;
+        if (!form || form.dataset.enhanced) return;
         form.dataset.enhanced = 'true';
 
-        // Auto-Save aktivieren wenn gewuenscht
         if (form.dataset.autosave) {
             this.setupAutoSave(form);
         }
 
-        // Submit-Handler
         form.addEventListener('submit', (e) => this.handleSubmit(e, form));
     }
 
-    // Einzelnes Input verbessern
     enhanceInput(input) {
-        if (input.dataset.enhanced) return;
+        if (!input || input.dataset.enhanced) return;
         input.dataset.enhanced = 'true';
-
-        // Wrapper hinzufuegen wenn noetig
-        this.wrapInput(input);
-    }
-
-    wrapInput(input) {
-        // Nur wrappen wenn noch nicht gewrappt
-        if (input.parentElement && input.parentElement.classList.contains('form-field')) return;
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'form-field';
-
-        // Nur wrappen wenn Input ein Label oder Placeholder hat
-        if (input.id || input.placeholder) {
-            input.parentNode.insertBefore(wrapper, input);
-            wrapper.appendChild(input);
-
-            // Feedback-Element hinzufuegen
-            const feedback = document.createElement('div');
-            feedback.className = 'field-feedback';
-            wrapper.appendChild(feedback);
-        }
     }
 
     handleInput(e) {
         const input = e.target;
         if (!this.isFormElement(input)) return;
 
-        // Live-Validierung (nach kurzer Verzoegerung)
         clearTimeout(input._validationTimer);
         input._validationTimer = setTimeout(() => {
-            this.validateField(input, false); // Soft validation while typing
+            this.validateField(input, false);
         }, 300);
 
-        // Auto-Save triggern
         const form = input.closest('form, [data-form]');
         if (form && form.dataset.autosave) {
             this.triggerAutoSave(form);
         }
 
-        // Character counter aktualisieren
         this.updateCharCounter(input);
     }
 
     handleBlur(e) {
         const input = e.target;
         if (!this.isFormElement(input)) return;
-
-        // Vollstaendige Validierung bei Blur
         this.validateField(input, true);
     }
 
@@ -112,13 +92,10 @@ class FormService {
         const input = e.target;
         if (!this.isFormElement(input)) return;
 
-        // Focus-Styling
         const wrapper = input.closest('.form-field');
         if (wrapper) {
             wrapper.classList.add('focused');
         }
-
-        // Fehler-State temporaer entfernen beim Focus
         input.classList.remove('field-error');
     }
 
@@ -126,10 +103,8 @@ class FormService {
         return el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName);
     }
 
-    // Feld validieren
     validateField(input, strict = true) {
-        const wrapper = input.closest('.form-field');
-        const feedback = wrapper ? wrapper.querySelector('.field-feedback') : null;
+        if (!input) return true;
 
         let isValid = true;
         let message = '';
@@ -142,7 +117,7 @@ class FormService {
             }
         }
 
-        // Type-spezifische Validierung
+        // Type-specific validation
         if (input.value && isValid) {
             switch (input.type) {
                 case 'email':
@@ -150,14 +125,6 @@ class FormService {
                     if (!emailRegex.test(input.value)) {
                         isValid = false;
                         message = 'Bitte geben Sie eine gueltige E-Mail-Adresse ein';
-                    }
-                    break;
-
-                case 'tel':
-                    const phoneRegex = /^[\d\s\-\+\(\)]{6,}$/;
-                    if (!phoneRegex.test(input.value)) {
-                        isValid = false;
-                        message = 'Bitte geben Sie eine gueltige Telefonnummer ein';
                     }
                     break;
 
@@ -172,24 +139,6 @@ class FormService {
                         message = 'Maximalwert: ' + input.max;
                     }
                     break;
-
-                case 'url':
-                    try {
-                        new URL(input.value);
-                    } catch {
-                        isValid = false;
-                        message = 'Bitte geben Sie eine gueltige URL ein';
-                    }
-                    break;
-            }
-        }
-
-        // Pattern check
-        if (input.pattern && input.value && isValid) {
-            const regex = new RegExp(input.pattern);
-            if (!regex.test(input.value)) {
-                isValid = false;
-                message = input.title || 'Format ungueltig';
             }
         }
 
@@ -198,61 +147,16 @@ class FormService {
             isValid = false;
             message = 'Mindestens ' + input.minLength + ' Zeichen erforderlich';
         }
-        if (input.maxLength > 0 && input.value.length > input.maxLength && isValid) {
-            isValid = false;
-            message = 'Maximal ' + input.maxLength + ' Zeichen erlaubt';
-        }
 
-        // Custom validation
-        if (input.dataset.validate && isValid) {
-            const customResult = this.runCustomValidation(input);
-            if (!customResult.valid) {
-                isValid = false;
-                message = customResult.message;
-            }
-        }
-
-        // UI aktualisieren
-        this.updateFieldUI(input, wrapper, feedback, isValid, message, strict);
-
+        this.updateFieldUI(input, isValid, message, strict);
         return isValid;
     }
 
-    runCustomValidation(input) {
-        const validationType = input.dataset.validate;
+    updateFieldUI(input, isValid, message, strict) {
+        const wrapper = input.closest('.form-field');
+        const feedback = wrapper ? wrapper.querySelector('.field-feedback') : null;
 
-        switch (validationType) {
-            case 'match':
-                // Muss mit anderem Feld uebereinstimmen
-                const matchField = document.getElementById(input.dataset.matchField);
-                if (matchField && input.value !== matchField.value) {
-                    return { valid: false, message: 'Felder stimmen nicht ueberein' };
-                }
-                break;
-
-            case 'inventoryNumber':
-                // ORCA Inventurnummer Format
-                const invRegex = /^[A-Z]{2,4}-\d{4,8}$/;
-                if (!invRegex.test(input.value)) {
-                    return { valid: false, message: 'Format: XX-12345' };
-                }
-                break;
-
-            case 'toolNumber':
-                // Werkzeugnummer
-                const toolRegex = /^\d{6,12}$/;
-                if (!toolRegex.test(input.value)) {
-                    return { valid: false, message: 'Nur Ziffern (6-12 Stellen)' };
-                }
-                break;
-        }
-
-        return { valid: true, message: '' };
-    }
-
-    updateFieldUI(input, wrapper, feedback, isValid, message, strict) {
         if (!strict && isValid) {
-            // Beim Tippen: nur Erfolg zeigen, keine Fehler
             if (input.value.length > 2) {
                 input.classList.remove('field-error');
                 input.classList.add('field-valid');
@@ -275,36 +179,28 @@ class FormService {
         }
     }
 
-    // Character Counter
     updateCharCounter(input) {
         if (!input.maxLength || input.maxLength < 0) return;
 
-        let counter = input.parentElement.querySelector('.char-counter');
-        if (!counter) {
+        let counter = input.parentElement ? input.parentElement.querySelector('.char-counter') : null;
+        if (!counter && input.parentElement) {
             counter = document.createElement('span');
             counter.className = 'char-counter';
             input.parentElement.appendChild(counter);
         }
 
-        const remaining = input.maxLength - input.value.length;
-        counter.textContent = remaining + ' / ' + input.maxLength;
-        counter.classList.toggle('warning', remaining < 20);
-        counter.classList.toggle('danger', remaining < 5);
+        if (counter) {
+            const remaining = input.maxLength - input.value.length;
+            counter.textContent = remaining + ' / ' + input.maxLength;
+            counter.classList.toggle('warning', remaining < 20);
+            counter.classList.toggle('danger', remaining < 5);
+        }
     }
 
-    // Auto-Save
     setupAutoSave(form) {
         const formId = form.id || 'form_' + Math.random().toString(36).substr(2, 9);
         form.dataset.formId = formId;
-
-        // Gespeicherte Daten laden
         this.loadFormData(form, formId);
-
-        // Auto-Save Indicator hinzufuegen
-        const indicator = document.createElement('div');
-        indicator.className = 'autosave-indicator';
-        indicator.innerHTML = '<span class="autosave-icon">&#128190;</span> <span class="autosave-text">Automatisch gespeichert</span>';
-        form.insertBefore(indicator, form.firstChild);
     }
 
     triggerAutoSave(form) {
@@ -312,28 +208,8 @@ class FormService {
         if (!formId) return;
 
         clearTimeout(this.autoSaveTimers[formId]);
-
-        // Indicator: Speichern...
-        const indicator = form.querySelector('.autosave-indicator');
-        if (indicator) {
-            indicator.classList.add('saving');
-            indicator.querySelector('.autosave-text').textContent = 'Speichern...';
-        }
-
         this.autoSaveTimers[formId] = setTimeout(() => {
             this.saveFormData(form, formId);
-
-            // Indicator: Gespeichert
-            if (indicator) {
-                indicator.classList.remove('saving');
-                indicator.classList.add('saved');
-                indicator.querySelector('.autosave-text').textContent = 'Gespeichert';
-
-                setTimeout(() => {
-                    indicator.classList.remove('saved');
-                    indicator.querySelector('.autosave-text').textContent = 'Automatisch gespeichert';
-                }, 2000);
-            }
         }, 1000);
     }
 
@@ -371,13 +247,11 @@ class FormService {
 
             const { data, timestamp } = JSON.parse(saved);
 
-            // Daten aelter als 24h ignorieren
             if (Date.now() - timestamp > 24 * 60 * 60 * 1000) {
                 localStorage.removeItem('orca_form_' + formId);
                 return;
             }
 
-            // Daten wiederherstellen
             Object.keys(data).forEach(key => {
                 const input = form.querySelector('[name="' + key + '"], #' + key);
                 if (input) {
@@ -390,23 +264,12 @@ class FormService {
                     }
                 }
             });
-
-            // Hinweis anzeigen
-            if (typeof errorService !== 'undefined') {
-                errorService.showToast('Formular wurde aus Entwurf wiederhergestellt', 'info');
-            }
         } catch (e) {
             console.warn('[Form] Load failed:', e);
         }
     }
 
-    clearFormData(formId) {
-        localStorage.removeItem('orca_form_' + formId);
-    }
-
-    // Submit Handler
     handleSubmit(e, form) {
-        // Alle Felder validieren
         const inputs = form.querySelectorAll('input, textarea, select');
         let allValid = true;
         let firstInvalid = null;
@@ -420,34 +283,18 @@ class FormService {
 
         if (!allValid) {
             e.preventDefault();
-
-            // Zum ersten fehlerhaften Feld scrollen
             if (firstInvalid) {
                 firstInvalid.focus();
-                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-
-            // Fehlermeldung
-            if (typeof errorService !== 'undefined') {
-                errorService.showToast('Bitte korrigieren Sie die markierten Felder', 'error');
-            }
-
-            // Form schuetteln
-            form.classList.add('form-shake');
-            setTimeout(() => form.classList.remove('form-shake'), 500);
-
             return false;
         }
 
-        // Auto-Save Daten loeschen bei erfolgreichem Submit
         if (form.dataset.formId) {
-            this.clearFormData(form.dataset.formId);
+            localStorage.removeItem('orca_form_' + form.dataset.formId);
         }
-
         return true;
     }
 
-    // Hilfsmethoden fuer manuelle Verwendung
     validate(formOrSelector) {
         const form = typeof formOrSelector === 'string'
             ? document.querySelector(formOrSelector)
@@ -465,32 +312,6 @@ class FormService {
         });
 
         return allValid;
-    }
-
-    reset(formOrSelector) {
-        const form = typeof formOrSelector === 'string'
-            ? document.querySelector(formOrSelector)
-            : formOrSelector;
-
-        if (!form) return;
-
-        form.reset();
-
-        // Validation states zuruecksetzen
-        form.querySelectorAll('.field-error, .field-valid').forEach(el => {
-            el.classList.remove('field-error', 'field-valid');
-        });
-        form.querySelectorAll('.has-error, .has-success').forEach(el => {
-            el.classList.remove('has-error', 'has-success');
-        });
-        form.querySelectorAll('.field-feedback').forEach(el => {
-            el.textContent = '';
-        });
-
-        // Auto-Save loeschen
-        if (form.dataset.formId) {
-            this.clearFormData(form.dataset.formId);
-        }
     }
 }
 

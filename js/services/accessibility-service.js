@@ -4,31 +4,42 @@
 class AccessibilityService {
     constructor() {
         this.announcements = [];
-        this.init();
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
     }
 
     init() {
-        // Live-Region fuer Ankuendigungen erstellen
-        this.createLiveRegion();
+        try {
+            // Live-Region fuer Ankuendigungen erstellen
+            this.createLiveRegion();
 
-        // ARIA-Labels automatisch hinzufuegen
-        this.setupAutoARIA();
+            // ARIA-Labels automatisch hinzufuegen
+            this.setupAutoARIA();
 
-        // Skip-Links fuer Tastatur-Navigation
-        this.createSkipLinks();
+            // Skip-Links fuer Tastatur-Navigation
+            this.createSkipLinks();
 
-        // Fokus-Trap fuer Modals
-        this.setupFocusTrap();
+            // Fokus-Trap fuer Modals
+            this.setupFocusTrap();
 
-        // Fokus-Sichtbarkeit verbessern
-        this.setupFocusVisibility();
+            // Fokus-Sichtbarkeit verbessern
+            this.setupFocusVisibility();
 
-        // Kontrast-Modus erkennen
-        this.checkContrastMode();
+            // Kontrast-Modus erkennen
+            this.checkContrastMode();
+        } catch (e) {
+            console.warn('[A11y] Init error:', e);
+        }
     }
 
     // Live-Region fuer Screen Reader Ankuendigungen
     createLiveRegion() {
+        if (!document.body) return;
+
         const region = document.createElement('div');
         region.id = 'a11y-live-region';
         region.setAttribute('role', 'status');
@@ -61,6 +72,8 @@ class AccessibilityService {
 
     // ARIA-Labels automatisch setzen
     setupAutoARIA() {
+        if (!document.body) return;
+
         const observer = new MutationObserver((mutations) => {
             mutations.forEach(mutation => {
                 mutation.addedNodes.forEach(node => {
@@ -83,110 +96,51 @@ class AccessibilityService {
     enhanceElement(el) {
         if (!el || el.dataset.a11yEnhanced) return;
 
-        // Buttons ohne Text
-        if (el.tagName === 'BUTTON' && !el.textContent.trim() && !el.getAttribute('aria-label')) {
-            const icon = el.querySelector('svg, img, span');
-            if (icon) {
-                // Versuchen Label aus Title oder Class abzuleiten
+        try {
+            // Buttons ohne Text
+            if (el.tagName === 'BUTTON' && !el.textContent.trim() && !el.getAttribute('aria-label')) {
                 const label = el.title || this.guessLabelFromClass(el.className);
                 if (label) {
                     el.setAttribute('aria-label', label);
                 }
             }
-        }
 
-        // Links ohne Text
-        if (el.tagName === 'A' && !el.textContent.trim() && !el.getAttribute('aria-label')) {
-            const label = el.title || this.guessLabelFromClass(el.className);
-            if (label) {
-                el.setAttribute('aria-label', label);
+            // Links ohne Text
+            if (el.tagName === 'A' && !el.textContent.trim() && !el.getAttribute('aria-label')) {
+                const label = el.title || this.guessLabelFromClass(el.className);
+                if (label) {
+                    el.setAttribute('aria-label', label);
+                }
             }
-        }
 
-        // Icons im Button
-        if (el.classList.contains('icon') || el.tagName === 'SVG') {
-            el.setAttribute('aria-hidden', 'true');
-        }
-
-        // Inputs ohne Labels
-        if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') && !el.id) {
-            // ID generieren falls noetig
-            el.id = 'input_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        // Progress-Elemente
-        if (el.classList.contains('progress') || el.classList.contains('loading-bar')) {
-            el.setAttribute('role', 'progressbar');
-            el.setAttribute('aria-valuemin', '0');
-            el.setAttribute('aria-valuemax', '100');
-        }
-
-        // Tabellen
-        if (el.tagName === 'TABLE' && !el.getAttribute('role')) {
-            el.setAttribute('role', 'table');
-        }
-
-        // Navigations-Elemente
-        if (el.classList.contains('nav') || el.classList.contains('sidebar')) {
-            if (!el.getAttribute('role')) {
-                el.setAttribute('role', 'navigation');
+            // Filter-Chips als Toggle-Buttons
+            if (el.classList && el.classList.contains('filter-chip')) {
+                el.setAttribute('role', 'button');
+                el.setAttribute('aria-pressed', el.classList.contains('active') ? 'true' : 'false');
             }
-        }
 
-        // Modals
-        if (el.classList.contains('modal')) {
-            el.setAttribute('role', 'dialog');
-            el.setAttribute('aria-modal', 'true');
+            el.dataset.a11yEnhanced = 'true';
+        } catch (e) {
+            // Ignore errors on individual elements
         }
-
-        // Tabs
-        if (el.classList.contains('tabs')) {
-            el.setAttribute('role', 'tablist');
-        }
-        if (el.classList.contains('tab')) {
-            el.setAttribute('role', 'tab');
-        }
-        if (el.classList.contains('tab-content')) {
-            el.setAttribute('role', 'tabpanel');
-        }
-
-        // Alerts/Notifications
-        if (el.classList.contains('toast') || el.classList.contains('alert') || el.classList.contains('notification')) {
-            el.setAttribute('role', 'alert');
-        }
-
-        // Filter-Chips als Toggle-Buttons
-        if (el.classList.contains('filter-chip')) {
-            el.setAttribute('role', 'button');
-            el.setAttribute('aria-pressed', el.classList.contains('active') ? 'true' : 'false');
-        }
-
-        el.dataset.a11yEnhanced = 'true';
     }
 
     guessLabelFromClass(className) {
+        if (!className) return null;
         const labelMap = {
             'close': 'Schliessen',
             'search': 'Suchen',
             'menu': 'Menue',
-            'nav': 'Navigation',
             'settings': 'Einstellungen',
             'edit': 'Bearbeiten',
             'delete': 'Loeschen',
             'add': 'Hinzufuegen',
-            'remove': 'Entfernen',
             'save': 'Speichern',
             'cancel': 'Abbrechen',
             'back': 'Zurueck',
             'next': 'Weiter',
-            'prev': 'Zurueck',
             'help': 'Hilfe',
-            'info': 'Information',
-            'expand': 'Erweitern',
-            'collapse': 'Einklappen',
-            'theme': 'Design wechseln',
-            'dark': 'Dunkelmodus',
-            'light': 'Hellmodus'
+            'theme': 'Design wechseln'
         };
 
         const classes = className.toLowerCase().split(/\s+/);
@@ -200,6 +154,8 @@ class AccessibilityService {
 
     // Skip-Links erstellen
     createSkipLinks() {
+        if (!document.body) return;
+
         const skipNav = document.createElement('a');
         skipNav.href = '#main-content';
         skipNav.className = 'skip-link';
@@ -242,17 +198,13 @@ class AccessibilityService {
 
     // Fokus-Sichtbarkeit nur bei Tastatur
     setupFocusVisibility() {
-        let isUsingKeyboard = false;
-
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Tab') {
-                isUsingKeyboard = true;
                 document.body.classList.add('keyboard-nav');
             }
         });
 
         document.addEventListener('mousedown', () => {
-            isUsingKeyboard = false;
             document.body.classList.remove('keyboard-nav');
         });
     }
@@ -276,104 +228,7 @@ class AccessibilityService {
         const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
         if (el) {
             el.focus();
-            // Fuer Screen Reader ankuendigen
-            if (el.getAttribute('aria-label')) {
-                this.announce(el.getAttribute('aria-label'));
-            }
         }
-    }
-
-    // Fokus in Container verwalten
-    trapFocus(container) {
-        const focusable = container.querySelectorAll(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-
-        if (focusable.length > 0) {
-            focusable[0].focus();
-        }
-
-        container.dataset.focusTrap = 'true';
-    }
-
-    releaseFocus(container) {
-        delete container.dataset.focusTrap;
-    }
-
-    // Seitenbereich ankuendigen
-    announceRegion(regionName) {
-        this.announce('Bereich: ' + regionName);
-    }
-
-    // Ladezustand ankuendigen
-    announceLoading(isLoading, context = '') {
-        if (isLoading) {
-            this.announce(context ? context + ' wird geladen' : 'Wird geladen');
-        } else {
-            this.announce(context ? context + ' geladen' : 'Geladen');
-        }
-    }
-
-    // Fehler ankuendigen
-    announceError(message) {
-        this.announce(message, 'assertive');
-    }
-
-    // Erfolg ankuendigen
-    announceSuccess(message) {
-        this.announce(message);
-    }
-
-    // Aenderung ankuendigen
-    announceChange(message) {
-        this.announce(message);
-    }
-
-    // Hilfstext fuer ein Element hinzufuegen
-    addDescription(element, text) {
-        const descId = 'desc_' + Math.random().toString(36).substr(2, 9);
-
-        const desc = document.createElement('span');
-        desc.id = descId;
-        desc.className = 'sr-only';
-        desc.textContent = text;
-
-        element.appendChild(desc);
-        element.setAttribute('aria-describedby', descId);
-
-        return descId;
-    }
-
-    // Label fuer ein Element setzen
-    setLabel(element, label) {
-        element.setAttribute('aria-label', label);
-    }
-
-    // Element als expanded/collapsed markieren
-    setExpanded(element, isExpanded) {
-        element.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-    }
-
-    // Element als selected markieren
-    setSelected(element, isSelected) {
-        element.setAttribute('aria-selected', isSelected ? 'true' : 'false');
-    }
-
-    // Element als pressed markieren (Toggle)
-    setPressed(element, isPressed) {
-        element.setAttribute('aria-pressed', isPressed ? 'true' : 'false');
-    }
-
-    // Element als busy markieren
-    setBusy(element, isBusy) {
-        element.setAttribute('aria-busy', isBusy ? 'true' : 'false');
-    }
-
-    // Progress-Wert setzen
-    setProgress(element, value, max = 100) {
-        element.setAttribute('aria-valuenow', value);
-        element.setAttribute('aria-valuemax', max);
-        element.setAttribute('aria-valuetext', Math.round((value / max) * 100) + '% abgeschlossen');
     }
 }
 
