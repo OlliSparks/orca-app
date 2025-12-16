@@ -31,11 +31,9 @@ class AgentVerlagerungBeantragenPage {
         this.assets = [];
     }
 
-    // Step definitions
+    // Step definitions - Werkzeug zuerst, Standort wird automatisch übernommen
     steps = [
         { id: 'greeting', name: 'Begrüßung' },
-        { id: 'source_company', name: 'Quell-Unternehmen' },
-        { id: 'source_location', name: 'Quell-Standort' },
         { id: 'tool_selection', name: 'Werkzeug auswählen' },
         { id: 'tool_dimensions', name: 'Maße erfassen' },
         { id: 'more_tools', name: 'Weitere Werkzeuge?' },
@@ -171,17 +169,16 @@ Ich helfe Ihnen, einen Verlagerungsantrag für Werkzeuge zu erstellen.
 **Ihr Unternehmen:** ${companyName}
 
 Der Antrag durchläuft folgende Schritte:
-1. Quell-Standort auswählen
-2. Werkzeug(e) für Verlagerung auswählen
-3. Maße und Zolltarifnummer erfassen
-4. Ziel-Standort festlegen
-5. Abschlussdatum und Details
+1. Werkzeug(e) für Verlagerung auswählen
+2. Maße und Zolltarifnummer prüfen/erfassen
+3. Ziel-Standort festlegen
+4. Abschlussdatum und Details
 
-Bereit? Dann starten wir mit der Auswahl des Quell-Standorts.`);
+Bereit? Dann starten wir mit der Auswahl des Werkzeugs.`);
 
-        this.currentStep = 'source_location';
+        this.currentStep = 'tool_selection';
         this.updateProgress();
-        this.showSourceLocationSelection();
+        this.showToolSelection();
     }
 
     showSourceLocationSelection() {
@@ -245,21 +242,12 @@ Bereit? Dann starten wir mit der Auswahl des Quell-Standorts.`);
     }
 
     showToolSelection() {
-        // Filter assets by source location if possible
+        // Show all assets - location will be determined from selection
         let availableAssets = this.assets;
-        if (this.verlagerungData.quellStandortKey) {
-            const locationAssets = this.assets.filter(a =>
-                a.locationKey === this.verlagerungData.quellStandortKey ||
-                a.location?.includes(this.verlagerungData.quellStadt)
-            );
-            if (locationAssets.length > 0) {
-                availableAssets = locationAssets;
-            }
-        }
 
         this.addMessage('agent', `Welches Werkzeug soll verlagert werden?
 
-${availableAssets.length > 0 ? `Es sind **${availableAssets.length} Werkzeuge** an diesem Standort verfügbar.` : ''}
+${availableAssets.length > 0 ? `**${availableAssets.length} Werkzeuge** verfügbar.` : ''}
 
 Geben Sie die **Inventarnummer** ein oder wählen Sie aus der Liste:`);
 
@@ -332,43 +320,80 @@ Geben Sie die **Inventarnummer** ein oder wählen Sie aus der Liste:`);
             a.inventoryNumber?.includes(value)
         );
 
-        // Create tool entry
+        // Create tool entry with pre-filled data from asset
         this.currentTool = {
             number: value,
             name: asset?.name || 'Werkzeug',
             assetKey: asset?.key || null,
-            gewicht: null,
-            hoehe: null,
-            breite: null,
-            laenge: null,
-            zolltarifnummer: null
+            gewicht: asset?.weight || asset?.gewicht || null,
+            hoehe: asset?.height || asset?.hoehe || null,
+            breite: asset?.width || asset?.breite || null,
+            laenge: asset?.length || asset?.laenge || null,
+            zolltarifnummer: asset?.customsTariffNumber || asset?.zolltarifnummer || null
         };
 
         if (asset) {
-            this.addMessage('agent', `✓ Werkzeug gefunden: **${asset.name || value}**
+            // Auto-set source location from first tool (if not already set)
+            if (!this.verlagerungData.quellStandort && this.tools.length === 0) {
+                // Try to get location from asset
+                const assetLocation = asset.location || asset.standort;
+                const assetLocationKey = asset.locationKey || asset.standortKey;
 
-Jetzt benötige ich die verlagerungsrelevanten Daten für dieses Werkzeug.`);
+                if (assetLocation || assetLocationKey) {
+                    this.verlagerungData.quellStandort = assetLocation;
+                    this.verlagerungData.quellStandortKey = assetLocationKey;
 
-            // Pre-fill dimensions if available
-            if (asset.weight) this.currentTool.gewicht = asset.weight;
-            if (asset.height) this.currentTool.hoehe = asset.height;
-            if (asset.width) this.currentTool.breite = asset.width;
-            if (asset.length) this.currentTool.laenge = asset.length;
+                    // Try to find matching location for more details
+                    const loc = this.locations.find(l =>
+                        l.key === assetLocationKey ||
+                        l.title === assetLocation ||
+                        l.name === assetLocation
+                    );
+                    if (loc) {
+                        this.verlagerungData.quellStadt = loc.city;
+                        this.verlagerungData.quellLand = loc.country;
+                    }
+                }
+            }
+
+            // Check what data is pre-filled
+            const hasData = this.currentTool.gewicht || this.currentTool.hoehe ||
+                           this.currentTool.breite || this.currentTool.laenge;
+
+            let locationInfo = '';
+            if (asset.location || asset.standort) {
+                locationInfo = `\n**Standort:** ${asset.location || asset.standort}`;
+            }
+
+            this.addMessage('agent', `✓ Werkzeug gefunden: **${asset.name || value}**${locationInfo}
+
+${hasData ? 'Die vorhandenen Maße wurden übernommen. Bitte prüfen und bestätigen.' : 'Bitte geben Sie die Maße ein.'}`);
         } else {
             this.addMessage('agent', `Werkzeug **${value}** wird hinzugefügt.
 
-Jetzt benötige ich die verlagerungsrelevanten Daten.`);
+Bitte geben Sie die verlagerungsrelevanten Daten ein.`);
         }
 
         this.currentStep = 'tool_dimensions';
         this.updateProgress();
+        this.updateSidebar();
         this.showDimensionsInput();
     }
 
     showDimensionsInput() {
-        this.addMessage('agent', `Bitte geben Sie die **Maße und das Gewicht** des Werkzeugs ein:
+        const hasPrefilledData = this.currentTool.gewicht || this.currentTool.hoehe ||
+                                  this.currentTool.breite || this.currentTool.laenge ||
+                                  this.currentTool.zolltarifnummer;
+
+        if (hasPrefilledData) {
+            this.addMessage('agent', `Bitte **prüfen und ergänzen** Sie die Maße:
+
+Die vorhandenen Daten wurden übernommen.`);
+        } else {
+            this.addMessage('agent', `Bitte geben Sie die **Maße und das Gewicht** des Werkzeugs ein:
 
 Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
+        }
 
         const inputArea = document.getElementById('inputArea');
         inputArea.innerHTML = `
@@ -472,9 +497,13 @@ Diese Daten werden für die Zoll- und Steuerprüfung benötigt.`);
     }
 
     showMoreToolsQuestion() {
+        const locationInfo = this.verlagerungData.quellStandort
+            ? `\n**Quell-Standort:** ${this.verlagerungData.quellStandort}`
+            : '';
+
         this.addMessage('agent', `Möchten Sie **weitere Werkzeuge** zu dieser Verlagerung hinzufügen?
 
-Aktuell: **${this.tools.length} Werkzeug(e)** erfasst.`);
+Aktuell: **${this.tools.length} Werkzeug(e)** erfasst.${locationInfo}`);
 
         const inputArea = document.getElementById('inputArea');
         inputArea.innerHTML = `
@@ -505,12 +534,16 @@ Aktuell: **${this.tools.length} Werkzeug(e)** erfasst.`);
 
     showBezeichnungInput() {
         const toolNumbers = this.tools.map(t => t.number).join(', ');
+        const sourceLocation = this.verlagerungData.quellStandort || 'noch nicht festgelegt';
+
         this.addMessage('agent', `Bitte geben Sie eine **aussagekräftige Bezeichnung** für diese Verlagerung ein.
 
 Diese wird für alle Beteiligten sichtbar sein.
 
-**Beispiel:** "Verlagerung Presswerkzeug von München nach Regensburg"
-**Werkzeuge:** ${toolNumbers}`);
+**Von:** ${sourceLocation}
+**Werkzeuge:** ${toolNumbers}
+
+**Beispiel:** "Verlagerung Presswerkzeug von München nach Regensburg"`);
 
         this.updateInputArea('text', 'Bezeichnung eingeben...', 'bezeichnung');
     }

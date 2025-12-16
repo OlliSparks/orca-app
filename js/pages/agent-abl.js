@@ -25,7 +25,6 @@ class AgentABLPage {
             project: null,
             commodity: null,
             fek: null,
-            recipient: null,
             location: null,
             locationKey: null,
             // Weitere Angaben
@@ -46,7 +45,6 @@ class AgentABLPage {
             { id: 'location', label: 'Standort', required: false },
             { id: 'commodity', label: 'Commodity', required: false },
             { id: 'fek', label: 'FEK', required: false },
-            { id: 'recipient', label: 'Empfänger', required: false },
             { id: 'tool_number', label: 'Werkzeugnummer', required: true },
             { id: 'inventory_photo', label: 'Inventarschild', required: false },
             { id: 'tool_photo', label: 'Werkzeugfoto', required: false },
@@ -82,7 +80,6 @@ class AgentABLPage {
             project: null,
             commodity: null,
             fek: null,
-            recipient: null,
             location: null,
             locationKey: null,
             vatId: null,
@@ -307,7 +304,6 @@ class AgentABLPage {
         if (this.ablData.location) filledFields.push(`- Standort: **${this.ablData.location}**`);
         if (this.ablData.commodity) filledFields.push(`- Commodity: **${this.ablData.commodity}**`);
         if (this.ablData.fek) filledFields.push(`- FEK: **${this.ablData.fek}**`);
-        if (this.ablData.recipient) filledFields.push(`- Empfänger: **${this.ablData.recipient}**`);
 
         if (filledFields.length > 0) {
             summary += `\n${filledFields.join('\n')}`;
@@ -475,13 +471,10 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
                 inputArea.innerHTML = this.getLocationInputHtml(canSkip);
                 break;
             case 'commodity':
-                inputArea.innerHTML = this.getCommodityInputHtml(canSkip);
+                inputArea.innerHTML = this.getTextInputWithSkip('Commodity eingeben...', 'Falls bekannt, z.B. A2', canSkip);
                 break;
             case 'fek':
-                inputArea.innerHTML = this.getFEKInputHtml(canSkip);
-                break;
-            case 'recipient':
-                inputArea.innerHTML = this.getRecipientInputHtml(canSkip);
+                inputArea.innerHTML = this.getTextInputWithSkip('FEK eingeben...', 'Fertigungseinzelkosten in EUR (falls bekannt)', canSkip);
                 break;
             case 'tool_number':
                 inputArea.innerHTML = this.getTextInputWithSkip('Inventarnummer eingeben...', 'z.B. 0010120920', false);
@@ -942,39 +935,6 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
             });
         }
 
-        // Commodity select
-        const commoditySelect = document.getElementById('commoditySelect');
-        if (commoditySelect) {
-            commoditySelect.addEventListener('change', (e) => {
-                if (e.target.value) {
-                    this.addUserMessage(e.target.value);
-                    this.processCommodity(e.target.value);
-                }
-            });
-        }
-
-        // FEK select
-        const fekSelect = document.getElementById('fekSelect');
-        if (fekSelect) {
-            fekSelect.addEventListener('change', (e) => {
-                if (e.target.value) {
-                    this.addUserMessage(e.target.value);
-                    this.processFEK(e.target.value);
-                }
-            });
-        }
-
-        // Recipient select
-        const recipientSelect = document.getElementById('recipientSelect');
-        if (recipientSelect) {
-            recipientSelect.addEventListener('change', (e) => {
-                if (e.target.value) {
-                    this.addUserMessage(e.target.value);
-                    this.processRecipient(e.target.value);
-                }
-            });
-        }
-
         // Date input
         const dateInput = document.getElementById('dateInput');
         const sendDateBtn = document.getElementById('sendDateBtn');
@@ -1081,9 +1041,6 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
             case 'fek':
                 this.processFEK(value);
                 break;
-            case 'recipient':
-                this.processRecipient(value);
-                break;
             case 'tool_number':
                 this.processToolNumber(value);
                 break;
@@ -1118,7 +1075,6 @@ Ich helfe Ihnen, eine **Abnahmebereitschaftserklärung** zu erstellen.
             location: 'An welchem **Standort** befindet sich das Werkzeug?',
             commodity: 'Welche **Commodity** (Warengruppe)?',
             fek: 'Wie hoch sind die **FEK** (Fertigungseinzelkosten)?',
-            recipient: 'Wer ist der **Empfänger** der ABL?',
             tool_number: `Werkzeug ${this.tools.length + 1}: Bitte geben Sie die **Inventarnummer** ein:`,
             inventory_photo: 'Bitte laden Sie ein **Foto des Inventarschilds** hoch:',
             tool_photo: 'Bitte laden Sie ein **Foto des Gesamtwerkzeugs** hoch:',
@@ -1469,7 +1425,6 @@ Das Werkzeug wird trotzdem erfasst.`
 • Standort: ${this.ablData.location || '—'}
 • Commodity: ${this.ablData.commodity || '—'}
 • FEK: ${this.ablData.fek || '—'}
-• Empfänger: ${this.ablData.recipient || '—'}
 
 **Werkzeuge (${this.tools.length}):**`;
 
