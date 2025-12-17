@@ -484,7 +484,7 @@ In der Zwischenzeit: Fragen Sie mich zu **Inventur**, **ABL**, **Verlagerung** o
 
             .chat-messages { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 
-            .message { display: flex; gap: 0.75rem; max-width: 85%; }
+            .message { display: flex; gap: 0.75rem; max-width: 85%; overflow: visible; }
             .message.user { align-self: flex-end; flex-direction: row-reverse; }
             .message.assistant { align-self: flex-start; }
 
@@ -492,7 +492,7 @@ In der Zwischenzeit: Fragen Sie mich zu **Inventur**, **ABL**, **Verlagerung** o
             .message.assistant .message-avatar { background: #e0e7ff; }
             .message.user .message-avatar { background: #f3f4f6; }
 
-            .message-content { padding: 0.75rem 1rem; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; }
+            .message-content { padding: 0.75rem 1rem; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; overflow: visible; max-height: none; word-wrap: break-word; }
             .message.assistant .message-content { background: #f0f4ff; color: #1e3a5f; border-bottom-left-radius: 4px; }
             .message.user .message-content { background: #2c4a8c; color: white; border-bottom-right-radius: 4px; }
             .message-content code { background: rgba(0,0,0,0.1); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.9em; }
