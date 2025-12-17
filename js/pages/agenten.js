@@ -6,10 +6,11 @@ class AgentenPage {
                 id: 'allgemein',
                 name: 'Allgemein-Agent',
                 icon: '🤖',
-                description: 'Ihr persönlicher KI-Assistent. Stellen Sie beliebige Fragen zu ORCA, Prozessen, Status-Codes und mehr.',
-                features: ['Freie Fragen', 'Prozess-Beratung', 'Status-Erklärung', 'Anleitungen'],
+                description: 'Freier KI-Assistent mit ORCA-Kontext. Nur Glossar und Skills als Wissensbasis.',
+                features: ['ORCA-Glossar', 'Skills-Suche', 'Prozess-Navigation'],
                 status: 'active',
-                route: '/agent-allgemein'
+                route: '/agent-allgemein',
+                internal: true
             },
             {
                 id: 'inventur',

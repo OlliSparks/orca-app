@@ -6,6 +6,7 @@ class AgentSkillsPage {
         this.skills = [];
         this.categories = JSON.parse(localStorage.getItem('orca_skill_categories') || '["Fachliche Skills", "Prozess-Skills", "Rollen-Skills", "Technische Skills"]');
         this.currentSkill = null;
+        this.currentCategory = null;
         this.originalContent = '';
         this.skillsPath = 'C:\\Users\\orcao\\OneDrive - orca. organizing company assets GmbH\\Orca-Skills';
         this.viewMode = 'list'; // 'list' or 'read'
@@ -328,6 +329,7 @@ Beispiele:
             return;
         }
         this.currentSkill = null;
+        this.currentCategory = null;
         this.originalContent = '';
         this.render();
     }
@@ -576,6 +578,7 @@ ${input}
         this.skills = PRELOADED_SKILLS;
         this.saveToStorage();
         this.currentSkill = null;
+        this.currentCategory = null;
         this.render();
         alert(this.skills.length + ' Skills geladen!');
     }
