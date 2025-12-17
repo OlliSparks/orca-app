@@ -387,11 +387,59 @@ class OnboardingService {
                 related: ['Verlagerung', 'VVL'],
                 category: 'Begriff'
             },
-            'Agent': {
-                short: 'KI-gestützter Assistent',
-                long: 'Agenten sind intelligente Assistenten, die Sie Schritt für Schritt durch komplexe Prozesse führen. Sie können Daten importieren, analysieren und automatisch zuordnen. Finden Sie alle Agenten im Menü unter "Agenten".',
-                related: ['Inventur-Agent', 'Verlagerungs-Agent'],
-                category: 'Begriff'
+            'Agenten (Überblick)': {
+                short: 'KI-gestützte Assistenten für alle Prozesse',
+                long: 'Agenten sind intelligente Assistenten, die Sie Schritt für Schritt durch komplexe Prozesse führen. Sie helfen beim Datenimport, bei der Prozessdurchführung und bei der Dokumentation. Agenten vereinfachen Ihre Arbeit, reduzieren Fehler und sparen Zeit. Alle Agenten finden Sie im Menü unter "Agenten".',
+                related: ['Inventur-Agent', 'ABL-Agent', 'Verlagerungs-Agent', 'Reporting-Agent'],
+                category: 'Agenten'
+            },
+            'Inventur-Agent': {
+                short: 'Importiert Werkzeugdaten aus beliebigen Quellen',
+                long: 'Der Inventur-Agent analysiert Ihre Daten (Excel, CSV, Screenshots) und ordnet sie automatisch offenen Inventuren zu. Features: Excel/CSV Import, Screenshot-Analyse, API-Anbindung, automatisches Matching.',
+                related: ['Inventur', 'Agenten (Überblick)'],
+                category: 'Agenten'
+            },
+            'ABL-Agent': {
+                short: 'Erstellt Abnahmebereitschaftserklärungen',
+                long: 'Der ABL-Agent führt Sie Schritt für Schritt durch die ABL-Erstellung. Features: Foto-Upload, Standort-Erkennung, Schritt-für-Schritt Dialog, automatische ABL-Erstellung.',
+                related: ['ABL', 'Agenten (Überblick)'],
+                category: 'Agenten'
+            },
+            'Reporting-Agent': {
+                short: 'Erstellt und exportiert Reports',
+                long: 'Der Reporting-Agent lädt Reports aus dem ORCA-System und exportiert sie in verschiedenen Formaten. Features: Fertigungsmittel-Report, Inventur-Reports, PDF/Excel Export, Custom-Auswertungen.',
+                related: ['FM-Akte', 'Agenten (Überblick)'],
+                category: 'Agenten'
+            },
+            'Verlagerungs-Agent': {
+                short: 'Beantragt und dokumentiert Verlagerungen',
+                long: 'Der Verlagerungs-Agent unterstützt bei Anträgen und Durchführung von Verlagerungen. Features: Werkzeug-Auswahl, Maße & Gewicht, Zolltarifnummer, Quell-/Ziel-Standort, Versand-Dokumentation, Empfangsbestätigung.',
+                related: ['Verlagerung', 'Agenten (Überblick)'],
+                category: 'Agenten'
+            },
+            'VPW-Agent': {
+                short: 'Führt Vertragspartnerwechsel durch',
+                long: 'Der VPW-Agent unterstützt bei der Durchführung von Vertragspartnerwechseln. Features: Partnerwahl, Übergabe-Protokoll, Foto-Dokumentation, Workflow-Integration.',
+                related: ['VPW', 'Agenten (Überblick)'],
+                category: 'Agenten'
+            },
+            'Verschrottungs-Agent': {
+                short: 'Erfasst Verschrottungsanträge',
+                long: 'Der Verschrottungs-Agent führt Sie durch den Verschrottungsprozess und dokumentiert alles automatisch. Features: Foto-Dokumentation, Schritt-für-Schritt Dialog, automatische Antragserstellung.',
+                related: ['Verschrottung', 'Agenten (Überblick)'],
+                category: 'Agenten'
+            },
+            'Inventurplanungs-Agent': {
+                short: 'Plant Inventur-Touren effizient',
+                long: 'Der Inventurplanungs-Agent hilft beim Vorbereiten: Was wissen Sie schon? Erledigen Sie am Rechner was geht, planen Sie den Rest als Tour. Features: Daten-Import, Sofort bestätigen, Tour planen.',
+                related: ['Inventur', 'Agenten (Überblick)'],
+                category: 'Agenten'
+            },
+            'Integrations-Assistent': {
+                short: 'Verbindet Ihre Systeme mit ORCA',
+                long: 'Der Integrations-Assistent verbindet Ihre Werkzeugdaten mit ORCA. Wählen Sie aus 3 einfachen Wegen – vom manuellen Upload bis zur automatischen Synchronisation. Kein IT-Aufwand nötig.',
+                related: ['API', 'Agenten (Überblick)'],
+                category: 'Agenten'
             },
             'Dashboard': {
                 short: 'Übersichtsseite',

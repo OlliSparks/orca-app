@@ -59,29 +59,6 @@ class GlossarPage {
                     </div>
                 </div>
 
-                <!-- Quick Links zu den Hauptkategorien -->
-                <div class="glossar-quicklinks">
-                    <h3>Schnellzugriff</h3>
-                    <div class="quicklinks-grid">
-                        <div class="quicklink-card" onclick="glossarPage.setCategory('orca Allgemein')">
-                            <span class="quicklink-icon">🌐</span>
-                            <span>orca Allgemein</span>
-                        </div>
-                        <div class="quicklink-card" onclick="glossarPage.setCategory('Agenten')">
-                            <span class="quicklink-icon">🤖</span>
-                            <span>Agenten</span>
-                        </div>
-                        <div class="quicklink-card" onclick="glossarPage.setCategory('Prozesse')">
-                            <span class="quicklink-icon">⚙️</span>
-                            <span>Prozesse</span>
-                        </div>
-                        <div class="quicklink-card" onclick="glossarPage.setCategory('Rollen')">
-                            <span class="quicklink-icon">👤</span>
-                            <span>Rollen</span>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Glossar-Liste -->
                 <div class="glossar-list" id="glossarList">
                     ${this.renderGlossaryList(glossary)}
