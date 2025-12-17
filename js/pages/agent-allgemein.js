@@ -260,12 +260,31 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
     }
 
     renderMessages() {
-        return this.messages.map(m => `
+        let html = this.messages.map(m => `
             <div class="message ${m.role}">
                 <div class="message-avatar">${m.role === 'assistant' ? '🤖' : '👤'}</div>
                 <div class="message-content">${this.formatMessage(m.content)}</div>
             </div>
         `).join('');
+
+        // Typing indicator wenn Loading
+        if (this.isLoading) {
+            html += `
+                <div class="message assistant typing">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="typing-indicator">
+                            <span class="typing-text">Durchsuche ORCA-Wissensbasis</span>
+                            <span class="typing-dots">
+                                <span></span><span></span><span></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        return html;
     }
 
     formatMessage(content) {
@@ -687,6 +706,58 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
             [data-theme="dark"] .quick-questions button { background: #1e293b; border-color: #334155; color: #e2e8f0; }
             [data-theme="dark"] .quick-questions button:hover { background: #334155; color: #93c5fd; }
             [data-theme="dark"] .api-warning { background: #422006; color: #fcd34d; }
+
+            /* Typing Indicator */
+            .typing-indicator {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .typing-text {
+                color: #6b7280;
+                font-size: 0.9rem;
+            }
+
+            .typing-dots {
+                display: flex;
+                gap: 4px;
+            }
+
+            .typing-dots span {
+                width: 8px;
+                height: 8px;
+                background: #2c4a8c;
+                border-radius: 50%;
+                animation: typingBounce 1.4s infinite ease-in-out both;
+            }
+
+            .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+            .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+            .typing-dots span:nth-child(3) { animation-delay: 0s; }
+
+            @keyframes typingBounce {
+                0%, 80%, 100% {
+                    transform: scale(0.6);
+                    opacity: 0.5;
+                }
+                40% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+
+            .message.typing .message-content {
+                background: #f8fafc;
+                border: 1px dashed #d1d5db;
+            }
+
+            [data-theme="dark"] .typing-text { color: #94a3b8; }
+            [data-theme="dark"] .typing-dots span { background: #60a5fa; }
+            [data-theme="dark"] .message.typing .message-content {
+                background: #1e293b;
+                border-color: #475569;
+            }
 
             /* Responsive */
             @media (max-width: 900px) {
