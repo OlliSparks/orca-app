@@ -35,50 +35,40 @@ class PlanungPage {
 
         app.innerHTML = `
             <div class="container">
-                <!-- Tacho Widget -->
+                <!-- Tacho Widget mit Agent-Button -->
                 <div class="speedometer-widget">
                     <div class="speedometer-header">
-                        <div class="speedometer-text">
-                            <h2>Fortschritt: Fälligkeiten (6 Monate)</h2>
-                            <p>Geplante Werkzeuge mit Startdatum in den nächsten 6 Monaten</p>
-                        </div>
                         <div class="speedometer-container">
                             <div class="speedometer">
                                 <svg viewBox="0 0 200 120" style="width: 100%; height: 100%;">
                                     <!-- Background Arc (hellgrau) -->
                                     <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" stroke-width="20" stroke-linecap="round"/>
-
-                                    <!-- Status Segments -->
-                                    <path id="segmentInInventur" d="M 20 100 A 80 80 0 0 1 180 100"
-                                          fill="none" stroke="#dcfce7" stroke-width="20" stroke-linecap="round"
-                                          stroke-dasharray="251.2" stroke-dashoffset="251.2"
-                                          style="transition: stroke-dashoffset 0.5s ease;"/>
-
-                                    <path id="segmentFeinplanung" d="M 20 100 A 80 80 0 0 1 180 100"
-                                          fill="none" stroke="#dbeafe" stroke-width="20" stroke-linecap="round"
-                                          stroke-dasharray="251.2" stroke-dashoffset="251.2"
-                                          style="transition: stroke-dashoffset 0.5s ease;"/>
-
-                                    <path id="segmentOffen" d="M 20 100 A 80 80 0 0 1 180 100"
-                                          fill="none" stroke="#f3f4f6" stroke-width="20" stroke-linecap="round"
+                                    <!-- Progress Arc (blau) -->
+                                    <path id="speedometerArc" d="M 20 100 A 80 80 0 0 1 180 100"
+                                          fill="none" stroke="#3b82f6" stroke-width="20" stroke-linecap="round"
                                           stroke-dasharray="251.2" stroke-dashoffset="251.2"
                                           style="transition: stroke-dashoffset 0.5s ease;"/>
                                 </svg>
                                 <div class="speedometer-percentage" id="speedometerPercentage">0%</div>
-                                <div class="speedometer-label">Geplant</div>
+                                <div class="speedometer-label">geplant</div>
                             </div>
                         </div>
+                        <div class="speedometer-text">
+                            <h2>Fortschritt: Inventurplanung</h2>
+                            <p>Werkzeuge mit festgelegtem Starttermin in den naechsten 6 Monaten</p>
+                        </div>
+                        <button class="agent-btn-integrated" id="agentPlanungBtn">
+                            <span class="agent-btn-icon">🤖</span>
+                            <div class="agent-btn-content">
+                                <strong>KI-Agent</strong>
+                                <small>Planung erstellen</small>
+                            </div>
+                        </button>
                     </div>
                 </div>
 
                 <div class="view-controls">
-                    <button class="bulk-btn api-load" id="apiLoadBtn">
-                        📄 Lade lokale Werkzeuginformationen
-                    </button>
-                    <div style="display: flex; gap: 0.5rem; margin-left: auto;">
-                        <button class="bulk-btn primary" id="bulkConfirmBtn">✓ Ausgewählte bestätigen</button>
-                        <button class="bulk-btn secondary" id="bulkLocationBtn">📌 Standortplanung</button>
-                    </div>
+                    <button class="bulk-btn secondary" id="bulkLocationBtn">📌 Standortplanung</button>
                 </div>
 
                 <div class="toolbar">
@@ -389,9 +379,10 @@ class PlanungPage {
         });
 
         // Bulk actions
-        document.getElementById('bulkConfirmBtn').addEventListener('click', () => this.bulkConfirm());
+        // Removed bulkConfirmBtn
         document.getElementById('bulkLocationBtn').addEventListener('click', () => this.openBulkLocationModal());
-        document.getElementById('apiLoadBtn').addEventListener('click', () => this.loadFromAPI());
+        document.getElementById('agentPlanungBtn').addEventListener('click', () => router.navigate('/agent-inventurplanung'));
+        // Removed apiLoadBtn
         document.getElementById('submitBtn').addEventListener('click', () => this.submitInventoryPlan());
 
         // Pagination
@@ -573,37 +564,21 @@ class PlanungPage {
     }
 
     updateSpeedometer() {
-        const offen = this.tools.filter(t => t.status === 'offen').length;
-        const feinplanung = this.tools.filter(t => t.status === 'feinplanung').length;
-        const inInventur = this.tools.filter(t => t.status === 'in-inventur').length;
-        const total = offen + feinplanung + inInventur;
+        const total = this.tools.length;
+        const geplant = this.tools.filter(t => t.status === 'feinplanung' || t.status === 'in-inventur').length;
 
         if (total === 0) {
             document.getElementById('speedometerPercentage').textContent = '0%';
             return;
         }
 
-        const percentOffen = (offen / total) * 100;
-        const percentFeinplanung = (feinplanung / total) * 100;
-        const percentInInventur = (inInventur / total) * 100;
+        const percent = Math.round((geplant / total) * 100);
+        document.getElementById('speedometerPercentage').textContent = `${percent}%`;
 
-        const totalPercent = Math.round(percentFeinplanung + percentInInventur);
-        document.getElementById('speedometerPercentage').textContent = `${totalPercent}%`;
-
-        // Update SVG arcs (251.2 is the total arc length)
+        // Update SVG arc (251.2 is the total arc length)
         const arcLength = 251.2;
-
-        // in Inventur (full arc from start)
-        const offsetInInventur = arcLength - (arcLength * percentInInventur / 100);
-        document.getElementById('segmentInInventur').style.strokeDashoffset = offsetInInventur;
-
-        // Feinplanung (arc from start to feinplanung + inInventur)
-        const offsetFeinplanung = arcLength - (arcLength * (percentFeinplanung + percentInInventur) / 100);
-        document.getElementById('segmentFeinplanung').style.strokeDashoffset = offsetFeinplanung;
-
-        // Offen (full arc)
-        const offsetOffen = arcLength - arcLength;
-        document.getElementById('segmentOffen').style.strokeDashoffset = offsetOffen;
+        const offset = arcLength - (arcLength * percent / 100);
+        document.getElementById('speedometerArc').style.strokeDashoffset = offset;
     }
 
     updateSubmitInfo() {

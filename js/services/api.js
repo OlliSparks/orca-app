@@ -908,20 +908,39 @@ class APIService {
                 const params = new URLSearchParams();
                 if (filters.status) params.append('status', filters.status);
                 if (filters.location) params.append('location', filters.location);
+                params.append('limit', '100');
 
                 const endpoint = `/asset-list?${params.toString()}`;
                 const response = await this.call(endpoint, 'GET');
+                const rawData = response.data || response || [];
 
-                // Transform API response to our format
+                // Transform API response to planning format
+                const items = (Array.isArray(rawData) ? rawData : []).map((item, index) => ({
+                    id: item.assetKey || item.key || item.id || index + 1,
+                    name: item.name || item.toolName || item.description || 'Unbekanntes Werkzeug',
+                    number: item.identifier || item.toolNumber || item.assetNumber || '-',
+                    location: item.locationKey || item.location || item.locationId || '-',
+                    dueDate: item.nextInventoryDate || item.dueDate || this.calculateDueDate(index),
+                    startDate: item.plannedStartDate || item.startDate || '',
+                    inventoryType: item.inventoryType || item.type || 'IA'
+                }));
+
                 return {
                     success: true,
-                    data: response.data || response,
-                    total: response.total || (response.data ? response.data.length : 0)
+                    data: items,
+                    total: items.length
                 };
             },
             // Mock fallback
             () => this.getMockPlanningData(filters)
         );
+    }
+
+    // Helper: Calculate due date for planning
+    calculateDueDate(index) {
+        const date = new Date();
+        date.setMonth(date.getMonth() + (index % 6) + 1);
+        return date.toISOString().split('T')[0];
     }
 
     // === Mock Data Methods (werden später entfernt) ===
