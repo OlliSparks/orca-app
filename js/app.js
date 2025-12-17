@@ -14,6 +14,9 @@ class OrcaApp {
         // Start the router
         router.handleRouteChange();
 
+        // Initialize role dropdown
+        this.initRoleDropdown();
+
         // Initialize onboarding (tooltips, first-visit check)
         this.initOnboarding();
 
@@ -21,6 +24,20 @@ class OrcaApp {
         setTimeout(() => this.checkNewMessages(), 1000);
 
         console.log('ORCA 2.0 App initialized');
+    }
+
+    initRoleDropdown() {
+        const dropdown = document.getElementById('roleDropdown');
+        if (dropdown && typeof permissionService !== 'undefined') {
+            const currentRole = permissionService.getCurrentRole();
+            dropdown.value = currentRole;
+            
+            // Update dropdown appearance based on role category
+            const roleInfo = permissionService.getRoleInfo(currentRole);
+            if (roleInfo) {
+                dropdown.style.borderColor = roleInfo.color;
+            }
+        }
     }
 
     initOnboarding() {
@@ -201,6 +218,21 @@ class OrcaApp {
         // API-Monitor-Agent (Admin-Übersicht)
         router.addRoute('/agent-api-monitor', () => {
             agentAPIMonitorPage.render();
+        });
+
+        // Berechtigungs-Agent (Intern)
+        router.addRoute('/agent-berechtigungen', () => {
+            agentBerechtigungenPage.render();
+        });
+
+        // Bug-Agent (Intern)
+        router.addRoute('/agent-bugs', () => {
+            agentBugsPage.render();
+        });
+
+        // Backlog-Agent (Intern)
+        router.addRoute('/agent-backlog', () => {
+            agentBacklogPage.render();
         });
 
         // Verlagerung beantragen Agent

@@ -8043,3 +8043,44 @@ body.high-contrast .card {
 .header-action-btn svg circle[r="0.5"] {
     fill: currentColor;
 }
+
+/* ============================================
+   ROLE DROPDOWN
+   ============================================ */
+
+.role-dropdown-container {
+    margin-right: 0.5rem;
+}
+
+.role-dropdown {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.role-dropdown:hover {
+    background: #fde68a;
+    border-color: #d97706;
+}
+
+.role-dropdown:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
+/* Dark Mode */
+[data-theme="dark"] .role-dropdown {
+    background: #451a03;
+    border-color: #b45309;
+    color: #fde68a;
+}
+
+[data-theme="dark"] .role-dropdown:hover {
+    background: #78350f;
+}

@@ -93,6 +93,21 @@
                 </button>
             </div>
 
+            <!-- Role Dropdown (Dev/Support) -->
+            <div class="role-dropdown-container">
+                <select id="roleDropdown" class="role-dropdown" onchange="permissionService.setCurrentRole(this.value); location.reload();">
+                    <option value="SUP">🛡️ SUP</option>
+                    <option value="WVL">👔 WVL</option>
+                    <option value="IVL">📋 IVL</option>
+                    <option value="WVL-LOC">📍 WVL-LOC</option>
+                    <option value="ID">🔧 ID</option>
+                    <option value="ITL">💻 ITL</option>
+                    <option value="VVL">🚚 VVL</option>
+                    <option value="FEK">🏭 FEK</option>
+                    <option value="CL">✅ CL</option>
+                </select>
+            </div>
+
             <!-- Navigation Dropdown -->
             <div class="nav-dropdown-container">
                 <select id="navDropdown" class="nav-dropdown" onchange="router.navigate(this.value)">
@@ -144,6 +159,7 @@
     <!-- Configuration & Auth müssen zuerst geladen werden -->
     <script src="js/config/api-config.js" defer></script>
     <script src="js/services/auth.js" defer></script>
+    <script src="js/services/permission-service.js" defer></script>
     <script src="js/services/api.js?v=20251215b" defer></script>
     <script src="js/services/error-service.js" defer></script>
     <!-- <script src="js/services/loading-service.js" defer></script> -->
@@ -188,6 +204,9 @@
     <script src="js/pages/agent-vpw.js" defer></script>
     <script src="js/pages/agent-api-setup.js" defer></script>
     <script src="js/pages/agent-api-monitor.js" defer></script>
+    <script src="js/pages/agent-berechtigungen.js" defer></script>
+    <script src="js/pages/agent-bugs.js" defer></script>
+    <script src="js/pages/agent-backlog.js" defer></script>
     <script src="js/pages/messages.js" defer></script>
     <script src="js/pages/agent-verlagerung-beantragen.js" defer></script>
     <script src="js/pages/agent-verlagerung-durchfuehren.js" defer></script>

@@ -90,15 +90,46 @@ class AgentenPage {
                 description: 'Übersicht aller angebundenen Lieferanten-Systeme. Status, Aktivitäten und Statistiken.',
                 features: ['Verbindungsstatus', 'Aktivitätslog', 'Antwort-Statistiken', 'Fehlerüberwachung'],
                 status: 'active',
-                route: '/agent-api-monitor'
+                route: '/agent-api-monitor',
+                internal: true
+            },
+            {
+                id: 'berechtigungen',
+                name: 'Berechtigungs-Agent',
+                icon: '🔐',
+                description: 'Verwalten Sie Rollen und Zugriffsrechte. Bearbeiten Sie die Berechtigungsmatrix und prüfen Sie Zugriffsrechte.',
+                features: ['Matrix-Editor', 'Rollen-Prüfung', 'Export/Import', 'Zugriffsanalyse'],
+                status: 'active',
+                route: '/agent-berechtigungen',
+                internal: true
+            },
+            {
+                id: 'bugs',
+                name: 'Bug-Agent',
+                icon: '🐛',
+                description: 'Melden und verfolgen Sie Bugs. Strukturierte Erfassung mit Screenshots, Prioritäten und Status-Tracking.',
+                features: ['Bug-Erfassung', 'Screenshot-Upload', 'Prioritäten', 'Claude-Export'],
+                status: 'active',
+                route: '/agent-bugs',
+                internal: true
+            },
+            {
+                id: 'backlog',
+                name: 'Backlog-Agent',
+                icon: '📋',
+                description: 'Sammeln Sie Feature-Requests und Verbesserungsideen. Kanban-Board mit Story Points und Kategorien.',
+                features: ['Kanban-Board', 'Story Points', 'Kategorien', 'Export'],
+                status: 'active',
+                route: '/agent-backlog',
+                internal: true
             }
         ];
     }
 
-    // Lieferanten-Agenten (alle außer API-Monitor)
+    // Lieferanten-Agenten (alle außer interne)
     getSupplierAgents() {
         return this.agents
-            .filter(a => a.id !== 'api-monitor')
+            .filter(a => !a.internal)
             .sort((a, b) => {
                 if (a.status === 'active' && b.status !== 'active') return -1;
                 if (a.status !== 'active' && b.status === 'active') return 1;
@@ -106,9 +137,9 @@ class AgentenPage {
             });
     }
 
-    // Interne Agenten (nur API-Monitor)
+    // Interne Agenten (mit internal: true Flag)
     getInternalAgents() {
-        return this.agents.filter(a => a.id === 'api-monitor');
+        return this.agents.filter(a => a.internal === true);
     }
 
     render() {
@@ -126,7 +157,9 @@ class AgentenPage {
         }
 
         const supplierAgents = this.getSupplierAgents();
-        const internalAgents = this.getInternalAgents();
+        // Interne Agenten nur für Support anzeigen
+        const showInternalAgents = typeof permissionService !== 'undefined' && permissionService.getCurrentRole() === 'SUP';
+        const internalAgents = showInternalAgents ? this.getInternalAgents() : [];
 
         app.innerHTML = `
             <div class="container agenten-page">
