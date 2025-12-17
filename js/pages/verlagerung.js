@@ -19,7 +19,7 @@ class VerlagerungPage {
         app.innerHTML = `
             <div class="container verlagerung-page">
                 <div class="info-widget-compact">
-                    <h2>Verlagerungen <span class="help-icon" id="helpIconVerlagerung">?</span></h2>
+                    <h2>Verlagerungen <span class="help-icon" onclick="document.getElementById('helpTooltipVerlagerung').classList.toggle('visible')">?</span></h2>
                     <div class="help-tooltip" id="helpTooltipVerlagerung">
                         <strong>Verlagerungsprozess:</strong><br>
                         1. <strong>Beantragen:</strong> Neue Verlagerung beim OEM beantragen<br>
@@ -195,9 +195,7 @@ class VerlagerungPage {
             if (th) this.sortTable(th.dataset.sort);
         });
 
-        document.getElementById('helpIconVerlagerung')?.addEventListener('click', () => {
-            document.getElementById('helpTooltipVerlagerung').classList.toggle('visible');
-        });
+
 
         document.getElementById('agentBeantragenBtn')?.addEventListener('click', () => router.navigate('/agent-verlagerung-beantragen'));
         document.getElementById('agentDurchfuehrenBtn')?.addEventListener('click', () => router.navigate('/agent-verlagerung-durchfuehren'));
