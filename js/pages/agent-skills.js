@@ -59,6 +59,9 @@ class AgentSkillsPage {
                             <button class="btn-action" onclick="agentSkillsPage.exportAllSkills()">
                                 📤 Alle exportieren
                             </button>
+                            <button class="btn-action reload" onclick="agentSkillsPage.reloadFromSource()">
+                                🔄 Neu laden
+                            </button>
                         </div>
 
                         <div class="sidebar-section">
@@ -554,6 +557,25 @@ ${input}
     saveToStorage() {
         localStorage.setItem('orca_skills', JSON.stringify(this.skills));
         localStorage.setItem('orca_skill_categories', JSON.stringify(this.categories));
+    }
+
+    reloadFromSource() {
+        if (typeof PRELOADED_SKILLS === 'undefined') {
+            alert('Keine Quelldaten verfügbar.');
+            return;
+        }
+
+        if (!confirm(PRELOADED_SKILLS.length + ' Skills aus Quelldatei laden?
+
+Achtung: Lokale Änderungen werden überschrieben!')) {
+            return;
+        }
+
+        this.skills = PRELOADED_SKILLS;
+        this.saveToStorage();
+        this.currentSkill = null;
+        this.render();
+        alert(this.skills.length + ' Skills erfolgreich geladen!');
     }
 
     getCategoryIcon(category) {
