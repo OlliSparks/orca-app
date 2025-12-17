@@ -571,22 +571,13 @@ ${input}
     }
 
     reloadFromSource() {
-        if (typeof PRELOADED_SKILLS === 'undefined') {
-            alert('Keine Quelldaten verfügbar.');
-            return;
-        }
-
-        if (!confirm(PRELOADED_SKILLS.length + ' Skills aus Quelldatei laden?
-
-Achtung: Lokale Änderungen werden überschrieben!')) {
-            return;
-        }
-
+        if (typeof PRELOADED_SKILLS === 'undefined') { alert('Keine Quelldaten'); return; }
+        if (!confirm(PRELOADED_SKILLS.length + ' Skills neu laden?')) return;
         this.skills = PRELOADED_SKILLS;
         this.saveToStorage();
         this.currentSkill = null;
         this.render();
-        alert(this.skills.length + ' Skills erfolgreich geladen!');
+        alert(this.skills.length + ' Skills geladen!');
     }
 
     getCategoryIcon(category) {
