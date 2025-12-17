@@ -457,9 +457,9 @@ In der Zwischenzeit: Fragen Sie mich zu **Inventur**, **ABL**, **Verlagerung** o
 
     getStyles() {
         return `
-            .agent-allgemein-page { height: calc(100vh - 80px); display: flex; flex-direction: column; }
+            .agent-allgemein-page { min-height: calc(100vh - 120px); display: flex; flex-direction: column; }
 
-            .allgemein-layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; height: 100%; }
+            .allgemein-layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; flex: 1; min-height: 0; }
 
             .allgemein-sidebar { background: #f8fafc; border-right: 1px solid #e5e7eb; padding: 1rem; overflow-y: auto; }
             .sidebar-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
@@ -480,9 +480,9 @@ In der Zwischenzeit: Fragen Sie mich zu **Inventur**, **ABL**, **Verlagerung** o
             .btn-settings { width: 100%; padding: 0.5rem; background: #2c4a8c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
             .btn-settings:hover { background: #1e3a6d; }
 
-            .allgemein-chat { display: flex; flex-direction: column; height: 100%; background: white; }
+            .allgemein-chat { display: flex; flex-direction: column; height: 100%; background: white; min-height: 0; overflow: hidden; }
 
-            .chat-messages { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+            .chat-messages { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; min-height: 200px; }
 
             .message { display: flex; gap: 0.75rem; max-width: 85%; overflow: visible; }
             .message.user { align-self: flex-end; flex-direction: row-reverse; }
