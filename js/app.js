@@ -44,12 +44,11 @@ class OrcaApp {
             // Get new messages since last check
             const newMessages = messageService.getNewMessagesSinceLastCheck();
 
-            if (newMessages.length > 0) {
-                // Show popup for new messages
-                MessagesPage.showNewMessagesPopup(newMessages);
-                // Mark messages as checked so they don't show again
-                messageService.updateLastSync();
-            }
+            // Popup deaktiviert - stoert die Benutzer
+            // if (newMessages.length > 0) {
+            //     MessagesPage.showNewMessagesPopup(newMessages);
+            // }
+            messageService.updateLastSync();
         } catch (error) {
             console.error('Error checking new messages:', error);
         }
