@@ -134,14 +134,13 @@ class ABLPage {
                                 <th class="sortable" data-sort="title">Bezeichnung</th>
                                 <th class="sortable" data-sort="identifier">Bestell-Position</th>
                                 <th class="sortable" data-sort="status">Status</th>
-                                <th class="sortable" data-sort="progress">Fortschritt</th>
                                 <th class="sortable" data-sort="dueDate">Faellig</th>
                                 <th>Aktionen</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody">
                             <tr>
-                                <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <td colspan="5" style="text-align: center; padding: 2rem;">
                                     Lade Daten...
                                 </td>
                             </tr>
@@ -797,7 +796,7 @@ class ABLPage {
         if (pageItems.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="6">
+                    <td colspan="5">
                         <div class="empty-state">
                             <div class="empty-state-icon">&#128269;</div>
                             <div class="empty-state-text">Keine ABL-Auftraege gefunden</div>
@@ -811,19 +810,13 @@ class ABLPage {
                 const statusClass = 'status-' + abl.status;
                 const statusLabel = this.getStatusLabel(abl.status);
                 const isOverdue = this.isOverdue(abl);
-                const progress = parseFloat(abl.progress) || 0;
-
+                
                 return `
                     <tr onclick="ablPage.openDetail('${abl.key}')" style="cursor: pointer;">
                         <td class="tool-name">${abl.title || '-'}</td>
                         <td class="tool-number">${abl.identifier || '-'}</td>
                         <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
-                        <td>
-                            <div class="progress-bar-container" style="width: 100px;">
-                                <div class="progress-bar-fill" style="width: ${progress}%;"></div>
-                            </div>
-                            <span style="font-size: 0.75rem; color: #6b7280;">${progress}%</span>
-                        </td>
+
                         <td class="${isOverdue ? 'overdue' : ''}" style="${isOverdue ? 'color: #ef4444; font-weight: 500;' : 'color: #6b7280;'}">
                             ${this.formatDate(abl.dueDate)}
                         </td>
@@ -864,8 +857,7 @@ class ABLPage {
                 const statusClass = 'status-' + abl.status;
                 const statusLabel = this.getStatusLabel(abl.status);
                 const isOverdue = this.isOverdue(abl);
-                const progress = parseFloat(abl.progress) || 0;
-
+                
                 return `
                     <div class="abl-card" onclick="ablPage.openDetail('${abl.key}')">
                         <div class="abl-card-header">
@@ -873,15 +865,7 @@ class ABLPage {
                             <span class="status-badge ${statusClass}">${statusLabel}</span>
                         </div>
                         <div class="abl-card-id">Bestell-Position: ${abl.identifier || '-'}</div>
-                        <div class="abl-card-progress">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" style="width: ${progress}%;"></div>
-                            </div>
-                            <div class="progress-text">
-                                <span>${progress}% abgeschlossen</span>
-                                <span>${abl.positionsDone || 0}/${abl.positionsTotal || 0} Positionen</span>
-                            </div>
-                        </div>
+
                         <div class="abl-card-footer">
                             <span class="abl-card-due ${isOverdue ? 'overdue' : ''}">
                                 Faellig: ${this.formatDate(abl.dueDate)}

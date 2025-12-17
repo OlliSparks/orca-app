@@ -443,6 +443,14 @@ class AgentInventurplanungPage {
                 background: #2563eb;
             }
 
+            .accept-date-btn {
+                margin-top: 2rem;
+                padding: 1rem 2rem;
+                font-size: 1.1rem;
+                display: block;
+                margin-left: auto;
+            }
+
             .action-btn.secondary {
                 background: #f3f4f6;
                 color: #374151;
