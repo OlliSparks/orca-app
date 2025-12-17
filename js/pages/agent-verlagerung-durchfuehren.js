@@ -1,12 +1,12 @@
 // ORCA 2.0 - Agent: Verlagerung durchführen
 // Workflow für die Durchführung einer genehmigten Werkzeug-Verlagerung
 
-class AgentVerlagerungDurchfuehrenPage {
+class AgentVerlagerungDurchführenPage {
     constructor() {
         this.messages = [];
         this.currentStep = 'greeting';
         this.selectedVerlagerung = null;
-        this.durchfuehrungData = {
+        this.durchführungData = {
             versandDatum: null,
             spedition: null,
             trackingNummer: null,
@@ -57,7 +57,7 @@ class AgentVerlagerungDurchfuehrenPage {
         this.messages = [];
         this.currentStep = 'greeting';
         this.selectedVerlagerung = null;
-        this.durchfuehrungData = {
+        this.durchführungData = {
             versandDatum: null,
             spedition: null,
             trackingNummer: null,
@@ -109,7 +109,7 @@ class AgentVerlagerungDurchfuehrenPage {
             if (index === currentIndex) status = 'active';
 
             // Skip zoll_dokumente if not relevant
-            if (step.id === 'zoll_dokumente' && !this.durchfuehrungData.zollrelevant && this.currentStep !== 'zoll_dokumente') {
+            if (step.id === 'zoll_dokumente' && !this.durchführungData.zollrelevant && this.currentStep !== 'zoll_dokumente') {
                 return '';
             }
 
@@ -210,7 +210,7 @@ Der Prozess umfasst:
             const status = this.getStatusLabel(v.status);
 
             return `
-                <div class="verlagerung-card" onclick="agentVerlagerungDurchfuehrenPage.selectVerlagerung(${index})">
+                <div class="verlagerung-card" onclick="agentVerlagerungDurchführenPage.selectVerlagerung(${index})">
                     <div class="card-header">
                         <span class="card-title">${v.bezeichnung || v.name || v.identifier || 'Verlagerung'}</span>
                         <span class="card-status ${v.status}">${status}</span>
@@ -266,7 +266,7 @@ Der Prozess umfasst:
         this.addMessage('user', v.bezeichnung || v.name || 'Verlagerung ausgewählt');
 
         // Check if international (different countries)
-        this.durchfuehrungData.zollrelevant = this.checkZollRelevanz(v);
+        this.durchführungData.zollrelevant = this.checkZollRelevanz(v);
 
         this.addMessage('agent', `✓ Verlagerung ausgewählt: **${v.bezeichnung || v.name || 'Verlagerung'}**
 
@@ -274,7 +274,7 @@ Der Prozess umfasst:
 - Von: ${v.quellStandort || v.sourceLocation || 'N/A'}
 - Nach: ${v.zielStandort || v.targetLocation || 'N/A'}
 - Werkzeuge: ${v.tools?.length || v.toolCount || 1}
-${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung** - Zolldokumente erforderlich!' : ''}`);
+${this.durchführungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung** - Zolldokumente erforderlich!' : ''}`);
 
         this.currentStep = 'versand_datum';
         this.updateProgress();
@@ -320,8 +320,8 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
             <div class="date-input-container">
                 <input type="date" id="versandDatumInput" class="agent-input date-input"
                        value="${today}"
-                       onkeypress="if(event.key==='Enter') agentVerlagerungDurchfuehrenPage.processVersandDatum()">
-                <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.processVersandDatum()">
+                       onkeypress="if(event.key==='Enter') agentVerlagerungDurchführenPage.processVersandDatum()">
+                <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.processVersandDatum()">
                     Bestätigen
                 </button>
             </div>
@@ -341,7 +341,7 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
             return;
         }
 
-        this.durchfuehrungData.versandDatum = value;
+        this.durchführungData.versandDatum = value;
         const formattedDate = new Date(value).toLocaleDateString('de-DE');
 
         this.addMessage('user', formattedDate);
@@ -360,16 +360,16 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
         inputArea.innerHTML = `
             <div class="spedition-input-container">
                 <div class="quick-options">
-                    <button class="option-btn" onclick="agentVerlagerungDurchfuehrenPage.setSpedition('DHL Freight')">DHL Freight</button>
-                    <button class="option-btn" onclick="agentVerlagerungDurchfuehrenPage.setSpedition('DB Schenker')">DB Schenker</button>
-                    <button class="option-btn" onclick="agentVerlagerungDurchfuehrenPage.setSpedition('Kühne + Nagel')">Kühne + Nagel</button>
-                    <button class="option-btn" onclick="agentVerlagerungDurchfuehrenPage.setSpedition('Eigentransport')">Eigentransport</button>
+                    <button class="option-btn" onclick="agentVerlagerungDurchführenPage.setSpedition('DHL Freight')">DHL Freight</button>
+                    <button class="option-btn" onclick="agentVerlagerungDurchführenPage.setSpedition('DB Schenker')">DB Schenker</button>
+                    <button class="option-btn" onclick="agentVerlagerungDurchführenPage.setSpedition('Kühne + Nagel')">Kühne + Nagel</button>
+                    <button class="option-btn" onclick="agentVerlagerungDurchführenPage.setSpedition('Eigentransport')">Eigentransport</button>
                 </div>
                 <div class="custom-input">
                     <input type="text" id="speditionInput" class="agent-input"
                            placeholder="Andere Spedition eingeben..."
-                           onkeypress="if(event.key==='Enter') agentVerlagerungDurchfuehrenPage.processSpedition()">
-                    <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.processSpedition()">
+                           onkeypress="if(event.key==='Enter') agentVerlagerungDurchführenPage.processSpedition()">
+                    <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.processSpedition()">
                         Bestätigen
                     </button>
                 </div>
@@ -391,7 +391,7 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
             return;
         }
 
-        this.durchfuehrungData.spedition = value;
+        this.durchführungData.spedition = value;
         this.addMessage('user', value);
         this.addMessage('agent', `✓ Spedition: **${value}**`);
 
@@ -411,12 +411,12 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
             <div class="tracking-input-container">
                 <input type="text" id="trackingInput" class="agent-input"
                        placeholder="Tracking-Nummer (optional)..."
-                       onkeypress="if(event.key==='Enter') agentVerlagerungDurchfuehrenPage.processTracking()">
+                       onkeypress="if(event.key==='Enter') agentVerlagerungDurchführenPage.processTracking()">
                 <div class="button-row">
-                    <button class="agent-btn secondary" onclick="agentVerlagerungDurchfuehrenPage.skipTracking()">
+                    <button class="agent-btn secondary" onclick="agentVerlagerungDurchführenPage.skipTracking()">
                         Überspringen
                     </button>
-                    <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.processTracking()">
+                    <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.processTracking()">
                         Bestätigen
                     </button>
                 </div>
@@ -438,7 +438,7 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
         const value = input?.value?.trim();
 
         if (value) {
-            this.durchfuehrungData.trackingNummer = value;
+            this.durchführungData.trackingNummer = value;
             this.addMessage('user', value);
             this.addMessage('agent', `✓ Tracking-Nummer: **${value}**`);
         } else {
@@ -463,17 +463,17 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
         inputArea.innerHTML = `
             <div class="verpackung-input-container">
                 <div class="quick-options">
-                    <button class="option-btn" onclick="agentVerlagerungDurchfuehrenPage.addVerpackungshinweis('Zerbrechlich')">Zerbrechlich</button>
-                    <button class="option-btn" onclick="agentVerlagerungDurchfuehrenPage.addVerpackungshinweis('Nicht kippen')">Nicht kippen</button>
-                    <button class="option-btn" onclick="agentVerlagerungDurchfuehrenPage.addVerpackungshinweis('Schwerlast')">Schwerlast</button>
+                    <button class="option-btn" onclick="agentVerlagerungDurchführenPage.addVerpackungshinweis('Zerbrechlich')">Zerbrechlich</button>
+                    <button class="option-btn" onclick="agentVerlagerungDurchführenPage.addVerpackungshinweis('Nicht kippen')">Nicht kippen</button>
+                    <button class="option-btn" onclick="agentVerlagerungDurchführenPage.addVerpackungshinweis('Schwerlast')">Schwerlast</button>
                 </div>
                 <textarea id="verpackungInput" class="agent-textarea"
                           placeholder="Weitere Hinweise (optional)..." rows="2"></textarea>
                 <div class="button-row">
-                    <button class="agent-btn secondary" onclick="agentVerlagerungDurchfuehrenPage.skipVerpackung()">
+                    <button class="agent-btn secondary" onclick="agentVerlagerungDurchführenPage.skipVerpackung()">
                         Überspringen
                     </button>
-                    <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.processVerpackung()">
+                    <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.processVerpackung()">
                         Weiter
                     </button>
                 </div>
@@ -499,7 +499,7 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
         const value = input?.value?.trim();
 
         if (value) {
-            this.durchfuehrungData.verpackungshinweise = value;
+            this.durchführungData.verpackungshinweise = value;
             this.addMessage('user', value);
             this.addMessage('agent', `✓ Verpackungshinweise: **${value}**`);
         } else {
@@ -516,7 +516,7 @@ ${this.durchfuehrungData.zollrelevant ? '\n⚠️ **Internationale Verlagerung**
     }
 
     showZollCheck() {
-        if (this.durchfuehrungData.zollrelevant) {
+        if (this.durchführungData.zollrelevant) {
             this.addMessage('agent', `⚠️ **Internationale Verlagerung erkannt!**
 
 Für grenzüberschreitende Transporte sind Zolldokumente erforderlich.
@@ -526,10 +526,10 @@ Bitte bestätigen Sie die Zollrelevanz:`);
             const inputArea = document.getElementById('inputArea');
             inputArea.innerHTML = `
                 <div class="choice-buttons">
-                    <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.confirmZollRelevant(true)">
+                    <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.confirmZollRelevant(true)">
                         📋 Ja, Zolldokumente erforderlich
                     </button>
-                    <button class="agent-btn secondary" onclick="agentVerlagerungDurchfuehrenPage.confirmZollRelevant(false)">
+                    <button class="agent-btn secondary" onclick="agentVerlagerungDurchführenPage.confirmZollRelevant(false)">
                         Nein, kein Zoll nötig
                     </button>
                 </div>
@@ -542,10 +542,10 @@ Bitte bestätigen Sie die Zollrelevanz:`);
             const inputArea = document.getElementById('inputArea');
             inputArea.innerHTML = `
                 <div class="choice-buttons">
-                    <button class="agent-btn secondary" onclick="agentVerlagerungDurchfuehrenPage.confirmZollRelevant(true)">
+                    <button class="agent-btn secondary" onclick="agentVerlagerungDurchführenPage.confirmZollRelevant(true)">
                         📋 Ja, Zolldokumente nötig
                     </button>
-                    <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.confirmZollRelevant(false)">
+                    <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.confirmZollRelevant(false)">
                         Nein, innerhalb EU
                     </button>
                 </div>
@@ -554,7 +554,7 @@ Bitte bestätigen Sie die Zollrelevanz:`);
     }
 
     confirmZollRelevant(isRelevant) {
-        this.durchfuehrungData.zollrelevant = isRelevant;
+        this.durchführungData.zollrelevant = isRelevant;
 
         if (isRelevant) {
             this.addMessage('user', 'Zolldokumente erforderlich');
@@ -591,7 +591,7 @@ Bitte geben Sie die Dokumentennummern ein:`);
                     <input type="text" id="zollRefInput" class="agent-input" placeholder="z.B. MRN-Nummer">
                 </div>
                 <div class="form-actions">
-                    <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.processZollDokumente()">
+                    <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.processZollDokumente()">
                         Dokumente bestätigen
                     </button>
                 </div>
@@ -618,7 +618,7 @@ Bitte geben Sie die Dokumentennummern ein:`);
         if (carnet) docs.push({ type: 'Carnet ATA', nummer: carnet });
         if (zollRef) docs.push({ type: 'Zollreferenz', nummer: zollRef });
 
-        this.durchfuehrungData.zollDokumente = docs;
+        this.durchführungData.zollDokumente = docs;
 
         const docSummary = docs.map(d => `${d.type}: ${d.nummer}`).join(', ');
         this.addMessage('user', docSummary);
@@ -641,8 +641,8 @@ ${docs.map(d => `- **${d.type}:** ${d.nummer}`).join('\n')}`);
             <div class="date-input-container">
                 <input type="date" id="ankunftDatumInput" class="agent-input date-input"
                        value="${today}"
-                       onkeypress="if(event.key==='Enter') agentVerlagerungDurchfuehrenPage.processAnkunft()">
-                <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.processAnkunft()">
+                       onkeypress="if(event.key==='Enter') agentVerlagerungDurchführenPage.processAnkunft()">
+                <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.processAnkunft()">
                     Bestätigen
                 </button>
             </div>
@@ -662,7 +662,7 @@ ${docs.map(d => `- **${d.type}:** ${d.nummer}`).join('\n')}`);
             return;
         }
 
-        this.durchfuehrungData.ankunftsDatum = value;
+        this.durchführungData.ankunftsDatum = value;
         const formattedDate = new Date(value).toLocaleDateString('de-DE');
 
         this.addMessage('user', formattedDate);
@@ -684,8 +684,8 @@ ${docs.map(d => `- **${d.type}:** ${d.nummer}`).join('\n')}`);
             <div class="simple-input-container">
                 <input type="text" id="empfaengerInput" class="agent-input"
                        placeholder="Name des Empfängers..."
-                       onkeypress="if(event.key==='Enter') agentVerlagerungDurchfuehrenPage.processEmpfaenger()">
-                <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.processEmpfaenger()">
+                       onkeypress="if(event.key==='Enter') agentVerlagerungDurchführenPage.processEmpfaenger()">
+                <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.processEmpfaenger()">
                     Bestätigen
                 </button>
             </div>
@@ -705,7 +705,7 @@ ${docs.map(d => `- **${d.type}:** ${d.nummer}`).join('\n')}`);
             return;
         }
 
-        this.durchfuehrungData.empfaenger = value;
+        this.durchführungData.empfaenger = value;
         this.addMessage('user', value);
         this.addMessage('agent', `✓ Empfänger: **${value}**`);
 
@@ -722,17 +722,17 @@ ${docs.map(d => `- **${d.type}:** ${d.nummer}`).join('\n')}`);
         inputArea.innerHTML = `
             <div class="zustand-selection">
                 <div class="zustand-options">
-                    <button class="zustand-btn good" onclick="agentVerlagerungDurchfuehrenPage.processZustand('Einwandfrei')">
+                    <button class="zustand-btn good" onclick="agentVerlagerungDurchführenPage.processZustand('Einwandfrei')">
                         <span class="icon">✅</span>
                         <span class="label">Einwandfrei</span>
                         <span class="desc">Keine Schäden, wie erwartet</span>
                     </button>
-                    <button class="zustand-btn warning" onclick="agentVerlagerungDurchfuehrenPage.processZustand('Leichte Mängel')">
+                    <button class="zustand-btn warning" onclick="agentVerlagerungDurchführenPage.processZustand('Leichte Mängel')">
                         <span class="icon">⚠️</span>
                         <span class="label">Leichte Mängel</span>
                         <span class="desc">Kleinere Beschädigungen</span>
                     </button>
-                    <button class="zustand-btn bad" onclick="agentVerlagerungDurchfuehrenPage.processZustand('Beschädigt')">
+                    <button class="zustand-btn bad" onclick="agentVerlagerungDurchführenPage.processZustand('Beschädigt')">
                         <span class="icon">❌</span>
                         <span class="label">Beschädigt</span>
                         <span class="desc">Erhebliche Schäden</span>
@@ -743,7 +743,7 @@ ${docs.map(d => `- **${d.type}:** ${d.nummer}`).join('\n')}`);
     }
 
     processZustand(zustand) {
-        this.durchfuehrungData.zustandBeiAnkunft = zustand;
+        this.durchführungData.zustandBeiAnkunft = zustand;
         this.addMessage('user', zustand);
 
         if (zustand === 'Einwandfrei') {
@@ -766,7 +766,7 @@ Bitte dokumentieren Sie die Mängel für mögliche Versicherungsansprüche.`);
 
     showSummary() {
         const v = this.selectedVerlagerung;
-        const d = this.durchfuehrungData;
+        const d = this.durchführungData;
 
         const versandDate = new Date(d.versandDatum).toLocaleDateString('de-DE');
         const ankunftDate = new Date(d.ankunftsDatum).toLocaleDateString('de-DE');
@@ -800,10 +800,10 @@ Ist alles korrekt?`);
         const inputArea = document.getElementById('inputArea');
         inputArea.innerHTML = `
             <div class="summary-actions">
-                <button class="agent-btn secondary" onclick="agentVerlagerungDurchfuehrenPage.restartProcess()">
+                <button class="agent-btn secondary" onclick="agentVerlagerungDurchführenPage.restartProcess()">
                     ✏️ Daten korrigieren
                 </button>
-                <button class="agent-btn primary large" onclick="agentVerlagerungDurchfuehrenPage.completeVerlagerung()">
+                <button class="agent-btn primary large" onclick="agentVerlagerungDurchführenPage.completeVerlagerung()">
                     ✅ Verlagerung abschließen
                 </button>
             </div>
@@ -828,7 +828,7 @@ Ist alles korrekt?`);
             </div>
         `;
 
-        this.durchfuehrungData.abgeschlossenAm = new Date().toISOString();
+        this.durchführungData.abgeschlossenAm = new Date().toISOString();
 
         // Try to update via API
         try {
@@ -836,7 +836,7 @@ Ist alles korrekt?`);
                 const result = await api.updateRelocationStatus(
                     this.selectedVerlagerung.apiKey || this.selectedVerlagerung.key,
                     'P3', // Completed
-                    this.durchfuehrungData
+                    this.durchführungData
                 );
 
                 if (result.success) {
@@ -859,8 +859,8 @@ Ist alles korrekt?`);
                 [],
                 {
                     processId: this.selectedVerlagerung.id || this.selectedVerlagerung.key,
-                    empfaenger: this.durchfuehrungData.empfaenger,
-                    zustand: this.durchfuehrungData.zustandBeiAnkunft
+                    empfaenger: this.durchführungData.empfaenger,
+                    zustand: this.durchführungData.zustandBeiAnkunft
                 }
             );
         }
@@ -868,8 +868,8 @@ Ist alles korrekt?`);
         this.currentStep = 'completed';
         this.updateProgress();
 
-        const zustandIcon = this.durchfuehrungData.zustandBeiAnkunft === 'Einwandfrei' ? '✅' :
-                           this.durchfuehrungData.zustandBeiAnkunft === 'Leichte Mängel' ? '⚠️' : '❌';
+        const zustandIcon = this.durchführungData.zustandBeiAnkunft === 'Einwandfrei' ? '✅' :
+                           this.durchführungData.zustandBeiAnkunft === 'Leichte Mängel' ? '⚠️' : '❌';
 
         this.addMessage('agent', `🎉 **Verlagerung erfolgreich abgeschlossen!**
 
@@ -877,7 +877,7 @@ ${zustandIcon} Das Werkzeug ist am Zielort angekommen.
 
 **Nächste Schritte:**
 1. Werkzeug-Standort im System ist aktualisiert
-2. ${this.durchfuehrungData.zustandBeiAnkunft === 'Beschädigt' ? '⚠️ **Schadensmeldung an Spedition senden!**' : 'Werkzeug kann in Betrieb genommen werden'}
+2. ${this.durchführungData.zustandBeiAnkunft === 'Beschädigt' ? '⚠️ **Schadensmeldung an Spedition senden!**' : 'Werkzeug kann in Betrieb genommen werden'}
 
 Sie erhalten eine Bestätigung in den **Nachrichten**.`);
 
@@ -889,7 +889,7 @@ Sie erhalten eine Bestätigung in den **Nachrichten**.`);
                 <button class="agent-btn secondary" onclick="router.navigate('/verlagerung')">
                     📋 Zur Übersicht
                 </button>
-                <button class="agent-btn primary" onclick="agentVerlagerungDurchfuehrenPage.render()">
+                <button class="agent-btn primary" onclick="agentVerlagerungDurchführenPage.render()">
                     📦 Weitere Verlagerung
                 </button>
             </div>
@@ -908,7 +908,7 @@ Sie erhalten eine Bestätigung in den **Nachrichten**.`);
             localVerlagerungen[index] = {
                 ...localVerlagerungen[index],
                 status: 'completed',
-                durchfuehrung: this.durchfuehrungData
+                durchführung: this.durchführungData
             };
             localStorage.setItem('pending_verlagerungen', JSON.stringify(localVerlagerungen));
         }
@@ -917,7 +917,7 @@ Sie erhalten eine Bestätigung in den **Nachrichten**.`);
         const completed = JSON.parse(localStorage.getItem('completed_verlagerungen') || '[]');
         completed.push({
             ...this.selectedVerlagerung,
-            durchfuehrung: this.durchfuehrungData,
+            durchführung: this.durchführungData,
             completedAt: new Date().toISOString()
         });
         localStorage.setItem('completed_verlagerungen', JSON.stringify(completed));
@@ -961,7 +961,7 @@ Sie erhalten eine Bestätigung in den **Nachrichten**.`);
 
         const items = [];
         const v = this.selectedVerlagerung;
-        const d = this.durchfuehrungData;
+        const d = this.durchführungData;
 
         if (v) {
             items.push(`<div class="summary-item"><span class="label">Verlagerung:</span> ${v.bezeichnung || v.name || 'N/A'}</div>`);
@@ -991,10 +991,10 @@ Sie erhalten eine Bestätigung in den **Nachrichten**.`);
     }
 
     addStyles() {
-        if (document.getElementById('agent-verlagerung-durchfuehren-styles')) return;
+        if (document.getElementById('agent-verlagerung-durchführen-styles')) return;
 
         const styles = document.createElement('style');
-        styles.id = 'agent-verlagerung-durchfuehren-styles';
+        styles.id = 'agent-verlagerung-durchführen-styles';
         styles.textContent = `
             .agent-verlagerung-page {
                 display: flex;
@@ -1528,4 +1528,4 @@ Sie erhalten eine Bestätigung in den **Nachrichten**.`);
 }
 
 // Initialize
-const agentVerlagerungDurchfuehrenPage = new AgentVerlagerungDurchfuehrenPage();
+const agentVerlagerungDurchführenPage = new AgentVerlagerungDurchführenPage();

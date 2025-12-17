@@ -1,5 +1,5 @@
 // ORCA 2.0 - Verschrottung Detail
-// Strukturiertes Ende. Vollstaendig dokumentiert.
+// Strukturiertes Ende. Vollständig dokumentiert.
 class VerschrottungDetailPage {
     constructor() {
         this.processKey = null;
@@ -33,7 +33,7 @@ class VerschrottungDetailPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="router.navigate('/verschrottung')">Zurueck zur Liste</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/verschrottung')">Zurück zur Liste</button>
         `;
 
         // Load data
@@ -152,7 +152,7 @@ class VerschrottungDetailPage {
                 <!-- Back Navigation -->
                 <div style="margin-bottom: 1rem;">
                     <button class="btn btn-neutral" onclick="router.navigate('/verschrottung')" style="padding: 0.5rem 1rem;">
-                        &larr; Zurueck zur Liste
+                        &larr; Zurück zur Liste
                     </button>
                 </div>
 
@@ -277,7 +277,7 @@ class VerschrottungDetailPage {
 
         // Update footer with actions
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="router.navigate('/verschrottung')">Zurueck</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/verschrottung')">Zurück</button>
         `;
 
         // Inject styles
@@ -340,7 +340,7 @@ class VerschrottungDetailPage {
             <div class="container">
                 <div style="margin-bottom: 1rem;">
                     <button class="btn btn-neutral" onclick="router.navigate('/verschrottung')" style="padding: 0.5rem 1rem;">
-                        &larr; Zurueck zur Liste
+                        &larr; Zurück zur Liste
                     </button>
                 </div>
                 <div class="card" style="text-align: center; padding: 4rem 2rem;">

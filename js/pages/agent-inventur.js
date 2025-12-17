@@ -916,9 +916,9 @@ Falls keine Werkzeuge gefunden werden können:
             { number: '0010120920', type: 'Spritzgiesswerkzeug', location: 'Hunedoara', source: filename },
             { number: '0010052637', type: 'Spritzgiesswerkzeug', location: 'Hunedoara', source: filename },
             { number: '0010052648', type: 'Spritzgiesswerkzeug', location: 'Hunedoara', source: filename },
-            { number: '10006841', type: 'Schaeumform', location: 'Hunedoara', source: filename },
-            { number: '10006842', type: 'Schaeumform', location: 'Hunedoara', source: filename },
-            { number: '10006843', type: 'Schaeumform', location: 'Hunedoara', source: filename },
+            { number: '10006841', type: 'Schäumform', location: 'Hunedoara', source: filename },
+            { number: '10006842', type: 'Schäumform', location: 'Hunedoara', source: filename },
+            { number: '10006843', type: 'Schäumform', location: 'Hunedoara', source: filename },
             { number: '0010254378', type: 'Spritzgiesswerkzeug', location: 'Hunedoara', source: filename },
             { number: '10447851', type: 'Spritzgiesswerkzeug', location: 'Hunedoara', source: filename }
         ];

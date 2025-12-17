@@ -1,5 +1,5 @@
 // ORCA 2.0 - ABL (Abnahmebereitschaft) Liste
-// Analog zur Inventur-Seite mit Uebersicht + Karten-Ansicht
+// Analog zur Inventur-Seite mit Übersicht + Karten-Ansicht
 class ABLPage {
     constructor() {
         this.allABL = [];
@@ -35,7 +35,7 @@ class ABLPage {
                     </h2>
                     <div class="help-tooltip" id="helpTooltipABL">
                         <strong>Was ist zu tun?</strong><br>
-                        Pruefen Sie die Abnahmebereitschaft Ihrer Werkzeuge und bestaetigen Sie die Positionen. Bei Abweichungen: Kommentar hinterlassen.
+                        Prüfen Sie die Abnahmebereitschaft Ihrer Werkzeuge und bestätigen Sie die Positionen. Bei Abweichungen: Kommentar hinterlassen.
                     </div>
                 </div>
 
@@ -117,11 +117,11 @@ class ABLPage {
                         <div class="filter-chip" data-filter="laufend">
                             Laufend <span class="count" id="countLaufend">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="durchgefuehrt">
-                            Durchgefuehrt <span class="count" id="countDurchgefuehrt">0</span>
+                        <div class="filter-chip" data-filter="durchgeführt">
+                            Durchgeführt <span class="count" id="countDurchgeführt">0</span>
                         </div>
                         <div class="filter-chip warning" data-filter="overdue">
-                            Ueberfaellig <span class="count" id="countOverdue">0</span>
+                            Überfällig <span class="count" id="countOverdue">0</span>
                         </div>
                     </div>
                 </div>
@@ -134,7 +134,7 @@ class ABLPage {
                                 <th class="sortable" data-sort="title">Bezeichnung</th>
                                 <th class="sortable" data-sort="identifier">Bestell-Position</th>
                                 <th class="sortable" data-sort="status">Status</th>
-                                <th class="sortable" data-sort="dueDate">Faellig</th>
+                                <th class="sortable" data-sort="dueDate">Fällig</th>
                                 <th>Aktionen</th>
                             </tr>
                         </thead>
@@ -152,7 +152,7 @@ class ABLPage {
                             Lade...
                         </div>
                         <div class="pagination-controls">
-                            <button class="page-btn" id="prevPage" onclick="ablPage.prevPage()">Zurueck</button>
+                            <button class="page-btn" id="prevPage" onclick="ablPage.prevPage()">Zurück</button>
                             <button class="page-btn" id="nextPage" onclick="ablPage.nextPage()">Weiter</button>
                         </div>
                     </div>
@@ -161,14 +161,14 @@ class ABLPage {
                 <!-- CARDS VIEW -->
                 <div class="cards-container" id="cardsView" style="display: none;">
                     <div class="cards-grid" id="cardsGrid">
-                        <!-- Karten werden hier eingefuegt -->
+                        <!-- Karten werden hier eingefügt -->
                     </div>
                     <div class="pagination">
                         <div class="pagination-info" id="cardsPaginationInfo">
                             Lade...
                         </div>
                         <div class="pagination-controls">
-                            <button class="page-btn" id="cardsPrevPage" onclick="ablPage.prevPage()">Zurueck</button>
+                            <button class="page-btn" id="cardsPrevPage" onclick="ablPage.prevPage()">Zurück</button>
                             <button class="page-btn" id="cardsNextPage" onclick="ablPage.nextPage()">Weiter</button>
                         </div>
                     </div>
@@ -188,14 +188,14 @@ class ABLPage {
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" onclick="ablPage.clearLocationFilter()">Filter loeschen</button>
-                        <button class="btn btn-primary" onclick="ablPage.closeLocationFilter()">Schliessen</button>
+                        <button class="btn btn-secondary" onclick="ablPage.clearLocationFilter()">Filter löschen</button>
+                        <button class="btn btn-primary" onclick="ablPage.closeLocationFilter()">Schließen</button>
                     </div>
                 </div>
             </div>
         `;
 
-        // Speedometer CSS einfuegen
+        // Speedometer CSS einfügen
         this.injectStyles();
 
         // Show API mode
@@ -230,7 +230,7 @@ class ABLPage {
     }
 
     injectStyles() {
-        // Pruefe ob Styles bereits existieren
+        // Prüfe ob Styles bereits existieren
         if (document.getElementById('abl-page-styles')) return;
 
         const styles = document.createElement('style');
@@ -428,7 +428,7 @@ class ABLPage {
                 background: #fef3c7;
                 color: #92400e;
             }
-            .status-badge.status-durchgefuehrt {
+            .status-badge.status-durchgeführt {
                 background: #d1fae5;
                 color: #065f46;
             }
@@ -519,7 +519,7 @@ class ABLPage {
 
     async loadData() {
         try {
-            // Lade ABL-Daten ueber API (nutzt inventory-list mit type=ID)
+            // Lade ABL-Daten über API (nutzt inventory-list mit type=ID)
             const response = await api.getABLList();
             if (response.success) {
                 this.allABL = response.data;
@@ -666,7 +666,7 @@ class ABLPage {
             let aVal = a[column];
             let bVal = b[column];
 
-            // Spezialfall fuer progress (numerisch)
+            // Spezialfall für progress (numerisch)
             if (column === 'progress') {
                 aVal = parseFloat(aVal) || 0;
                 bVal = parseFloat(bVal) || 0;
@@ -698,9 +698,9 @@ class ABLPage {
         const total = this.allABL.length;
         const geplant = this.allABL.filter(a => a.status === 'geplant').length;
         const laufend = this.allABL.filter(a => a.status === 'laufend').length;
-        const durchgefuehrt = this.allABL.filter(a => a.status === 'durchgefuehrt').length;
+        const durchgeführt = this.allABL.filter(a => a.status === 'durchgeführt').length;
 
-        // Ueberfaellige berechnen
+        // Überfällige berechnen
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const overdue = this.allABL.filter(abl => {
@@ -715,16 +715,16 @@ class ABLPage {
         document.getElementById('countAll').textContent = total;
         document.getElementById('countGeplant').textContent = geplant;
         document.getElementById('countLaufend').textContent = laufend;
-        document.getElementById('countDurchgefuehrt').textContent = durchgefuehrt;
+        document.getElementById('countDurchgeführt').textContent = durchgeführt;
         document.getElementById('countOverdue').textContent = overdue;
 
-        // Stats fuer Speedometer
+        // Stats für Speedometer
         const abgeschlossen = this.allABL.filter(a =>
-            a.status === 'abgeschlossen' || a.status === 'akzeptiert' || a.status === 'durchgefuehrt'
+            a.status === 'abgeschlossen' || a.status === 'akzeptiert' || a.status === 'durchgeführt'
         ).length;
         const offen = total - abgeschlossen;
 
-        console.log('ABL Stats:', { total, abgeschlossen, offen, geplant, laufend, durchgefuehrt });
+        console.log('ABL Stats:', { total, abgeschlossen, offen, geplant, laufend, durchgeführt });
 
         const statTotalEl = document.getElementById('ablStatTotal');
         const statDoneEl = document.getElementById('ablStatDone');
@@ -744,7 +744,7 @@ class ABLPage {
         this.allABL.forEach(abl => {
             if (abl.status === 'abgeschlossen') totalProgress += 100;
             else if (abl.status === 'akzeptiert') totalProgress += 90;
-            else if (abl.status === 'durchgefuehrt') totalProgress += 75;
+            else if (abl.status === 'durchgeführt') totalProgress += 75;
             else if (abl.status === 'laufend') totalProgress += parseFloat(abl.progress) || 25;
             else if (abl.status === 'geplant') totalProgress += 5;
         });
@@ -799,7 +799,7 @@ class ABLPage {
                     <td colspan="5">
                         <div class="empty-state">
                             <div class="empty-state-icon">&#128269;</div>
-                            <div class="empty-state-text">Keine ABL-Auftraege gefunden</div>
+                            <div class="empty-state-text">Keine ABL-Aufträge gefunden</div>
                             <div class="empty-state-hint">Versuche einen anderen Suchbegriff oder Filter</div>
                         </div>
                     </td>
@@ -832,7 +832,7 @@ class ABLPage {
 
         // Pagination
         document.getElementById('paginationInfo').textContent =
-            `Zeige ${startIdx + 1}-${Math.min(endIdx, this.filteredABL.length)} von ${this.filteredABL.length} ABL-Auftraegen`;
+            `Zeige ${startIdx + 1}-${Math.min(endIdx, this.filteredABL.length)} von ${this.filteredABL.length} ABL-Aufträgen`;
         document.getElementById('prevPage').disabled = this.currentPage <= 1;
         document.getElementById('nextPage').disabled = this.currentPage >= totalPages;
     }
@@ -848,7 +848,7 @@ class ABLPage {
             cardsGrid.innerHTML = `
                 <div class="empty-state" style="grid-column: 1 / -1;">
                     <div class="empty-state-icon">&#128269;</div>
-                    <div class="empty-state-text">Keine ABL-Auftraege gefunden</div>
+                    <div class="empty-state-text">Keine ABL-Aufträge gefunden</div>
                     <div class="empty-state-hint">Versuche einen anderen Suchbegriff oder Filter</div>
                 </div>
             `;
@@ -868,7 +868,7 @@ class ABLPage {
 
                         <div class="abl-card-footer">
                             <span class="abl-card-due ${isOverdue ? 'overdue' : ''}">
-                                Faellig: ${this.formatDate(abl.dueDate)}
+                                Fällig: ${this.formatDate(abl.dueDate)}
                             </span>
                             <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="event.stopPropagation(); ablPage.openDetail('${abl.key}')">
                                 Details
@@ -881,7 +881,7 @@ class ABLPage {
 
         // Pagination
         document.getElementById('cardsPaginationInfo').textContent =
-            `Zeige ${startIdx + 1}-${Math.min(endIdx, this.filteredABL.length)} von ${this.filteredABL.length} ABL-Auftraegen`;
+            `Zeige ${startIdx + 1}-${Math.min(endIdx, this.filteredABL.length)} von ${this.filteredABL.length} ABL-Aufträgen`;
         document.getElementById('cardsPrevPage').disabled = this.currentPage <= 1;
         document.getElementById('cardsNextPage').disabled = this.currentPage >= totalPages;
     }
@@ -890,7 +890,7 @@ class ABLPage {
         const labels = {
             'geplant': 'Geplant',
             'laufend': 'Laufend',
-            'durchgefuehrt': 'Durchgefuehrt',
+            'durchgeführt': 'Durchgeführt',
             'akzeptiert': 'Akzeptiert',
             'abgeschlossen': 'Abgeschlossen',
             // Lokale ABL-Status
@@ -991,7 +991,7 @@ class ABLPage {
 
     exportData() {
         // CSV Export
-        const headers = ['ABL-Nr.', 'Bezeichnung', 'Standort', 'Status', 'Fortschritt', 'Faellig'];
+        const headers = ['ABL-Nr.', 'Bezeichnung', 'Standort', 'Status', 'Fortschritt', 'Fällig'];
         const rows = this.filteredABL.map(abl => [
             abl.identifier || '',
             abl.title || '',

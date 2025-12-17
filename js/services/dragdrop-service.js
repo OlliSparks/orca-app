@@ -14,12 +14,12 @@ class DragDropService {
 
     init() {
         try {
-            // Globales Drag-Over Event fuer visuelles Feedback
+            // Globales Drag-Over Event für visuelles Feedback
             document.addEventListener('dragover', (e) => this.handleGlobalDragOver(e));
             document.addEventListener('dragleave', (e) => this.handleGlobalDragLeave(e));
             document.addEventListener('drop', (e) => this.handleGlobalDrop(e));
 
-            // Observer fuer neue Drop-Zones
+            // Observer für neue Drop-Zones
             this.setupMutationObserver();
         } catch (e) {
             console.warn('[DragDrop] Init error:', e);

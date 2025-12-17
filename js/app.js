@@ -44,7 +44,7 @@ class OrcaApp {
             // Get new messages since last check
             const newMessages = messageService.getNewMessagesSinceLastCheck();
 
-            // Popup deaktiviert - stoert die Benutzer
+            // Popup deaktiviert - stört die Benutzer
             // if (newMessages.length > 0) {
             //     MessagesPage.showNewMessagesPopup(newMessages);
             // }

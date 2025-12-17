@@ -32,7 +32,7 @@ class ABLDetailPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="router.navigate('/abl')">Zurueck zur Liste</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/abl')">Zurück zur Liste</button>
         `;
 
         // Load data
@@ -146,7 +146,7 @@ class ABLDetailPage {
         const statusInfo = {
             'I0': { class: 'status-geplant', text: 'Geplant' },
             'I1': { class: 'status-laufend', text: 'Laufend' },
-            'I2': { class: 'status-durchgefuehrt', text: 'Durchgefuehrt' },
+            'I2': { class: 'status-durchgeführt', text: 'Durchgeführt' },
             'I3': { class: 'status-akzeptiert', text: 'Akzeptiert' },
             'I4': { class: 'status-abgeschlossen', text: 'Abgeschlossen' }
         }[inv.inventoryStatus] || { class: 'status-geplant', text: inv.inventoryStatus || 'Unbekannt' };
@@ -165,7 +165,7 @@ class ABLDetailPage {
                 <!-- Back Navigation -->
                 <div style="margin-bottom: 1rem;">
                     <button class="btn btn-neutral" onclick="router.navigate('/abl')" style="padding: 0.5rem 1rem;">
-                        &larr; Zurueck zur Liste
+                        &larr; Zurück zur Liste
                     </button>
                 </div>
 
@@ -180,7 +180,7 @@ class ABLDetailPage {
                             </span>
                         </div>
                         <div style="text-align: right;">
-                            <p style="color: #6b7280; font-size: 0.9rem;">Faellig am</p>
+                            <p style="color: #6b7280; font-size: 0.9rem;">Fällig am</p>
                             <p style="font-size: 1.2rem; font-weight: 600; ${this.isOverdue(inv.dueDate) ? 'color: #ef4444;' : ''}">${inv.dueDate ? this.formatDate(inv.dueDate) : '-'}</p>
                         </div>
                     </div>
@@ -267,7 +267,7 @@ class ABLDetailPage {
 
         // Update footer with actions
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="router.navigate('/abl')">Zurueck</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/abl')">Zurück</button>
             ${inv.inventoryStatus === 'I1' ? `
             <button class="btn btn-primary" onclick="ablDetailPage.reportAll()">Alle melden</button>
             ` : ''}
@@ -292,7 +292,7 @@ class ABLDetailPage {
                 <!-- Back Navigation -->
                 <div style="margin-bottom: 1rem;">
                     <button class="btn btn-neutral" onclick="router.navigate('/abl')" style="padding: 0.5rem 1rem;">
-                        &larr; Zurueck zur Liste
+                        &larr; Zurück zur Liste
                     </button>
                 </div>
 
@@ -409,7 +409,7 @@ class ABLDetailPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="router.navigate('/abl')">Zurueck</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/abl')">Zurück</button>
             ${localData.status !== 'sent' ? `
             <button class="btn btn-danger" onclick="ablDetailPage.deleteLocalABL('${this.inventoryKey}')">Löschen</button>
             ` : ''}
@@ -550,7 +550,7 @@ class ABLDetailPage {
                 'P0': { class: 'status-geplant', text: 'Geplant' },
                 'P1': { class: 'status-laufend', text: 'Versandt' },
                 'P2': { class: 'status-laufend', text: 'In Bearbeitung' },
-                'P3': { class: 'status-durchgefuehrt', text: 'Gemeldet' },
+                'P3': { class: 'status-durchgeführt', text: 'Gemeldet' },
                 'P4': { class: 'status-akzeptiert', text: 'Akzeptiert' },
                 'P5': { class: 'status-abgeschlossen', text: 'Abgeschlossen' },
                 'P6': { class: 'status-fehler', text: 'Abgelehnt' }
@@ -599,7 +599,7 @@ class ABLDetailPage {
                 background: #fef3c7;
                 color: #92400e;
             }
-            .status-badge.status-durchgefuehrt {
+            .status-badge.status-durchgeführt {
                 background: #d1fae5;
                 color: #065f46;
             }
@@ -673,7 +673,7 @@ class ABLDetailPage {
             return;
         }
 
-        if (!confirm('Moechten Sie alle ' + pendingPositions.length + ' offenen Positionen melden?')) {
+        if (!confirm('Möchten Sie alle ' + pendingPositions.length + ' offenen Positionen melden?')) {
             return;
         }
 
@@ -695,7 +695,7 @@ class ABLDetailPage {
             <div class="container">
                 <div style="margin-bottom: 1rem;">
                     <button class="btn btn-neutral" onclick="router.navigate('/abl')" style="padding: 0.5rem 1rem;">
-                        &larr; Zurueck zur Liste
+                        &larr; Zurück zur Liste
                     </button>
                 </div>
                 <div class="card" style="text-align: center; padding: 4rem 2rem;">

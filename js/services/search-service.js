@@ -90,8 +90,8 @@ class SearchService {
                 </div>
                 <div class="search-footer">
                     <span><kbd>&#8593;</kbd><kbd>&#8595;</kbd> Navigieren</span>
-                    <span><kbd>Enter</kbd> Oeffnen</span>
-                    <span><kbd>ESC</kbd> Schliessen</span>
+                    <span><kbd>Enter</kbd> Öffnen</span>
+                    <span><kbd>ESC</kbd> Schließen</span>
                 </div>
             </div>
         `;
@@ -140,7 +140,7 @@ class SearchService {
 
         // 1. Seiten-Navigation
         const pages = [
-            { type: 'page', title: 'Dashboard', path: '/dashboard', icon: '&#127968;', keywords: ['start', 'uebersicht', 'home'] },
+            { type: 'page', title: 'Dashboard', path: '/dashboard', icon: '&#127968;', keywords: ['start', 'übersicht', 'home'] },
             { type: 'page', title: 'Inventur', path: '/inventur', icon: '&#128269;', keywords: ['werkzeuge', 'zaehlung', 'bestand'] },
             { type: 'page', title: 'Verlagerung', path: '/verlagerung', icon: '&#128666;', keywords: ['umzug', 'transport'] },
             { type: 'page', title: 'Partnerwechsel', path: '/partnerwechsel', icon: '&#128260;', keywords: ['vpw', 'wechsel'] },
@@ -303,7 +303,7 @@ class SearchService {
             const titleLower = (item.title || '').toLowerCase();
             const subtitleLower = (item.subtitle || '').toLowerCase();
 
-            // Exakte Uebereinstimmung
+            // Exakte Übereinstimmung
             if (titleLower === q) score += 100;
             else if (titleLower.startsWith(q)) score += 60;
             else if (titleLower.includes(q)) score += 40;
@@ -320,7 +320,7 @@ class SearchService {
                 }
             }
 
-            // Wort-fuer-Wort Match
+            // Wort-für-Wort Match
             for (const word of words) {
                 if (word.length < 2) continue;
                 if (titleLower.includes(word)) score += 15;
@@ -328,7 +328,7 @@ class SearchService {
                 if (item.keywords && item.keywords.some(kw => (kw || '').toLowerCase().includes(word))) score += 8;
             }
 
-            // Typ-Prioritaet
+            // Typ-Priorität
             const typePriority = { 'inventur': 10, 'verlagerung': 8, 'abl': 6, 'page': 5, 'verschrottung': 4, 'vpw': 4 };
             score += typePriority[item.type] || 0;
 
@@ -410,8 +410,8 @@ class SearchService {
             container.innerHTML =
                 '<div class="search-no-results">' +
                     '<div class="no-results-icon">&#128269;</div>' +
-                    '<p>Keine Ergebnisse fuer "<strong>' + this.escapeHtml(query) + '</strong>"</p>' +
-                    '<span>Versuchen Sie andere Suchbegriffe oder oeffnen Sie eine Seite</span>' +
+                    '<p>Keine Ergebnisse für "<strong>' + this.escapeHtml(query) + '</strong>"</p>' +
+                    '<span>Versuchen Sie andere Suchbegriffe oder öffnen Sie eine Seite</span>' +
                 '</div>';
             return;
         }

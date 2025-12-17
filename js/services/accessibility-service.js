@@ -14,16 +14,16 @@ class AccessibilityService {
 
     init() {
         try {
-            // Live-Region fuer Ankuendigungen erstellen
+            // Live-Region für Ankündigungen erstellen
             this.createLiveRegion();
 
-            // ARIA-Labels automatisch hinzufuegen
+            // ARIA-Labels automatisch hinzufügen
             this.setupAutoARIA();
 
-            // Skip-Links fuer Tastatur-Navigation
+            // Skip-Links für Tastatur-Navigation
             this.createSkipLinks();
 
-            // Fokus-Trap fuer Modals
+            // Fokus-Trap für Modals
             this.setupFocusTrap();
 
             // Fokus-Sichtbarkeit verbessern
@@ -36,7 +36,7 @@ class AccessibilityService {
         }
     }
 
-    // Live-Region fuer Screen Reader Ankuendigungen
+    // Live-Region für Screen Reader Ankündigungen
     createLiveRegion() {
         if (!document.body) return;
 
@@ -48,7 +48,7 @@ class AccessibilityService {
         region.className = 'sr-only';
         document.body.appendChild(region);
 
-        // Assertive Region fuer wichtige Meldungen
+        // Assertive Region für wichtige Meldungen
         const assertive = document.createElement('div');
         assertive.id = 'a11y-live-assertive';
         assertive.setAttribute('role', 'alert');
@@ -58,12 +58,12 @@ class AccessibilityService {
         document.body.appendChild(assertive);
     }
 
-    // Screen Reader Ankuendigung
+    // Screen Reader Ankündigung
     announce(message, priority = 'polite') {
         const region = document.getElementById(priority === 'assertive' ? 'a11y-live-assertive' : 'a11y-live-region');
         if (!region) return;
 
-        // Kurz leeren dann neu setzen (fuer wiederholte Meldungen)
+        // Kurz leeren dann neu setzen (für wiederholte Meldungen)
         region.textContent = '';
         setTimeout(() => {
             region.textContent = message;
@@ -128,16 +128,16 @@ class AccessibilityService {
     guessLabelFromClass(className) {
         if (!className) return null;
         const labelMap = {
-            'close': 'Schliessen',
+            'close': 'Schließen',
             'search': 'Suchen',
-            'menu': 'Menue',
+            'menu': 'Menü',
             'settings': 'Einstellungen',
             'edit': 'Bearbeiten',
-            'delete': 'Loeschen',
-            'add': 'Hinzufuegen',
+            'delete': 'Löschen',
+            'add': 'Hinzufügen',
             'save': 'Speichern',
             'cancel': 'Abbrechen',
-            'back': 'Zurueck',
+            'back': 'Zurück',
             'next': 'Weiter',
             'help': 'Hilfe',
             'theme': 'Design wechseln'
@@ -162,14 +162,14 @@ class AccessibilityService {
         skipNav.textContent = 'Zum Hauptinhalt springen';
         document.body.insertBefore(skipNav, document.body.firstChild);
 
-        // Main-Content ID setzen falls noetig
+        // Main-Content ID setzen falls nötig
         const app = document.getElementById('app');
         if (app && !document.getElementById('main-content')) {
             app.id = 'main-content';
         }
     }
 
-    // Fokus-Trap fuer Modals
+    // Fokus-Trap für Modals
     setupFocusTrap() {
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Tab') return;

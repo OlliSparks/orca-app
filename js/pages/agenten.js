@@ -39,13 +39,13 @@ class AgentenPage {
                 route: '/agent-verlagerung-beantragen'
             },
             {
-                id: 'verlagerung-durchfuehren',
+                id: 'verlagerung-durchführen',
                 name: 'Verlagerung durchführen',
                 icon: '📦',
                 description: 'Führen Sie genehmigte Verlagerungen durch. Dokumentieren Sie Versand, Transport, Zolldokumente und Empfangsbestätigung.',
                 features: ['Versand-Dokumentation', 'Spedition & Tracking', 'Zolldokumente', 'Empfangsbestätigung'],
                 status: 'active',
-                route: '/agent-verlagerung-durchfuehren'
+                route: '/agent-verlagerung-durchführen'
             },
             {
                 id: 'vpw',

@@ -96,7 +96,7 @@ class UnternehmenPage {
                         <div style="font-size: 4rem; margin-bottom: 1rem; color: #f97316;">⚠️</div>
                         <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Keine Unternehmensdaten</h2>
                         <p style="color: #6b7280; margin-bottom: 2rem;">Die Unternehmensdaten konnten nicht geladen werden.</p>
-                        <button class="btn btn-primary" onclick="router.navigate('/')">Zurueck zur Uebersicht</button>
+                        <button class="btn btn-primary" onclick="router.navigate('/')">Zurück zur Übersicht</button>
                     </div>
                 </div>
             `;
@@ -107,7 +107,7 @@ class UnternehmenPage {
             <div class="container">
                 <!-- Back Button -->
                 <div style="margin-bottom: 1rem;">
-                    <button class="back-btn" onclick="router.navigate('/')">← Zurueck zur Uebersicht</button>
+                    <button class="back-btn" onclick="router.navigate('/')">← Zurück zur Übersicht</button>
                 </div>
 
                 <!-- Basis-Informationen -->
@@ -319,7 +319,7 @@ class UnternehmenPage {
                         <span class="user-key">· ${user.key || ''}</span>
                     </div>
                     <div class="user-contact-line">
-                        ${user.phone ? `<span class="user-phone">📞 ${user.phone}</span>` : '<span class="user-phone">📞 Keine Daten verfuegbar</span>'}
+                        ${user.phone ? `<span class="user-phone">📞 ${user.phone}</span>` : '<span class="user-phone">📞 Keine Daten verfügbar</span>'}
                         ${user.email ? `<span class="user-email">📧 ${user.email}</span>` : ''}
                     </div>
                     <div class="user-roles">
@@ -333,7 +333,7 @@ class UnternehmenPage {
                             <span>✏️</span> Bearbeiten
                         </div>
                         <div class="menu-item" onclick="unternehmenPage.resetPassword('${user.key}')">
-                            <span>🔑</span> Passwort zuruecksetzen
+                            <span>🔑</span> Passwort zurücksetzen
                         </div>
                         <div class="menu-item" onclick="unternehmenPage.resendRegistration('${user.key}')">
                             <span>📧</span> Registrierungslink erneut senden
@@ -352,7 +352,7 @@ class UnternehmenPage {
             return '<div class="empty-state">Keine Lieferanten hinterlegt</div>';
         }
 
-        // Gruppiere nach gueltig/ungueltig
+        // Gruppiere nach gültig/ungültig
         const validSuppliers = this.suppliers.filter(s => s.isValid);
         const invalidSuppliers = this.suppliers.filter(s => !s.isValid);
 
@@ -373,7 +373,7 @@ class UnternehmenPage {
                 <div class="suppliers-section" style="margin-top: 1.5rem;">
                     <div class="subsection-title">
                         <span>⚠️</span>
-                        <span>Unvollstaendige Lieferanten (${invalidSuppliers.length})</span>
+                        <span>Unvollständige Lieferanten (${invalidSuppliers.length})</span>
                     </div>
                     <div class="suppliers-grid inactive">
                         ${invalidSuppliers.map(sup => this.renderSupplierCard(sup, true)).join('')}
@@ -405,7 +405,7 @@ class UnternehmenPage {
                 <div class="supplier-details">
                     ${supplier.street ? `<div class="supplier-row">${supplier.street}</div>` : ''}
                     ${supplier.city ? `<div class="supplier-row">${supplier.postcode ? supplier.postcode + ' ' : ''}${supplier.city}</div>` : ''}
-                    ${!supplier.street && !supplier.city ? '<div class="supplier-row empty">Adressdaten nicht verfuegbar</div>' : ''}
+                    ${!supplier.street && !supplier.city ? '<div class="supplier-row empty">Adressdaten nicht verfügbar</div>' : ''}
                 </div>
             </div>
         `;
@@ -742,7 +742,7 @@ class UnternehmenPage {
 
     async resetPassword(key) {
         this.closeAllMenus();
-        if (!confirm('Passwort wirklich zuruecksetzen? Der Benutzer erhaelt eine E-Mail.')) return;
+        if (!confirm('Passwort wirklich zurücksetzen? Der Benutzer erhält eine E-Mail.')) return;
 
         try {
             const result = await api.resetUserPassword(this.companyKey, key);
@@ -1000,13 +1000,13 @@ class UnternehmenPage {
                     header.classList.remove('active');
                     content.classList.remove('active');
                 } else {
-                    // Alle schliessen
+                    // Alle schließen
                     document.querySelectorAll('.accordion-header').forEach(h => {
                         h.classList.remove('active');
                         h.nextElementSibling.classList.remove('active');
                     });
 
-                    // Aktuelles oeffnen
+                    // Aktuelles öffnen
                     header.classList.add('active');
                     content.classList.add('active');
                 }

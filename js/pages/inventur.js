@@ -4,7 +4,7 @@ class InventurPage {
         this.locations = []; // Wird dynamisch aus den geladenen Inventur-Positionen befuellt
 
         this.tools = [];
-        this.companyUsers = []; // Benutzerliste aus API fuer Delegate-Dropdown
+        this.companyUsers = []; // Benutzerliste aus API für Delegate-Dropdown
         this.currentFilter = 'all';
         this.currentLocationFilter = null;
         this.currentResponsibleFilter = null;
@@ -407,7 +407,7 @@ class InventurPage {
             this.updateSupplierHeader();
         }
 
-        // Schritt 2: Fuer jede Inventur die Positionen laden
+        // Schritt 2: Für jede Inventur die Positionen laden
         const allPositions = [];
         const totalInventories = inventoryResponse.data.length;
 
@@ -425,7 +425,7 @@ class InventurPage {
                     // Jede Position mit Inventur-Kontext anreichern
                     const enrichedPositions = positionsResponse.data.map(pos => ({
                         ...pos,
-                        // Falls dueDate nicht in Position, aus Inventur uebernehmen
+                        // Falls dueDate nicht in Position, aus Inventur übernehmen
                         dueDate: pos.dueDate || inventory.dueDate,
                         // Inventur-Referenz behalten
                         parentInventory: {
@@ -452,7 +452,7 @@ class InventurPage {
         // Schritt 4: Standorte aus den geladenen Positionen extrahieren
         this.extractLocationsFromTools();
 
-        // Schritt 5: Benutzerliste aus API laden (fuer Delegate-Dropdown)
+        // Schritt 5: Benutzerliste aus API laden (für Delegate-Dropdown)
         this.showLoadingBar(true, 'Lade Benutzerliste...', 100);
         await this.loadCompanyUsers();
 
@@ -671,8 +671,8 @@ class InventurPage {
 
                 if (!locationSet.has(locationName)) {
                     locationSet.set(locationName, {
-                        id: locationName,           // Fuer internen Filter (Name)
-                        key: apiKey,                // Fuer API-Rueckmeldung (UUID)
+                        id: locationName,           // Für internen Filter (Name)
+                        key: apiKey,                // Für API-Rueckmeldung (UUID)
                         name: locationName
                     });
                 }
@@ -721,7 +721,7 @@ class InventurPage {
         const select = document.getElementById('responsibleFilterSelect');
         if (!select) return;
 
-        // Vorherige Optionen loeschen (ausser der ersten)
+        // Vorherige Optionen löschen (ausser der ersten)
         while (select.options.length > 1) {
             select.remove(1);
         }
@@ -935,7 +935,7 @@ class InventurPage {
         // Safety check - elements may not exist yet
         if (!newLocationSelect || !bulkLocationSelect) return;
 
-        // Vorherige Optionen loeschen (ausser der ersten "-- Standort waehlen --" Option)
+        // Vorherige Optionen löschen (ausser der ersten "-- Standort wählen --" Option)
         while (newLocationSelect.options.length > 1) {
             newLocationSelect.remove(1);
         }
@@ -1428,13 +1428,13 @@ class InventurPage {
         }
     }
 
-    // Setzt alle Filter zurueck
+    // Setzt alle Filter zurück
     resetAllFilters() {
         this.currentLocationFilter = null;
         this.currentResponsibleFilter = null;
         this.currentPage = 1;
 
-        // Dropdowns zuruecksetzen
+        // Dropdowns zurücksetzen
         document.getElementById('bulkLocationSelect').value = '';
         document.getElementById('responsibleFilterSelect').value = '';
 
@@ -1463,7 +1463,7 @@ class InventurPage {
         if (this.currentTool) {
             this.currentTool.status = 'relocated';
             this.currentTool.newLocation = newLocationId;
-            // Speichere auch den locationKey fuer die API-Rueckmeldung
+            // Speichere auch den locationKey für die API-Rueckmeldung
             const selectedLocation = this.locations.find(loc => loc.id === newLocationId);
             this.currentTool.newLocationKey = selectedLocation?.key || newLocationId;
             this.currentTool.selected = false;
@@ -1640,7 +1640,7 @@ class InventurPage {
 
     // Photo upload methods
     addPhoto(toolId) {
-        // Suche mit == statt === fuer flexibleren Vergleich (String vs Number)
+        // Suche mit == statt === für flexibleren Vergleich (String vs Number)
         this.currentTool = this.tools.find(t => t.id == toolId || t.positionKey == toolId);
         if (this.currentTool) {
             document.getElementById('photoModalToolName').textContent = this.currentTool.name || this.currentTool.assetName || 'Unbekannt';
@@ -1651,7 +1651,7 @@ class InventurPage {
             document.getElementById('confirmPhoto').disabled = true;
             document.getElementById('photoModal').classList.add('active');
         } else {
-            console.error('Tool nicht gefunden:', toolId, 'Verfuegbare IDs:', this.tools.map(t => t.id));
+            console.error('Tool nicht gefunden:', toolId, 'Verfügbare IDs:', this.tools.map(t => t.id));
         }
     }
 
@@ -1746,7 +1746,7 @@ class InventurPage {
                 }
             });
 
-            // Felder zuruecksetzen
+            // Felder zurücksetzen
             select.value = '';
             document.getElementById('delegateNewResponsible').value = '';
 
@@ -1765,7 +1765,7 @@ class InventurPage {
         const selectValue = document.getElementById('delegateResponsibleSelect').value;
         const inputValue = document.getElementById('delegateNewResponsible').value.trim();
 
-        // Prioritaet: Eingabefeld > Dropdown
+        // Priorität: Eingabefeld > Dropdown
         const newResponsible = inputValue || selectValue;
 
         if (!newResponsible) {
@@ -1786,19 +1786,19 @@ class InventurPage {
         // Direkt im Array aktualisieren
         this.tools[toolIndex].responsible = newResponsible;
 
-        // Falls neuer Verantwortlicher noch nicht in der Liste ist, hinzufuegen
+        // Falls neuer Verantwortlicher noch nicht in der Liste ist, hinzufügen
         if (inputValue && !this.responsibles.find(r => r.id === inputValue)) {
             this.responsibles.push({ id: inputValue, name: inputValue });
             this.responsibles.sort((a, b) => a.name.localeCompare(b.name));
             this.populateResponsibleSelect();
         }
 
-        // Modal schliessen (setzt this.currentTool auf null)
+        // Modal schließen (setzt this.currentTool auf null)
         document.getElementById('delegateModal').classList.remove('active');
         this.currentTool = null;
 
         // Erfolgsmeldung
-        alert(`Verantwortlicher geaendert!\n\nWerkzeug: ${toolName}\nVon: ${oldResponsible || 'Nicht zugewiesen'}\nAn: ${newResponsible}`);
+        alert(`Verantwortlicher geändert!\n\nWerkzeug: ${toolName}\nVon: ${oldResponsible || 'Nicht zugewiesen'}\nAn: ${newResponsible}`);
 
         // Ansicht neu rendern
         if (this.currentView === 'table') {

@@ -848,7 +848,7 @@ class APIService {
 
                 // Asset data - INVENTARNUMMER hier!
                 inventoryNumber: inventoryNum,
-                number: inventoryNum,  // Fuer Kompatibilitaet
+                number: inventoryNum,  // Für Kompatibilitaet
                 name: assetName,
                 assetKey: pos.asset?.context?.key || pos.assetKey || '',
 
@@ -1175,7 +1175,7 @@ class APIService {
 // === ABL (Abnahmebereitschaftserklaerung) Endpoints ===
     // ABL = Inventur mit Typ ID (Abnahmebereitschaft)
     // Nutzt /inventory-list mit type=ID Filter
-    // Asset processStatus: A8 (geplant), A9 (in Durchfuehrung)
+    // Asset processStatus: A8 (geplant), A9 (in Durchführung)
 
     async getABLList(filters = {}) {
         return this.callWithFallback(
@@ -1217,7 +1217,7 @@ class APIService {
                     const keyShort = context.key ? context.key.substring(0, 8) : '';
                     let identifier = '';
 
-                    // Prioritaet: orders > partNumbers (wenn String) > key-Anfang
+                    // Priorität: orders > partNumbers (wenn String) > key-Anfang
                     if (meta.orders && typeof meta.orders === 'string') {
                         identifier = meta.orders;
                     } else if (meta.partNumbers && typeof meta.partNumbers === 'string') {
@@ -1269,11 +1269,11 @@ class APIService {
                     }
 
                     return {
-                        // Keys fuer Navigation
+                        // Keys für Navigation
                         id: context.key || index,
                         key: context.key || '',
                         inventoryKey: context.key || '',
-                        // ABL-Nummer / Identifier (fuer Anzeige)
+                        // ABL-Nummer / Identifier (für Anzeige)
                         identifier: identifier,
                         inventoryNumber: partNumberStr,
                         partNumbers: partNumberStr,
@@ -1323,7 +1323,7 @@ class APIService {
         const statusMap = {
             'I0': 'geplant',        // Geplant, noch nicht versandt
             'I1': 'laufend',        // An Lieferant versandt
-            'I2': 'durchgefuehrt',  // Lieferant hat zurueckgemeldet
+            'I2': 'durchgefuehrt',  // Lieferant hat zurückgemeldet
             'I3': 'akzeptiert',     // Owner hat akzeptiert
             'I4': 'abgeschlossen'   // Abgeschlossen
         };
@@ -1410,7 +1410,7 @@ class APIService {
         return statusMap[positionStatus] || 'unbekannt';
     }
 
-    // ABL Position melden (Abnahme durchfuehren)
+    // ABL Position melden (Abnahme durchführen)
     async reportABLPosition(inventoryKey, positionKey, revision, data) {
         return this.callWithFallback(
             async () => {
@@ -1462,10 +1462,10 @@ class APIService {
             if (i > 5 && i <= 9) inventoryStatus = 'I1';
             else if (i > 9) inventoryStatus = 'I2';
 
-            // Faelligkeitsdatum
+            // Fälligkeitsdatum
             const dueDate = new Date(today);
             if (i <= 3) {
-                // Ueberfaellig
+                // Überfällig
                 dueDate.setDate(today.getDate() - (5 * i));
             } else {
                 dueDate.setDate(today.getDate() + (7 * (i - 3)));
@@ -1513,7 +1513,7 @@ class APIService {
             // OPTIMIERT v2: Server-seitiger Filter nach RELOCATION.C + contractPartner
             // Wie in Produktions-App: /process?md.p.type=RELOCATION.C&md.contractPartner=XXX
             // Vorher: Alle 906 Verlagerungen laden, dann client-seitig filtern
-            // Jetzt: Nur die relevanten Verlagerungen fuer diesen Supplier laden
+            // Jetzt: Nur die relevanten Verlagerungen für diesen Supplier laden
             const params = new URLSearchParams();
             params.append('limit', filters.limit || 10000);
             params.append('skip', filters.skip || 0);
@@ -1528,7 +1528,7 @@ class APIService {
             let endpoint = `/process?${params.toString()}`;
             const processList = await this.call(endpoint, 'GET');
 
-            // Die API liefert bereits gefilterte Prozesse fuer diesen Supplier
+            // Die API liefert bereits gefilterte Prozesse für diesen Supplier
             const filteredBySupplier = Array.isArray(processList) ? processList : (processList.data || []);
 
             // Parent-Prozesse laden um Standort-Daten zu bekommen
@@ -1676,7 +1676,7 @@ class APIService {
             const item = response.data || response;
             let meta = item.meta || {};
 
-            // Lade Parent-Prozess fuer Standort-Daten
+            // Lade Parent-Prozess für Standort-Daten
             let parentMeta = {};
             const parentKey = meta['pp.pid'];
 
@@ -1691,7 +1691,7 @@ class APIService {
             }
 
             // Standorte: Die API liefert KEINE Adress-Felder!
-            // Adressen muessen ueber Company/Location API geladen werden
+            // Adressen müssen über Company/Location API geladen werden
             // Vorlaeufig: Parse aus 'title' (Format: "AT-Ort -> DE-Ort-[Ownership]")
             let sourceLocation = '';
             let targetLocation = '';
@@ -1818,7 +1818,7 @@ class APIService {
                     targetLocation: targetLoc,
                     status: posMeta['relo.status'] || 'PENDING',
                     comment: posMeta['relo.declaration.description'] || '',
-                    // Zusaetzliche Asset-Infos
+                    // Zusätzliche Asset-Infos
                     partNumber: posMeta['asset.partNumberText'] || '',
                     additionalInfo: posMeta['asset.factNumberAI'] || '',
                     originalData: pos
@@ -2074,7 +2074,7 @@ class APIService {
 
         try {
             // VPW = Vertragspartnerwechsel
-            // Versuche verschiedene Prozess-Typen die VPW sein koennten
+            // Versuche verschiedene Prozess-Typen die VPW sein könnten
             const params = new URLSearchParams();
             params.append('limit', filters.limit || 10000);
             params.append('skip', filters.skip || 0);
@@ -2087,7 +2087,7 @@ class APIService {
 
             let items = [];
 
-            // Moegliche VPW Prozess-Typen (wir wissen nicht den exakten Namen)
+            // Mögliche VPW Prozess-Typen (wir wissen nicht den exakten Namen)
             const vpwTypes = [
                 'CONTRACT_PARTNER.C',
                 'CONTRACT_PARTNER_CHANGE.C',
@@ -2124,7 +2124,7 @@ class APIService {
                     const allResponse = await this.call(allProcessEndpoint, 'GET');
                     const allProcesses = Array.isArray(allResponse) ? allResponse : (allResponse.data || []);
 
-                    // Filtere nach Prozessen die VPW-relevant sein koennten
+                    // Filtere nach Prozessen die VPW-relevant sein könnten
                     // (haben verschiedene contractPartner in from/to)
                     items = allProcesses.filter(p => {
                         const meta = p.meta || {};
@@ -2151,9 +2151,9 @@ class APIService {
                 if (apiStatus.includes('completed') || apiStatus.includes('done') || apiStatus.includes('closed')) {
                     status = 'abgeschlossen';
                 } else if (apiStatus.includes('accepted') || apiStatus.includes('confirmed')) {
-                    status = 'uebernahme-bestaetigt';
+                    status = 'übernahme-bestätigt';
                 } else if (apiStatus.includes('reported') || apiStatus.includes('sent')) {
-                    status = 'abgabe-bestaetigt';
+                    status = 'abgabe-bestätigt';
                 }
 
                 // Partner-Informationen extrahieren
@@ -2192,9 +2192,9 @@ class APIService {
                     toPartner: toPartner,
                     status: status,
                     dueDate: meta.dueDate || meta['due.date'] || null,
-                    direction: 'incoming', // Default, kann spaeter verfeinert werden
+                    direction: 'incoming', // Default, kann später verfeinert werden
                     createdAt: item.createdAt || meta.createdAt || null,
-                    rawMeta: meta // Fuer Debugging
+                    rawMeta: meta // Für Debugging
                 };
             });
 
@@ -2251,27 +2251,27 @@ class APIService {
             const year = new Date().getFullYear();
             const toolName = toolNames[(i - 1) % toolNames.length];
 
-            // Faelligkeit: Mix aus ueberfaellig und zukuenftig
+            // Fälligkeit: Mix aus überfällig und zukuenftig
             const dueDate = new Date(today);
             if (i <= 3) {
-                dueDate.setDate(today.getDate() - (5 * i)); // Ueberfaellig
+                dueDate.setDate(today.getDate() - (5 * i)); // Überfällig
             } else {
                 dueDate.setDate(today.getDate() + (7 * (i - 3))); // Zukuenftig
             }
 
             // Status-Verteilung:
             // 1-4: offen (warte auf Abgabe)
-            // 5-8: abgabe-bestaetigt (warte auf Uebernahme)
-            // 9-11: uebernahme-bestaetigt (warte auf OEM)
+            // 5-8: abgabe-bestätigt (warte auf Übernahme)
+            // 9-11: übernahme-bestätigt (warte auf OEM)
             // 12-15: abgeschlossen
             let status;
             if (i <= 4) status = 'offen';
-            else if (i <= 8) status = 'abgabe-bestaetigt';
-            else if (i <= 11) status = 'uebernahme-bestaetigt';
+            else if (i <= 8) status = 'abgabe-bestätigt';
+            else if (i <= 11) status = 'übernahme-bestätigt';
             else status = 'abgeschlossen';
 
             // Direction: eingehend oder ausgehend (aus Sicht des aktuellen Users)
-            // Erste Haelfte = incoming (User ist uebernehmender Partner)
+            // Erste Haelfte = incoming (User ist übernehmender Partner)
             // Zweite Haelfte = outgoing (User ist abgebender Partner)
             const direction = i <= 8 ? 'incoming' : 'outgoing';
 
@@ -2318,7 +2318,7 @@ class APIService {
                 // Versuch 1: /process mit SCRAPPING Type-Filter (korrekter Ansatz laut OpenAPI)
                 try {
                     console.log('Verschrottung: Lade /process mit md.p.type=SCRAPPING');
-                    // Verschiedene moegliche Type-Werte fuer Scrapping
+                    // Verschiedene mögliche Type-Werte für Scrapping
                     const scrappingTypes = ['SCRAPPING', 'SCRAPPING.C', 'SCRAPPING.A', 'SCRAP'];
 
                     for (const sType of scrappingTypes) {
@@ -2341,11 +2341,11 @@ class APIService {
                     console.log('Process-Abfrage mit Type-Filter fehlgeschlagen:', e.message);
                 }
 
-                // Versuch 2: System-Tasks mit type=SCRAPPING_COMPLETION pruefen
+                // Versuch 2: System-Tasks mit type=SCRAPPING_COMPLETION prüfen
                 if (items.length === 0) {
                     try {
-                        console.log('Verschrottung: Pruefe /tasks/system mit type=SCRAPPING_COMPLETION');
-                        // Supplier-Filter auch fuer Tasks anwenden (falls API es unterstuetzt)
+                        console.log('Verschrottung: Prüfe /tasks/system mit type=SCRAPPING_COMPLETION');
+                        // Supplier-Filter auch für Tasks anwenden (falls API es unterstützt)
                         let taskParams = new URLSearchParams();
                         taskParams.append('type', 'SCRAPPING_COMPLETION');
                         taskParams.append('limit', '10000');
@@ -2382,7 +2382,7 @@ class APIService {
                                     context: { key: task.key },
                                     key: task.key,
                                     _fromTask: true,
-                                    _taskData: task, // Original-Task fuer Detail-Ansicht
+                                    _taskData: task, // Original-Task für Detail-Ansicht
                                     meta: {
                                         title: task.title || task.description || 'Verschrottung',
                                         // Vertragspartner aus payload
@@ -2459,14 +2459,14 @@ class APIService {
                     console.log('Verschrottung - erstes Item:', JSON.stringify(items[0], null, 2));
                 } else {
                     console.log('KEINE Verschrottungs-Prozesse gefunden!');
-                    console.log('Hinweis: Pruefe ob der richtige Prozess-Typ in der API existiert.');
+                    console.log('Hinweis: Prüfe ob der richtige Prozess-Typ in der API existiert.');
                 }
 
                 const transformedData = items.map((item, index) => {
                     const meta = item.meta || {};
                     const context = item.context || {};
 
-                    // Key fuer Navigation
+                    // Key für Navigation
                     const processKey = context.key || item.key || '';
 
                     // Bezeichnung (Titel des Prozesses)
@@ -2569,7 +2569,7 @@ class APIService {
     }
 
     // Verschrottung Details laden
-    // Unterstuetzt sowohl Process-basierte als auch Task-basierte Scrapping-Daten
+    // Unterstützt sowohl Process-basierte als auch Task-basierte Scrapping-Daten
     async getVerschrottungDetail(processKey) {
         return this.callWithFallback(
             async () => {
@@ -2629,7 +2629,7 @@ class APIService {
                     data: data
                 };
             },
-            () => ({ success: false, error: 'Mock nicht verfuegbar' })
+            () => ({ success: false, error: 'Mock nicht verfügbar' })
         );
     }
 
@@ -2638,7 +2638,7 @@ class APIService {
     async getVerschrottungPositions(processKey, filters = {}) {
         return this.callWithFallback(
             async () => {
-                // Versuch 1: Pruefe ob es ein System-Task ist
+                // Versuch 1: Prüfe ob es ein System-Task ist
                 try {
                     const taskResponse = await this.call(`/tasks/system/${processKey}`, 'GET');
                     const task = taskResponse.data || taskResponse;
@@ -2941,7 +2941,7 @@ class APIService {
 
     async updateLocation(companyKey, locationKey, data) {
         try {
-            // Erst aktuellen Stand laden fuer revision
+            // Erst aktuellen Stand laden für revision
             const current = await this.call(`/companies/${companyKey}/locations/${locationKey}`, 'GET');
             const revision = current._rev || current.revision;
 
@@ -3113,7 +3113,7 @@ class APIService {
         }
     }
 
-    // Mock-Daten fuer Lieferanten
+    // Mock-Daten für Lieferanten
     getMockSuppliersData() {
         return {
             success: true,
@@ -3126,7 +3126,7 @@ class APIService {
         };
     }
 
-    // Mock-Daten fuer Unternehmen
+    // Mock-Daten für Unternehmen
     getMockCompanyData() {
         return {
             success: true,

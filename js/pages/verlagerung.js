@@ -23,7 +23,7 @@ class VerlagerungPage {
                     <div class="help-tooltip" id="helpTooltipVerlagerung">
                         <strong>Verlagerungsprozess:</strong><br>
                         1. <strong>Beantragen:</strong> Neue Verlagerung beim OEM beantragen<br>
-                        2. <strong>Durchfuehren:</strong> Genehmigte Verlagerung transportieren<br><br>
+                        2. <strong>Durchführen:</strong> Genehmigte Verlagerung transportieren<br><br>
                         <strong>Hinweis:</strong> Der Vertragspartner bleibt gleich - nur der Standort wechselt.
                     </div>
                 </div>
@@ -37,10 +37,10 @@ class VerlagerungPage {
                         </div>
                         <span class="agent-card-arrow">→</span>
                     </button>
-                    <button class="agent-card" id="agentDurchfuehrenBtn">
+                    <button class="agent-card" id="agentDurchführenBtn">
                         <div class="agent-card-icon">🚚</div>
                         <div class="agent-card-content">
-                            <strong>Verlagerung durchfuehren</strong>
+                            <strong>Verlagerung durchführen</strong>
                             <small>Genehmigte Verlagerung abwickeln</small>
                         </div>
                         <span class="agent-card-arrow">→</span>
@@ -56,7 +56,7 @@ class VerlagerungPage {
                     <div class="stat-card stat-genehmigt">
                         <div class="stat-number" id="statGenehmigt">0</div>
                         <div class="stat-label">Genehmigt</div>
-                        <div class="stat-sublabel">bereit zur Durchfuehrung</div>
+                        <div class="stat-sublabel">bereit zur Durchführung</div>
                     </div>
                     <div class="stat-card stat-transport">
                         <div class="stat-number" id="statTransport">0</div>
@@ -75,9 +75,9 @@ class VerlagerungPage {
                         <span class="tab-icon">📋</span> Beantragt
                         <span class="tab-count" id="tabCountBeantragt">0</span>
                     </button>
-                    <button class="tab-btn" data-tab="durchfuehrung">
-                        <span class="tab-icon">🚚</span> Zur Durchfuehrung
-                        <span class="tab-count" id="tabCountDurchfuehrung">0</span>
+                    <button class="tab-btn" data-tab="durchführung">
+                        <span class="tab-icon">🚚</span> Zur Durchführung
+                        <span class="tab-count" id="tabCountDurchführung">0</span>
                     </button>
                     <button class="tab-btn" data-tab="abgeschlossen">
                         <span class="tab-icon">✅</span> Abgeschlossen
@@ -98,7 +98,7 @@ class VerlagerungPage {
                     <div class="pagination">
                         <div class="pagination-info" id="paginationInfo">Lade...</div>
                         <div class="pagination-controls">
-                            <button class="page-btn" id="prevPage" onclick="verlagerungPage.prevPage()">Zurueck</button>
+                            <button class="page-btn" id="prevPage" onclick="verlagerungPage.prevPage()">Zurück</button>
                             <button class="page-btn" id="nextPage" onclick="verlagerungPage.nextPage()">Weiter</button>
                         </div>
                     </div>
@@ -198,7 +198,7 @@ class VerlagerungPage {
 
 
         document.getElementById('agentBeantragenBtn')?.addEventListener('click', () => router.navigate('/agent-verlagerung-beantragen'));
-        document.getElementById('agentDurchfuehrenBtn')?.addEventListener('click', () => router.navigate('/agent-verlagerung-durchfuehren'));
+        document.getElementById('agentDurchführenBtn')?.addEventListener('click', () => router.navigate('/agent-verlagerung-durchführen'));
     }
 
     applyTabFilter() {
@@ -208,7 +208,7 @@ class VerlagerungPage {
             case 'beantragt':
                 tabFiltered = this.allTools.filter(t => t.status === 'offen' || t.status === 'beantragt' || t.status === 'feinplanung');
                 break;
-            case 'durchfuehrung':
+            case 'durchführung':
                 tabFiltered = this.allTools.filter(t => t.status === 'genehmigt' || t.status === 'in-inventur' || t.status === 'transport');
                 break;
             case 'abgeschlossen':
@@ -236,7 +236,7 @@ class VerlagerungPage {
         document.getElementById('statTransport').textContent = transport;
         document.getElementById('statAbgeschlossen').textContent = abgeschlossen;
         document.getElementById('tabCountBeantragt').textContent = beantragt;
-        document.getElementById('tabCountDurchfuehrung').textContent = genehmigt + transport;
+        document.getElementById('tabCountDurchführung').textContent = genehmigt + transport;
         document.getElementById('tabCountAbgeschlossen').textContent = abgeschlossen;
     }
 
@@ -244,7 +244,7 @@ class VerlagerungPage {
         const header = document.getElementById('tableHeader');
         if (this.currentTab === 'beantragt') {
             header.innerHTML = '<th class="sortable" data-sort="name">Bezeichnung</th><th class="sortable" data-sort="identifier">Werkzeug</th><th class="sortable" data-sort="sourceLocation">Von</th><th class="sortable" data-sort="targetLocation">Nach</th><th class="sortable" data-sort="createdAt">Beantragt am</th><th class="sortable" data-sort="status">Status</th><th>Aktionen</th>';
-        } else if (this.currentTab === 'durchfuehrung') {
+        } else if (this.currentTab === 'durchführung') {
             header.innerHTML = '<th class="sortable" data-sort="name">Bezeichnung</th><th class="sortable" data-sort="identifier">Werkzeug</th><th class="sortable" data-sort="sourceLocation">Von</th><th class="sortable" data-sort="targetLocation">Nach</th><th class="sortable" data-sort="dueDate">Zieltermin</th><th class="sortable" data-sort="status">Status</th><th>Aktionen</th>';
         } else {
             header.innerHTML = '<th class="sortable" data-sort="name">Bezeichnung</th><th class="sortable" data-sort="identifier">Werkzeug</th><th class="sortable" data-sort="sourceLocation">Von</th><th class="sortable" data-sort="targetLocation">Nach</th><th class="sortable" data-sort="completedAt">Abgeschlossen</th><th>Dauer</th><th>Details</th>';
@@ -274,7 +274,7 @@ class VerlagerungPage {
         const pageTools = this.filteredTools.slice(startIdx, endIdx);
 
         if (pageTools.length === 0) {
-            const msg = { beantragt: 'Keine beantragten Verlagerungen', durchfuehrung: 'Keine Verlagerungen zur Durchfuehrung', abgeschlossen: 'Keine abgeschlossenen Verlagerungen' }[this.currentTab];
+            const msg = { beantragt: 'Keine beantragten Verlagerungen', durchführung: 'Keine Verlagerungen zur Durchführung', abgeschlossen: 'Keine abgeschlossenen Verlagerungen' }[this.currentTab];
             tableBody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">${this.currentTab === 'abgeschlossen' ? '✅' : '📦'}</div><div class="empty-state-text">${msg}</div>${this.currentTab === 'beantragt' ? '<button class="btn btn-primary" style="margin-top:1rem" onclick="router.navigate(\'/agent-verlagerung-beantragen\')">Verlagerung beantragen</button>' : ''}</div></td></tr>`;
         } else {
             tableBody.innerHTML = pageTools.map(t => this.renderRow(t)).join('');
@@ -289,15 +289,15 @@ class VerlagerungPage {
         const id = tool.id || tool.processKey;
         if (this.currentTab === 'beantragt') {
             return `<tr class="clickable-row" onclick="verlagerungPage.openDetail('${id}')"><td class="tool-name">${tool.name||'-'}</td><td style="font-size:.85rem">${tool.identifier||'-'}</td><td style="font-size:.85rem">${tool.sourceLocation||'-'}</td><td style="font-size:.85rem">${tool.targetLocation||'-'}</td><td style="color:#6b7280">${this.formatDate(tool.createdAt)}</td><td><span class="status-badge ${status.class}">${status.text}</span></td><td><button class="action-btn-small primary" onclick="event.stopPropagation();verlagerungPage.openDetail('${id}')">Details</button></td></tr>`;
-        } else if (this.currentTab === 'durchfuehrung') {
-            return `<tr class="clickable-row" onclick="verlagerungPage.openDetail('${id}')"><td class="tool-name">${tool.name||'-'}</td><td style="font-size:.85rem">${tool.identifier||'-'}</td><td style="font-size:.85rem">${tool.sourceLocation||'-'}</td><td style="font-size:.85rem">${tool.targetLocation||'-'}</td><td style="color:#6b7280">${this.formatDate(tool.dueDate)}</td><td><span class="status-badge ${status.class}">${status.text}</span></td><td><button class="action-btn-small success" onclick="event.stopPropagation();router.navigate('/agent-verlagerung-durchfuehren')">Durchfuehren</button></td></tr>`;
+        } else if (this.currentTab === 'durchführung') {
+            return `<tr class="clickable-row" onclick="verlagerungPage.openDetail('${id}')"><td class="tool-name">${tool.name||'-'}</td><td style="font-size:.85rem">${tool.identifier||'-'}</td><td style="font-size:.85rem">${tool.sourceLocation||'-'}</td><td style="font-size:.85rem">${tool.targetLocation||'-'}</td><td style="color:#6b7280">${this.formatDate(tool.dueDate)}</td><td><span class="status-badge ${status.class}">${status.text}</span></td><td><button class="action-btn-small success" onclick="event.stopPropagation();router.navigate('/agent-verlagerung-durchführen')">Durchführen</button></td></tr>`;
         } else {
             return `<tr class="clickable-row" onclick="verlagerungPage.openDetail('${id}')"><td class="tool-name">${tool.name||'-'}</td><td style="font-size:.85rem">${tool.identifier||'-'}</td><td style="font-size:.85rem">${tool.sourceLocation||'-'}</td><td style="font-size:.85rem">${tool.targetLocation||'-'}</td><td style="color:#6b7280">${this.formatDate(tool.completedAt||tool.dueDate)}</td><td style="color:#6b7280">${this.calcDuration(tool.createdAt,tool.completedAt)}</td><td><button class="action-btn-small primary" onclick="event.stopPropagation();verlagerungPage.openDetail('${id}')">Ansehen</button></td></tr>`;
         }
     }
 
     getStatusInfo(status) {
-        const map = { offen:{class:'status-offen',text:'Offen'}, beantragt:{class:'status-feinplanung',text:'Beantragt'}, feinplanung:{class:'status-feinplanung',text:'In Pruefung'}, genehmigt:{class:'status-in-inventur',text:'Genehmigt'}, 'in-inventur':{class:'status-in-inventur',text:'Im Transport'}, transport:{class:'status-in-inventur',text:'Im Transport'}, abgeschlossen:{class:'status-abgeschlossen',text:'Abgeschlossen'} };
+        const map = { offen:{class:'status-offen',text:'Offen'}, beantragt:{class:'status-feinplanung',text:'Beantragt'}, feinplanung:{class:'status-feinplanung',text:'In Prüfung'}, genehmigt:{class:'status-in-inventur',text:'Genehmigt'}, 'in-inventur':{class:'status-in-inventur',text:'Im Transport'}, transport:{class:'status-in-inventur',text:'Im Transport'}, abgeschlossen:{class:'status-abgeschlossen',text:'Abgeschlossen'} };
         return map[status] || { class:'status-offen', text:status };
     }
 

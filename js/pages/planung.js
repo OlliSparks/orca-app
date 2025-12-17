@@ -49,7 +49,7 @@ class PlanungPage {
                         </div>
                         <div class="speedometer-text">
                             <h2>Fortschritt: Inventurplanung</h2>
-                            <p>Werkzeuge mit festgelegtem Starttermin in den naechsten 6 Monaten</p>
+                            <p>Werkzeuge mit festgelegtem Starttermin in den nächsten 6 Monaten</p>
                         </div>
                         <button class="agent-btn-integrated" id="agentPlanungBtn">
                             <span class="agent-btn-icon">🤖</span>
@@ -370,7 +370,7 @@ class PlanungPage {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays <= 0) {
-            return 'in-inventur';  // Plantermin erreicht oder ueberschritten
+            return 'in-inventur';  // Plantermin erreicht oder überschritten
         } else {
             return 'feinplanung';  // Hat Plantermin in der Zukunft
         }

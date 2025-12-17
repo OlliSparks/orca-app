@@ -1,5 +1,5 @@
 // ORCA 2.0 - Verschrottung Liste
-// Strukturiertes Ende. Vollstaendig dokumentiert.
+// Strukturiertes Ende. Vollständig dokumentiert.
 class VerschrottungPage {
     constructor() {
         this.allItems = [];
@@ -33,7 +33,7 @@ class VerschrottungPage {
                     </h2>
                     <div class="help-tooltip" id="helpTooltipScrap">
                         <strong>Was ist zu tun?</strong><br>
-                        Pruefen Sie genehmigte Verschrottungen und bestaetigen Sie die Durchfuehrung. Dokumentieren Sie den Abschluss.
+                        Prüfen Sie genehmigte Verschrottungen und bestätigen Sie die Durchführung. Dokumentieren Sie den Abschluss.
                     </div>
                 </div>
 
@@ -132,7 +132,7 @@ class VerschrottungPage {
                             Lade...
                         </div>
                         <div class="pagination-controls">
-                            <button class="page-btn" id="prevPage" onclick="verschrottungPage.prevPage()">Zurueck</button>
+                            <button class="page-btn" id="prevPage" onclick="verschrottungPage.prevPage()">Zurück</button>
                             <button class="page-btn" id="nextPage" onclick="verschrottungPage.nextPage()">Weiter</button>
                         </div>
                     </div>

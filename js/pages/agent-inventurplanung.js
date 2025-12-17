@@ -54,7 +54,7 @@ class AgentInventurplanungPage {
                                     <button class="quick-date-btn" data-days="30">In 1 Monat</button>
                                 </div>
                                 <button class="action-btn primary accept-date-btn" id="acceptDateBtn">
-                                    Datum uebernehmen →
+                                    Datum übernehmen →
                                 </button>
                             </div>
                         </div>

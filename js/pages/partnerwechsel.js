@@ -8,7 +8,7 @@ class PartnerwechselPage {
         this.itemsPerPage = 50;
         this.currentFilter = 'all';
         this.currentSort = { column: 'dueDate', direction: 'asc' };
-        this.currentView = 'incoming'; // 'incoming' = zu uebernehmende, 'outgoing' = abzugebende
+        this.currentView = 'incoming'; // 'incoming' = zu übernehmende, 'outgoing' = abzugebende
         this.isLoading = false;
     }
 
@@ -35,10 +35,10 @@ class PartnerwechselPage {
                     </h2>
                     <div class="help-tooltip" id="helpTooltipVPW">
                         <strong>Was ist zu tun?</strong><br>
-                        Bestaetigen Sie die Abgabe oder Uebernahme von Werkzeugen beim Vertragspartnerwechsel. Alle Beteiligten muessen den Prozess bestaetigen.<br><br>
+                        Bestätigen Sie die Abgabe oder Übernahme von Werkzeugen beim Vertragspartnerwechsel. Alle Beteiligten müssen den Prozess bestätigen.<br><br>
                         <strong>Unterschied zur Verlagerung:</strong><br>
                         Bei einer Verlagerung bleibt der Vertragspartner gleich - nur der Standort wechselt.
-                        Beim VPW wechselt der Vertragspartner selbst. Rechte und Pflichten werden uebertragen.
+                        Beim VPW wechselt der Vertragspartner selbst. Rechte und Pflichten werden übertragen.
                     </div>
                 </div>
 
@@ -54,7 +54,7 @@ class PartnerwechselPage {
                     </div>
                     <div class="progress-stat-card">
                         <div class="stat-number" style="color: #3b82f6;" id="statAbgabeVPW">0</div>
-                        <div class="stat-label">Warte auf Uebernahme</div>
+                        <div class="stat-label">Warte auf Übernahme</div>
                     </div>
                     <div class="progress-stat-card">
                         <div class="stat-number" style="color: #22c55e;" id="statAbgeschlossenVPW">0</div>
@@ -83,7 +83,7 @@ class PartnerwechselPage {
                 <!-- VIEW TOGGLE: Eingehend / Ausgehend -->
                 <div class="view-toggle-container" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                     <button class="view-toggle-btn active" data-view="incoming" id="viewIncoming">
-                        📥 Zu uebernehmende Werkzeuge
+                        📥 Zu übernehmende Werkzeuge
                     </button>
                     <button class="view-toggle-btn" data-view="outgoing" id="viewOutgoing">
                         📤 Abzugebende Werkzeuge
@@ -111,11 +111,11 @@ class PartnerwechselPage {
                         <div class="filter-chip" data-filter="offen">
                             Offen <span class="count" id="countOffen">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="abgabe-bestaetigt">
-                            Abgabe bestaetigt <span class="count" id="countAbgabe">0</span>
+                        <div class="filter-chip" data-filter="abgabe-bestätigt">
+                            Abgabe bestätigt <span class="count" id="countAbgabe">0</span>
                         </div>
-                        <div class="filter-chip" data-filter="uebernahme-bestaetigt">
-                            Uebernahme bestaetigt <span class="count" id="countUebernahme">0</span>
+                        <div class="filter-chip" data-filter="übernahme-bestätigt">
+                            Übernahme bestätigt <span class="count" id="countÜbernahme">0</span>
                         </div>
                         <div class="filter-chip" data-filter="abgeschlossen">
                             Abgeschlossen <span class="count" id="countAbgeschlossen">0</span>
@@ -134,7 +134,7 @@ class PartnerwechselPage {
                                 <th class="sortable" data-sort="toolNumber">Werkzeugnummer</th>
                                 <th class="sortable" data-sort="toolName">Werkzeug</th>
                                 <th class="sortable" data-sort="fromPartner">Von (Abgebend)</th>
-                                <th class="sortable" data-sort="toPartner">An (Uebernehmend)</th>
+                                <th class="sortable" data-sort="toPartner">An (Übernehmend)</th>
                                 <th class="sortable" data-sort="status">Status</th>
                                 <th class="sortable" data-sort="dueDate">Frist</th>
                                 <th>Aktionen</th>
@@ -155,7 +155,7 @@ class PartnerwechselPage {
                             Lade...
                         </div>
                         <div class="pagination-controls">
-                            <button class="page-btn" id="prevPage">◀ Zurueck</button>
+                            <button class="page-btn" id="prevPage">◀ Zurück</button>
                             <button class="page-btn" id="nextPage">Weiter ▶</button>
                         </div>
                     </div>
@@ -166,20 +166,20 @@ class PartnerwechselPage {
             <div class="modal" id="confirmModal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2 id="confirmModalTitle">Bestaetigung</h2>
-                        <div class="modal-subtitle" id="confirmModalSubtitle">Moechten Sie diese Aktion bestaetigen?</div>
+                        <h2 id="confirmModalTitle">Bestätigung</h2>
+                        <div class="modal-subtitle" id="confirmModalSubtitle">Möchten Sie diese Aktion bestätigen?</div>
                     </div>
                     <div id="confirmModalBody" style="margin-bottom: 1rem;">
                         <!-- Dynamischer Inhalt -->
                     </div>
                     <div class="form-group" id="commentGroup" style="display: none;">
-                        <label class="form-label">Kommentar (optional - erzeugt Klaerfall!)</label>
+                        <label class="form-label">Kommentar (optional - erzeugt Klärfall!)</label>
                         <textarea id="confirmComment" class="form-input" rows="2" placeholder="Nur bei Problemen einen Kommentar eingeben..."></textarea>
-                        <div style="font-size: 0.75rem; color: #f59e0b; margin-top: 0.25rem;">⚠️ Ein Kommentar erzeugt automatisch einen Klaerfall beim OEM</div>
+                        <div style="font-size: 0.75rem; color: #f59e0b; margin-top: 0.25rem;">⚠️ Ein Kommentar erzeugt automatisch einen Klärfall beim OEM</div>
                     </div>
                     <div class="modal-actions">
                         <button class="modal-btn secondary" id="cancelConfirm">Abbrechen</button>
-                        <button class="modal-btn primary" id="submitConfirm">Bestaetigen</button>
+                        <button class="modal-btn primary" id="submitConfirm">Bestätigen</button>
                     </div>
                 </div>
             </div>
@@ -243,11 +243,11 @@ class PartnerwechselPage {
                 background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
                 color: #92400e;
             }
-            .status-abgabe-bestaetigt {
+            .status-abgabe-bestätigt {
                 background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
                 color: #1e40af;
             }
-            .status-uebernahme-bestaetigt {
+            .status-übernahme-bestätigt {
                 background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
                 color: #1e40af;
             }
@@ -461,8 +461,8 @@ class PartnerwechselPage {
     applyFilter() {
         let filtered = [...this.allProcesses];
 
-        // Filter by view (incoming = zu uebernehmend, outgoing = abzugebend)
-        // In Mock-Daten simulieren wir das ueber ein Flag
+        // Filter by view (incoming = zu übernehmend, outgoing = abzugebend)
+        // In Mock-Daten simulieren wir das über ein Flag
         if (this.currentView === 'incoming') {
             filtered = filtered.filter(p => p.direction === 'incoming' || !p.direction);
         } else {
@@ -514,15 +514,15 @@ class PartnerwechselPage {
     updateStats() {
         const total = this.allProcesses.length;
         const offen = this.allProcesses.filter(p => p.status === 'offen').length;
-        const abgabe = this.allProcesses.filter(p => p.status === 'abgabe-bestaetigt').length;
-        const uebernahme = this.allProcesses.filter(p => p.status === 'uebernahme-bestaetigt').length;
+        const abgabe = this.allProcesses.filter(p => p.status === 'abgabe-bestätigt').length;
+        const übernahme = this.allProcesses.filter(p => p.status === 'übernahme-bestätigt').length;
         const abgeschlossen = this.allProcesses.filter(p => p.status === 'abgeschlossen').length;
 
         // Update filter counts
         document.getElementById('countAll').textContent = total;
         document.getElementById('countOffen').textContent = offen;
         document.getElementById('countAbgabe').textContent = abgabe;
-        document.getElementById('countUebernahme').textContent = uebernahme;
+        document.getElementById('countÜbernahme').textContent = übernahme;
         document.getElementById('countAbgeschlossen').textContent = abgeschlossen;
 
         // Update progress overview stats
@@ -533,7 +533,7 @@ class PartnerwechselPage {
 
         if (statTotal) statTotal.textContent = total;
         if (statOffen) statOffen.textContent = offen;
-        if (statAbgabe) statAbgabe.textContent = abgabe + uebernahme;
+        if (statAbgabe) statAbgabe.textContent = abgabe + übernahme;
         if (statAbgeschlossen) statAbgeschlossen.textContent = abgeschlossen;
     }
 
@@ -565,7 +565,7 @@ class PartnerwechselPage {
                             <div class="empty-state-text">Keine Vertragspartnerwechsel gefunden</div>
                             <div class="empty-state-hint">
                                 ${this.currentView === 'incoming'
-                                    ? 'Aktuell keine Werkzeuge zur Uebernahme vorhanden'
+                                    ? 'Aktuell keine Werkzeuge zur Übernahme vorhanden'
                                     : 'Aktuell keine Werkzeuge zur Abgabe vorhanden'}
                             </div>
                         </div>
@@ -598,7 +598,7 @@ class PartnerwechselPage {
                             <div class="action-btn-group">
                                 ${canConfirm ? `
                                     <button class="action-btn confirm" onclick="partnerwechselPage.showConfirmModal('${p.id || p.processKey}')">
-                                        ✓ Bestaetigen
+                                        ✓ Bestätigen
                                     </button>
                                 ` : ''}
                                 <button class="action-btn details" onclick="partnerwechselPage.openDetail('${p.id || p.processKey}')">
@@ -630,28 +630,28 @@ class PartnerwechselPage {
     getStatusInfo(status) {
         const statusMap = {
             'offen': { class: 'status-offen', text: '⚪ Warte auf Abgabe' },
-            'abgabe-bestaetigt': { class: 'status-abgabe-bestaetigt', text: '🔵 Abgabe bestaetigt' },
-            'uebernahme-bestaetigt': { class: 'status-uebernahme-bestaetigt', text: '🔵 Uebernahme bestaetigt' },
+            'abgabe-bestätigt': { class: 'status-abgabe-bestätigt', text: '🔵 Abgabe bestätigt' },
+            'übernahme-bestätigt': { class: 'status-übernahme-bestätigt', text: '🔵 Übernahme bestätigt' },
             'abgeschlossen': { class: 'status-abgeschlossen', text: '✅ Abgeschlossen' },
-            // Fallback fuer alte Status
-            'feinplanung': { class: 'status-abgabe-bestaetigt', text: '🔵 In Bearbeitung' },
-            'in-inventur': { class: 'status-uebernahme-bestaetigt', text: '🔵 In Bearbeitung' }
+            // Fallback für alte Status
+            'feinplanung': { class: 'status-abgabe-bestätigt', text: '🔵 In Bearbeitung' },
+            'in-inventur': { class: 'status-übernahme-bestätigt', text: '🔵 In Bearbeitung' }
         };
         return statusMap[status] || { class: 'status-offen', text: status };
     }
 
     canUserConfirm(process) {
-        // Logik: User kann bestaetigen wenn...
-        // - Bei 'incoming' view und status ist 'abgabe-bestaetigt' -> Uebernahme bestaetigen
-        // - Bei 'outgoing' view und status ist 'offen' -> Abgabe bestaetigen
+        // Logik: User kann bestätigen wenn...
+        // - Bei 'incoming' view und status ist 'abgabe-bestätigt' -> Übernahme bestätigen
+        // - Bei 'outgoing' view und status ist 'offen' -> Abgabe bestätigen
         if (this.currentView === 'incoming') {
-            return process.status === 'abgabe-bestaetigt';
+            return process.status === 'abgabe-bestätigt';
         } else {
             return process.status === 'offen';
         }
     }
 
-    // Modal fuer Bestaetigung
+    // Modal für Bestätigung
     currentConfirmProcess = null;
 
     showConfirmModal(processId) {
@@ -661,10 +661,10 @@ class PartnerwechselPage {
         this.currentConfirmProcess = process;
 
         const isAbgabe = this.currentView === 'outgoing';
-        const title = isAbgabe ? 'Abgabe bestaetigen' : 'Uebernahme bestaetigen';
+        const title = isAbgabe ? 'Abgabe bestätigen' : 'Übernahme bestätigen';
         const subtitle = isAbgabe
-            ? 'Bestaetigen Sie, dass Sie das Werkzeug an den neuen Vertragspartner abgegeben haben.'
-            : 'Bestaetigen Sie, dass Sie das Werkzeug vom bisherigen Vertragspartner uebernommen haben.';
+            ? 'Bestätigen Sie, dass Sie das Werkzeug an den neuen Vertragspartner abgegeben haben.'
+            : 'Bestätigen Sie, dass Sie das Werkzeug vom bisherigen Vertragspartner übernommen haben.';
 
         document.getElementById('confirmModalTitle').textContent = title;
         document.getElementById('confirmModalSubtitle').textContent = subtitle;
@@ -702,9 +702,9 @@ class PartnerwechselPage {
         const process = this.allProcesses.find(p => (p.id || p.processKey) === processId);
         if (process) {
             if (this.currentView === 'outgoing') {
-                process.status = 'abgabe-bestaetigt';
+                process.status = 'abgabe-bestätigt';
             } else {
-                process.status = 'uebernahme-bestaetigt';
+                process.status = 'übernahme-bestätigt';
             }
         }
 
@@ -713,34 +713,34 @@ class PartnerwechselPage {
         this.renderTable();
 
         // Show success message
-        alert(`✓ ${this.currentView === 'outgoing' ? 'Abgabe' : 'Uebernahme'} erfolgreich bestaetigt!${comment ? '\n\n⚠️ Ihr Kommentar wurde als Klaerfall erfasst.' : ''}`);
+        alert(`✓ ${this.currentView === 'outgoing' ? 'Abgabe' : 'Übernahme'} erfolgreich bestätigt!${comment ? '\n\n⚠️ Ihr Kommentar wurde als Klärfall erfasst.' : ''}`);
     }
 
     confirmAll() {
         const selected = document.querySelectorAll('.row-checkbox:checked');
         if (selected.length === 0) {
-            alert('Bitte waehlen Sie mindestens einen Vertragspartnerwechsel aus.');
+            alert('Bitte wählen Sie mindestens einen Vertragspartnerwechsel aus.');
             return;
         }
 
-        const action = this.currentView === 'outgoing' ? 'Abgabe' : 'Uebernahme';
-        if (confirm(`Moechten Sie ${selected.length} ${action}(n) bestaetigen?`)) {
+        const action = this.currentView === 'outgoing' ? 'Abgabe' : 'Übernahme';
+        if (confirm(`Möchten Sie ${selected.length} ${action}(n) bestätigen?`)) {
             // TODO: Batch API Call
             selected.forEach(cb => {
                 const processId = cb.dataset.id;
                 const process = this.allProcesses.find(p => (p.id || p.processKey) === processId);
                 if (process) {
                     if (this.currentView === 'outgoing') {
-                        process.status = 'abgabe-bestaetigt';
+                        process.status = 'abgabe-bestätigt';
                     } else {
-                        process.status = 'uebernahme-bestaetigt';
+                        process.status = 'übernahme-bestätigt';
                     }
                 }
             });
 
             this.updateStats();
             this.renderTable();
-            alert(`✓ ${selected.length} ${action}(n) erfolgreich bestaetigt!`);
+            alert(`✓ ${selected.length} ${action}(n) erfolgreich bestätigt!`);
         }
     }
 
@@ -793,7 +793,7 @@ class PartnerwechselPage {
         }
 
         // Create CSV content
-        const headers = ['Werkzeugnummer', 'Werkzeug', 'Von (Abgebend)', 'An (Uebernehmend)', 'Status', 'Frist'];
+        const headers = ['Werkzeugnummer', 'Werkzeug', 'Von (Abgebend)', 'An (Übernehmend)', 'Status', 'Frist'];
         const rows = this.filteredProcesses.map(p => [
             p.toolNumber || '',
             p.toolName || p.name || '',

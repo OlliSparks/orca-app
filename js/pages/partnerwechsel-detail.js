@@ -32,7 +32,7 @@ class PartnerwechselDetailPage {
 
         // Update footer
         document.getElementById('footerActions').innerHTML = `
-            <button class="btn btn-neutral" onclick="router.navigate('/partnerwechsel')">← Zurueck zur Uebersicht</button>
+            <button class="btn btn-neutral" onclick="router.navigate('/partnerwechsel')">← Zurück zur Übersicht</button>
         `;
 
         // Load data
@@ -42,7 +42,7 @@ class PartnerwechselDetailPage {
     async loadData() {
         this.isLoading = true;
         try {
-            // Fuer Mock-Daten: Hole alle VPW und finde den passenden
+            // Für Mock-Daten: Hole alle VPW und finde den passenden
             const response = await api.getPartnerwechselList();
             if (response.success) {
                 this.processData = response.data.find(p =>
@@ -72,9 +72,9 @@ class PartnerwechselDetailPage {
 
         app.innerHTML = `
             <div class="container">
-                <!-- Zurueck-Button -->
+                <!-- Zurück-Button -->
                 <button class="btn btn-neutral" style="margin-bottom: 1rem;" onclick="router.navigate('/partnerwechsel')">
-                    ← Zurueck zur Uebersicht
+                    ← Zurück zur Übersicht
                 </button>
 
                 <!-- Header Card -->
@@ -111,38 +111,38 @@ class PartnerwechselDetailPage {
                         </div>
                         <div style="background: #fef2f2; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span style="color: #6b7280;">Abgabe bestaetigt:</span>
+                                <span style="color: #6b7280;">Abgabe bestätigt:</span>
                                 <span style="font-weight: 600; color: ${this.isAbgabeConfirmed() ? '#166534' : '#92400e'};">
                                     ${this.isAbgabeConfirmed() ? '✓ Ja' : '⏳ Ausstehend'}
                                 </span>
                             </div>
                             ${this.isAbgabeConfirmed() ? `
                                 <div style="font-size: 0.8rem; color: #6b7280;">
-                                    Bestaetigt am: ${this.formatDate(p.abgabeDate || new Date())}
+                                    Bestätigt am: ${this.formatDate(p.abgabeDate || new Date())}
                                 </div>
                             ` : ''}
                         </div>
                     </div>
 
-                    <!-- Uebernehmender Partner -->
+                    <!-- Übernehmender Partner -->
                     <div class="card" style="border-left: 4px solid #22c55e;">
                         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
                             <div style="font-size: 1.5rem;">📥</div>
                             <div>
-                                <div style="font-size: 0.85rem; color: #6b7280;">Uebernehmender Vertragspartner</div>
+                                <div style="font-size: 0.85rem; color: #6b7280;">Übernehmender Vertragspartner</div>
                                 <div style="font-weight: 600; color: #166534;">${p.toPartner || 'Unbekannt'}</div>
                             </div>
                         </div>
                         <div style="background: #f0fdf4; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span style="color: #6b7280;">Uebernahme bestaetigt:</span>
-                                <span style="font-weight: 600; color: ${this.isUebernahmeConfirmed() ? '#166534' : '#92400e'};">
-                                    ${this.isUebernahmeConfirmed() ? '✓ Ja' : '⏳ Ausstehend'}
+                                <span style="color: #6b7280;">Übernahme bestätigt:</span>
+                                <span style="font-weight: 600; color: ${this.isÜbernahmeConfirmed() ? '#166534' : '#92400e'};">
+                                    ${this.isÜbernahmeConfirmed() ? '✓ Ja' : '⏳ Ausstehend'}
                                 </span>
                             </div>
-                            ${this.isUebernahmeConfirmed() ? `
+                            ${this.isÜbernahmeConfirmed() ? `
                                 <div style="font-size: 0.8rem; color: #6b7280;">
-                                    Bestaetigt am: ${this.formatDate(p.uebernahmeDate || new Date())}
+                                    Bestätigt am: ${this.formatDate(p.übernahmeDate || new Date())}
                                 </div>
                             ` : ''}
                         </div>
@@ -193,18 +193,18 @@ class PartnerwechselDetailPage {
             <div class="modal" id="vpwConfirmModal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2 id="vpwModalTitle">Bestaetigung</h2>
-                        <div class="modal-subtitle" id="vpwModalSubtitle">Moechten Sie diese Aktion bestaetigen?</div>
+                        <h2 id="vpwModalTitle">Bestätigung</h2>
+                        <div class="modal-subtitle" id="vpwModalSubtitle">Möchten Sie diese Aktion bestätigen?</div>
                     </div>
                     <div id="vpwModalBody" style="margin-bottom: 1rem;"></div>
                     <div class="form-group">
-                        <label class="form-label">Kommentar (optional - erzeugt Klaerfall!)</label>
+                        <label class="form-label">Kommentar (optional - erzeugt Klärfall!)</label>
                         <textarea id="vpwConfirmComment" class="form-input" rows="2" placeholder="Nur bei Problemen..."></textarea>
-                        <div style="font-size: 0.75rem; color: #f59e0b; margin-top: 0.25rem;">⚠️ Ein Kommentar erzeugt automatisch einen Klaerfall beim OEM</div>
+                        <div style="font-size: 0.75rem; color: #f59e0b; margin-top: 0.25rem;">⚠️ Ein Kommentar erzeugt automatisch einen Klärfall beim OEM</div>
                     </div>
                     <div class="modal-actions">
                         <button class="modal-btn secondary" onclick="partnerwechselDetailPage.closeModal()">Abbrechen</button>
-                        <button class="modal-btn primary" id="vpwConfirmBtn">Bestaetigen</button>
+                        <button class="modal-btn primary" id="vpwConfirmBtn">Bestätigen</button>
                     </div>
                 </div>
             </div>
@@ -288,11 +288,11 @@ class PartnerwechselDetailPage {
                 background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
                 color: #92400e;
             }
-            .status-abgabe-bestaetigt {
+            .status-abgabe-bestätigt {
                 background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
                 color: #1e40af;
             }
-            .status-uebernahme-bestaetigt {
+            .status-übernahme-bestätigt {
                 background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
                 color: #1e40af;
             }
@@ -323,8 +323,8 @@ class PartnerwechselDetailPage {
     renderTimeline() {
         const steps = [
             { id: 'created', label: 'Erstellt', icon: '📋' },
-            { id: 'abgabe', label: 'Abgabe bestaetigt', icon: '📤' },
-            { id: 'uebernahme', label: 'Uebernahme bestaetigt', icon: '📥' },
+            { id: 'abgabe', label: 'Abgabe bestätigt', icon: '📤' },
+            { id: 'übernahme', label: 'Übernahme bestätigt', icon: '📥' },
             { id: 'done', label: 'Abgeschlossen', icon: '✅' }
         ];
 
@@ -355,8 +355,8 @@ class PartnerwechselDetailPage {
         const status = this.processData?.status;
         switch (status) {
             case 'offen': return 1;
-            case 'abgabe-bestaetigt': return 2;
-            case 'uebernahme-bestaetigt': return 3;
+            case 'abgabe-bestätigt': return 2;
+            case 'übernahme-bestätigt': return 3;
             case 'abgeschlossen': return 4;
             default: return 0;
         }
@@ -364,12 +364,12 @@ class PartnerwechselDetailPage {
 
     isAbgabeConfirmed() {
         const status = this.processData?.status;
-        return ['abgabe-bestaetigt', 'uebernahme-bestaetigt', 'abgeschlossen'].includes(status);
+        return ['abgabe-bestätigt', 'übernahme-bestätigt', 'abgeschlossen'].includes(status);
     }
 
-    isUebernahmeConfirmed() {
+    isÜbernahmeConfirmed() {
         const status = this.processData?.status;
-        return ['uebernahme-bestaetigt', 'abgeschlossen'].includes(status);
+        return ['übernahme-bestätigt', 'abgeschlossen'].includes(status);
     }
 
     renderActions() {
@@ -377,28 +377,28 @@ class PartnerwechselDetailPage {
         const direction = this.processData?.direction;
         const actions = [];
 
-        // Abgabe bestaetigen (fuer abgebenden Partner)
+        // Abgabe bestätigen (für abgebenden Partner)
         if (status === 'offen' && direction === 'outgoing') {
             actions.push(`
                 <button class="btn btn-primary" onclick="partnerwechselDetailPage.showConfirmAbgabe()">
-                    ✓ Abgabe bestaetigen
+                    ✓ Abgabe bestätigen
                 </button>
             `);
         }
 
-        // Uebernahme bestaetigen (fuer uebernehmenden Partner)
-        if (status === 'abgabe-bestaetigt' && direction === 'incoming') {
+        // Übernahme bestätigen (für übernehmenden Partner)
+        if (status === 'abgabe-bestätigt' && direction === 'incoming') {
             actions.push(`
-                <button class="btn btn-primary" onclick="partnerwechselDetailPage.showConfirmUebernahme()">
-                    ✓ Uebernahme bestaetigen
+                <button class="btn btn-primary" onclick="partnerwechselDetailPage.showConfirmÜbernahme()">
+                    ✓ Übernahme bestätigen
                 </button>
             `);
         }
 
-        // Werkzeugakte oeffnen
+        // Werkzeugakte öffnen
         actions.push(`
             <button class="btn btn-secondary" onclick="partnerwechselDetailPage.openToolDetail()">
-                📄 Werkzeugakte oeffnen
+                📄 Werkzeugakte öffnen
             </button>
         `);
 
@@ -410,16 +410,16 @@ class PartnerwechselDetailPage {
         `);
 
         if (actions.length === 0) {
-            return '<div style="color: #6b7280; font-style: italic;">Keine Aktionen verfuegbar</div>';
+            return '<div style="color: #6b7280; font-style: italic;">Keine Aktionen verfügbar</div>';
         }
 
         return actions.join('');
     }
 
     showConfirmAbgabe() {
-        document.getElementById('vpwModalTitle').textContent = 'Abgabe bestaetigen';
+        document.getElementById('vpwModalTitle').textContent = 'Abgabe bestätigen';
         document.getElementById('vpwModalSubtitle').textContent =
-            'Bestaetigen Sie, dass Sie das Werkzeug an den neuen Vertragspartner uebergeben haben.';
+            'Bestätigen Sie, dass Sie das Werkzeug an den neuen Vertragspartner übergeben haben.';
         document.getElementById('vpwModalBody').innerHTML = `
             <div style="background: #fef2f2; padding: 1rem; border-radius: 8px;">
                 <div style="font-weight: 600; color: #991b1b;">Werkzeug wird abgegeben an:</div>
@@ -430,17 +430,17 @@ class PartnerwechselDetailPage {
         document.getElementById('vpwConfirmModal').classList.add('active');
     }
 
-    showConfirmUebernahme() {
-        document.getElementById('vpwModalTitle').textContent = 'Uebernahme bestaetigen';
+    showConfirmÜbernahme() {
+        document.getElementById('vpwModalTitle').textContent = 'Übernahme bestätigen';
         document.getElementById('vpwModalSubtitle').textContent =
-            'Bestaetigen Sie, dass Sie das Werkzeug vom bisherigen Vertragspartner uebernommen haben.';
+            'Bestätigen Sie, dass Sie das Werkzeug vom bisherigen Vertragspartner übernommen haben.';
         document.getElementById('vpwModalBody').innerHTML = `
             <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px;">
-                <div style="font-weight: 600; color: #166534;">Werkzeug wird uebernommen von:</div>
+                <div style="font-weight: 600; color: #166534;">Werkzeug wird übernommen von:</div>
                 <div style="font-size: 1.1rem; margin-top: 0.5rem;">${this.processData?.fromPartner || 'Unbekannt'}</div>
             </div>
         `;
-        document.getElementById('vpwConfirmBtn').onclick = () => this.confirmUebernahme();
+        document.getElementById('vpwConfirmBtn').onclick = () => this.confirmÜbernahme();
         document.getElementById('vpwConfirmModal').classList.add('active');
     }
 
@@ -449,27 +449,27 @@ class PartnerwechselDetailPage {
         console.log('Confirming Abgabe for:', this.processId, 'Comment:', comment);
 
         // Mock: Update status
-        this.processData.status = 'abgabe-bestaetigt';
+        this.processData.status = 'abgabe-bestätigt';
         this.processData.abgabeDate = new Date().toISOString();
 
         this.closeModal();
         this.renderDetail();
 
-        alert(`✓ Abgabe erfolgreich bestaetigt!${comment ? '\n\n⚠️ Ihr Kommentar wurde als Klaerfall erfasst.' : ''}`);
+        alert(`✓ Abgabe erfolgreich bestätigt!${comment ? '\n\n⚠️ Ihr Kommentar wurde als Klärfall erfasst.' : ''}`);
     }
 
-    async confirmUebernahme() {
+    async confirmÜbernahme() {
         const comment = document.getElementById('vpwConfirmComment').value.trim();
-        console.log('Confirming Uebernahme for:', this.processId, 'Comment:', comment);
+        console.log('Confirming Übernahme for:', this.processId, 'Comment:', comment);
 
         // Mock: Update status
-        this.processData.status = 'uebernahme-bestaetigt';
-        this.processData.uebernahmeDate = new Date().toISOString();
+        this.processData.status = 'übernahme-bestätigt';
+        this.processData.übernahmeDate = new Date().toISOString();
 
         this.closeModal();
         this.renderDetail();
 
-        alert(`✓ Uebernahme erfolgreich bestaetigt!${comment ? '\n\n⚠️ Ihr Kommentar wurde als Klaerfall erfasst.' : ''}`);
+        alert(`✓ Übernahme erfolgreich bestätigt!${comment ? '\n\n⚠️ Ihr Kommentar wurde als Klärfall erfasst.' : ''}`);
     }
 
     closeModal() {
@@ -484,14 +484,14 @@ class PartnerwechselDetailPage {
     }
 
     showContact() {
-        alert('📧 Kontaktfunktion\n\nHier koennten Kontaktdaten der beteiligten Partner angezeigt werden.');
+        alert('📧 Kontaktfunktion\n\nHier könnten Kontaktdaten der beteiligten Partner angezeigt werden.');
     }
 
     getStatusInfo(status) {
         const statusMap = {
             'offen': { class: 'status-offen', text: '⚪ Warte auf Abgabe' },
-            'abgabe-bestaetigt': { class: 'status-abgabe-bestaetigt', text: '🔵 Abgabe bestaetigt' },
-            'uebernahme-bestaetigt': { class: 'status-uebernahme-bestaetigt', text: '🔵 Uebernahme bestaetigt' },
+            'abgabe-bestätigt': { class: 'status-abgabe-bestätigt', text: '🔵 Abgabe bestätigt' },
+            'übernahme-bestätigt': { class: 'status-übernahme-bestätigt', text: '🔵 Übernahme bestätigt' },
             'abgeschlossen': { class: 'status-abgeschlossen', text: '✅ Abgeschlossen' }
         };
         return statusMap[status] || { class: 'status-offen', text: status };
@@ -508,7 +508,7 @@ class PartnerwechselDetailPage {
         app.innerHTML = `
             <div class="container">
                 <button class="btn btn-neutral" style="margin-bottom: 1rem;" onclick="router.navigate('/partnerwechsel')">
-                    ← Zurueck zur Uebersicht
+                    ← Zurück zur Übersicht
                 </button>
                 <div class="card" style="text-align: center; padding: 4rem 2rem;">
                     <div style="font-size: 4rem; margin-bottom: 1rem; color: #f97316;">⚠️</div>

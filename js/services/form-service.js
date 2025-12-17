@@ -15,10 +15,10 @@ class FormService {
 
     init() {
         try {
-            // Observer fuer neue Formulare im DOM
+            // Observer für neue Formulare im DOM
             this.setupMutationObserver();
 
-            // Event-Delegation fuer Formulare
+            // Event-Delegation für Formulare
             document.addEventListener('input', (e) => this.handleInput(e), true);
             document.addEventListener('blur', (e) => this.handleBlur(e), true);
             document.addEventListener('focus', (e) => this.handleFocus(e), true);
@@ -124,7 +124,7 @@ class FormService {
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(input.value)) {
                         isValid = false;
-                        message = 'Bitte geben Sie eine gueltige E-Mail-Adresse ein';
+                        message = 'Bitte geben Sie eine gültige E-Mail-Adresse ein';
                     }
                     break;
 

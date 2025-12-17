@@ -376,7 +376,7 @@ class KPIPage {
                             <div class="detail-kpi-item">
                                 <div class="detail-kpi-info">
                                     <span class="detail-kpi-name">Durchlaufzeit Verlagerung</span>
-                                    <span class="detail-kpi-desc">Von Antrag bis Bestaetigung</span>
+                                    <span class="detail-kpi-desc">Von Antrag bis Bestätigung</span>
                                 </div>
                                 <div class="detail-kpi-value">6.8 Tage</div>
                             </div>
@@ -390,7 +390,7 @@ class KPIPage {
                             <div class="detail-kpi-item">
                                 <div class="detail-kpi-info">
                                     <span class="detail-kpi-name">SLA-Einhaltung</span>
-                                    <span class="detail-kpi-desc">Innerhalb Faelligkeit abgeschlossen</span>
+                                    <span class="detail-kpi-desc">Innerhalb Fälligkeit abgeschlossen</span>
                                 </div>
                                 <div class="detail-kpi-value success">91.4%</div>
                             </div>
@@ -1222,7 +1222,7 @@ class KPIPage {
         const data = {
             inventurQuote: 0,
             bearbeitungszeit: null,
-            ueberfaellig: 0,
+            überfällig: 0,
             werkzeuge: 0,
             nichtGefunden: 0,
             standortAbweichung: 0,
@@ -1243,7 +1243,7 @@ class KPIPage {
             if (inventurResult) {
                 data.prozesse.inventur = inventurResult.prozess;
                 data.inventurQuote = inventurResult.quote;
-                data.ueberfaellig = inventurResult.ueberfaellig;
+                data.überfällig = inventurResult.überfällig;
                 data.werkzeuge = inventurResult.werkzeuge;
                 data.nichtGefunden = inventurResult.nichtGefunden;
                 data.standortAbweichung = inventurResult.standortAbweichung;
@@ -1290,7 +1290,7 @@ class KPIPage {
         const data = {
             inventurQuote: 0,
             bearbeitungszeit: null, // Nicht aus API berechenbar
-            ueberfaellig: 0,
+            überfällig: 0,
             werkzeuge: 0,
             nichtGefunden: 0,
             standortAbweichung: 0,
@@ -1325,7 +1325,7 @@ class KPIPage {
                 const inv = inventurResult.value;
                 data.prozesse.inventur = inv.prozess;
                 data.inventurQuote = inv.quote;
-                data.ueberfaellig = inv.ueberfaellig;
+                data.überfällig = inv.überfällig;
                 data.werkzeuge = inv.werkzeuge;
                 data.nichtGefunden = inv.nichtGefunden;
                 data.standortAbweichung = inv.standortAbweichung;
@@ -1419,7 +1419,7 @@ class KPIPage {
                         offen: invOffen
                     },
                     quote,
-                    ueberfaellig: 0,
+                    überfällig: 0,
                     werkzeuge: inventories.length,
                     nichtGefunden: 0,
                     standortAbweichung: 0,
@@ -1494,7 +1494,7 @@ class KPIPage {
                     offen: pending
                 },
                 quote,
-                ueberfaellig: overdue,
+                überfällig: overdue,
                 werkzeuge: total,
                 nichtGefunden: total > 0 ? Math.round((nichtGefunden / total) * 100 * 10) / 10 : 0,
                 standortAbweichung: total > 0 ? Math.round((standortAbweichung / total) * 100 * 10) / 10 : 0,
@@ -1659,7 +1659,7 @@ class KPIPage {
         return {
             inventurQuote: 87,
             bearbeitungszeit: 4.2,
-            ueberfaellig: 12 * (this.selectedPeriod === 'month' ? 1 : this.selectedPeriod === 'quarter' ? 2 : 5),
+            überfällig: 12 * (this.selectedPeriod === 'month' ? 1 : this.selectedPeriod === 'quarter' ? 2 : 5),
             werkzeuge: 1248,
             nichtGefunden: 2.8,
             standortAbweichung: 8.5,
@@ -1703,8 +1703,8 @@ class KPIPage {
             }
         }
 
-        const ueberfaelligEl = document.getElementById('kpiUeberfaellig');
-        if (ueberfaelligEl) ueberfaelligEl.textContent = data.ueberfaellig;
+        const überfälligEl = document.getElementById('kpiÜberfällig');
+        if (überfälligEl) überfälligEl.textContent = data.überfällig;
 
         const werkzeugeEl = document.getElementById('kpiWerkzeuge');
         if (werkzeugeEl) werkzeugeEl.textContent = data.werkzeuge.toLocaleString('de-DE');
@@ -1819,7 +1819,7 @@ class KPIPage {
             <div class="detail-kpi-item">
                 <div class="detail-kpi-info">
                     <span class="detail-kpi-name">Durchlaufzeit Verlagerung</span>
-                    <span class="detail-kpi-desc">Von Antrag bis Bestaetigung</span>
+                    <span class="detail-kpi-desc">Von Antrag bis Bestätigung</span>
                 </div>
                 <div class="detail-kpi-value">
                     ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfügbar</span>' : '6.8 Tage'}
@@ -1837,7 +1837,7 @@ class KPIPage {
             <div class="detail-kpi-item">
                 <div class="detail-kpi-info">
                     <span class="detail-kpi-name">SLA-Einhaltung</span>
-                    <span class="detail-kpi-desc">Innerhalb Faelligkeit abgeschlossen</span>
+                    <span class="detail-kpi-desc">Innerhalb Fälligkeit abgeschlossen</span>
                 </div>
                 <div class="detail-kpi-value">
                     ${isLiveMode ? '<span class="kpi-na-badge">Nicht verfügbar</span>' : '<span class="success">91.4%</span>'}
@@ -1889,7 +1889,7 @@ class KPIPage {
             ['Kennzahl', 'Wert'],
             ['Inventur-Quote', data.inventurQuote + '%'],
             ['Bearbeitungszeit', data.bearbeitungszeit + ' Tage'],
-            ['Überfällig', data.ueberfaellig],
+            ['Überfällig', data.überfällig],
             ['Verwaltete Werkzeuge', data.werkzeuge],
             [''],
             ['Prozess', 'Gesamt', 'Abgeschlossen', 'Offen'],

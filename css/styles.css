@@ -3514,7 +3514,7 @@ table td input[type="text"] {
 
 /* === MOBILE OPTIMIERUNG === */
 @media (max-width: 768px) {
-    /* Groessere Touch-Targets fuer Buttons */
+    /* Größere Touch-Targets für Buttons */
     .btn {
         min-height: 48px;
         padding: 0.75rem 1.5rem;
@@ -3525,14 +3525,14 @@ table td input[type="text"] {
         min-height: 48px;
     }
 
-    /* Filter-Chips groesser */
+    /* Filter-Chips größer */
     .filter-chip {
         min-height: 44px;
         padding: 0.6rem 1rem;
         font-size: 0.9rem;
     }
 
-    /* Tabellen-Buttons groesser */
+    /* Tabellen-Buttons größer */
     table .btn {
         min-height: 44px;
         padding: 0.5rem 1rem;
@@ -3553,25 +3553,25 @@ table td input[type="text"] {
         min-width: 100% !important;
     }
 
-    /* Checkboxen groesser */
+    /* Checkboxen größer */
     .checkbox-custom {
         width: 24px;
         height: 24px;
     }
 
-    /* Paginierung groesser */
+    /* Paginierung größer */
     .page-btn, .pagination-btn {
         min-height: 44px;
         padding: 0.6rem 1rem;
     }
 
-    /* Modal-Buttons groesser */
+    /* Modal-Buttons größer */
     .modal-btn {
         min-height: 48px;
         padding: 0.75rem 1.5rem;
     }
 
-    /* Suche groesser */
+    /* Suche größer */
     .search-input {
         min-height: 48px;
         font-size: 1rem;

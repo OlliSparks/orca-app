@@ -39,7 +39,7 @@ class BreadcrumbService {
             '/agent-api-setup': { label: 'API-Setup', icon: '🔌', parent: '/agenten' },
             '/agent-api-monitor': { label: 'API-Monitor', icon: '📡', parent: '/agenten' },
             '/agent-verlagerung-beantragen': { label: 'Verlagerung beantragen', icon: '📝', parent: '/agent-verlagerung' },
-            '/agent-verlagerung-durchfuehren': { label: 'Verlagerung durchführen', icon: '🚚', parent: '/agent-verlagerung' },
+            '/agent-verlagerung-durchführen': { label: 'Verlagerung durchführen', icon: '🚚', parent: '/agent-verlagerung' },
             '/settings': { label: 'Einstellungen', icon: '⚙️', parent: '/dashboard' },
             '/glossar': { label: 'Glossar & Hilfe', icon: '📖', parent: '/dashboard' }
         };
