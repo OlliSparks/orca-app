@@ -231,6 +231,10 @@ class OrcaApp {
         });
 
         // Backlog-Agent (Intern)
+        router.addRoute('/agent-skills', () => {
+            agentSkillsPage.render();
+        });
+
         router.addRoute('/agent-backlog', () => {
             agentBacklogPage.render();
         });

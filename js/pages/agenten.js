@@ -114,6 +114,16 @@ class AgentenPage {
                 internal: true
             },
             {
+                id: 'skills',
+                name: 'Skill-Agent',
+                icon: '🎯',
+                description: 'Erstellen und bearbeiten Sie Claude Code Skills. Verwalten Sie Kategorien und exportieren Sie Skills als Markdown.',
+                features: ['Skills erstellen', 'Kategorien verwalten', 'Import/Export', 'Diff-Vorschau'],
+                status: 'active',
+                route: '/agent-skills',
+                internal: true
+            },
+            {
                 id: 'backlog',
                 name: 'Backlog-Agent',
                 icon: '📋',
