@@ -400,14 +400,17 @@ Sofort umsetzen: ${bug.urgent ? 'JA' : 'Nein'}
 
 Beschreibung:
 ${bug.description}
-
-${bug.steps ? `Reproduktionsschritte:
+${bug.steps ? `
+Reproduktionsschritte:
 ${bug.steps}` : ''}
+${bug.screenshot ? `
+Screenshot:
+![Bug Screenshot](${bug.screenshot})` : ''}
 
 Bitte analysiere und behebe diesen Bug.`;
 
         navigator.clipboard.writeText(text).then(() => {
-            alert('Bug-Report wurde in die Zwischenablage kopiert!');
+            alert('Bug-Report wurde in die Zwischenablage kopiert!' + (bug.screenshot ? ' (inkl. Screenshot als base64)' : ''));
         });
     }
 

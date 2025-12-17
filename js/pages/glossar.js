@@ -59,25 +59,25 @@ class GlossarPage {
                     </div>
                 </div>
 
-                <!-- Quick Links -->
+                <!-- Quick Links zu den Hauptkategorien -->
                 <div class="glossar-quicklinks">
                     <h3>Schnellzugriff</h3>
                     <div class="quicklinks-grid">
-                        <div class="quicklink-card" onclick="glossarPage.scrollToTerm('Inventur')">
-                            <span class="quicklink-icon">📋</span>
-                            <span>Inventur verstehen</span>
+                        <div class="quicklink-card" onclick="glossarPage.setCategory('orca Allgemein')">
+                            <span class="quicklink-icon">🌐</span>
+                            <span>orca Allgemein</span>
                         </div>
-                        <div class="quicklink-card" onclick="glossarPage.scrollToTerm('Verlagerung')">
-                            <span class="quicklink-icon">🚚</span>
-                            <span>Verlagerung verstehen</span>
+                        <div class="quicklink-card" onclick="glossarPage.setCategory('Agenten')">
+                            <span class="quicklink-icon">🤖</span>
+                            <span>Agenten</span>
                         </div>
-                        <div class="quicklink-card" onclick="glossarPage.scrollToTerm('I0')">
-                            <span class="quicklink-icon">🔢</span>
-                            <span>Status-Codes</span>
+                        <div class="quicklink-card" onclick="glossarPage.setCategory('Prozesse')">
+                            <span class="quicklink-icon">⚙️</span>
+                            <span>Prozesse</span>
                         </div>
-                        <div class="quicklink-card" onclick="glossarPage.scrollToTerm('IVL')">
+                        <div class="quicklink-card" onclick="glossarPage.setCategory('Rollen')">
                             <span class="quicklink-icon">👤</span>
-                            <span>Rollen erklärt</span>
+                            <span>Rollen</span>
                         </div>
                     </div>
                 </div>
@@ -121,18 +121,41 @@ class GlossarPage {
         this.searchTerm = '';
     }
 
+    // Feste Kategorie-Reihenfolge
     getCategories(glossary) {
-        const cats = new Set();
-        Object.values(glossary).forEach(entry => cats.add(entry.category));
-        return Array.from(cats).sort();
+        // Gewünschte Reihenfolge: orca Allgemein, Agenten, Prozesse, Rollen
+        return ['orca Allgemein', 'Agenten', 'Prozesse', 'Rollen'];
+    }
+
+    // Mapping von Detail-Kategorien zu Hauptkategorien
+    mapCategory(originalCategory) {
+        const mapping = {
+            // orca Allgemein
+            'Begriff': 'orca Allgemein',
+            'Status': 'orca Allgemein',
+            'Einstieg': 'orca Allgemein',
+            'Einstellungen': 'orca Allgemein',
+            'Technisch': 'orca Allgemein',
+            'Support': 'orca Allgemein',
+            'Tipps': 'orca Allgemein',
+            // Agenten
+            'Agenten': 'Agenten',
+            // Prozesse
+            'Prozess': 'Prozesse',
+            'Inventur': 'Prozesse',
+            'Verlagerung': 'Prozesse',
+            // Rollen
+            'Rolle': 'Rollen'
+        };
+        return mapping[originalCategory] || 'orca Allgemein';
     }
 
     getCategoryIcon(category) {
         const icons = {
-            'Prozess': '⚙️',
-            'Rolle': '👤',
-            'Status': '🔢',
-            'Begriff': '📝'
+            'orca Allgemein': '🌐',
+            'Agenten': '🤖',
+            'Prozesse': '⚙️',
+            'Rollen': '👤'
         };
         return icons[category] || '📌';
     }
@@ -140,8 +163,9 @@ class GlossarPage {
     renderGlossaryList(glossary) {
         const filteredTerms = Object.entries(glossary)
             .filter(([term, data]) => {
-                // Category filter
-                if (this.activeCategory !== 'all' && data.category !== this.activeCategory) {
+                // Category filter - nutze mapCategory für Hauptkategorie-Vergleich
+                const mappedCategory = this.mapCategory(data.category);
+                if (this.activeCategory !== 'all' && mappedCategory !== this.activeCategory) {
                     return false;
                 }
                 // Search filter
@@ -165,28 +189,35 @@ class GlossarPage {
             `;
         }
 
-        // Group by category
+        // Group by mapped category (Hauptkategorien)
         const grouped = {};
         filteredTerms.forEach(([term, data]) => {
-            if (!grouped[data.category]) {
-                grouped[data.category] = [];
+            const mappedCategory = this.mapCategory(data.category);
+            if (!grouped[mappedCategory]) {
+                grouped[mappedCategory] = [];
             }
-            grouped[data.category].push([term, data]);
+            grouped[mappedCategory].push([term, data]);
         });
 
+        // Render in fester Reihenfolge
+        const categoryOrder = ['orca Allgemein', 'Agenten', 'Prozesse', 'Rollen'];
         let html = '';
-        Object.entries(grouped).forEach(([category, terms]) => {
-            html += `
-                <div class="glossar-category-section">
-                    <h3 class="category-header">
-                        ${this.getCategoryIcon(category)} ${category}
-                        <span class="category-count">${terms.length} Begriffe</span>
-                    </h3>
-                    <div class="glossar-terms">
-                        ${terms.map(([term, data]) => this.renderTerm(term, data)).join('')}
+
+        categoryOrder.forEach(category => {
+            const terms = grouped[category];
+            if (terms && terms.length > 0) {
+                html += `
+                    <div class="glossar-category-section">
+                        <h3 class="category-header">
+                            ${this.getCategoryIcon(category)} ${category}
+                            <span class="category-count">${terms.length} Begriffe</span>
+                        </h3>
+                        <div class="glossar-terms">
+                            ${terms.map(([term, data]) => this.renderTerm(term, data)).join('')}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         });
 
         return html;
