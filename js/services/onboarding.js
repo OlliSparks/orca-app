@@ -94,17 +94,21 @@ class OnboardingService {
 
     initKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // F1 = Hilfe
+            // Skip shortcuts wenn User in Input-Feld tippt
+            const active = document.activeElement;
+            const isTyping = active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName);
+
+            // F1 = Hilfe (immer aktiv)
             if (e.key === 'F1') {
                 e.preventDefault();
                 this.showContextualHelp();
             }
-            // Shift+? = Glossar
-            if (e.shiftKey && e.key === '?') {
+            // Shift+? = Glossar (nur wenn nicht im Input-Feld)
+            if (e.shiftKey && e.key === '?' && !isTyping) {
                 e.preventDefault();
                 router.navigate('/glossar');
             }
-            // Escape = Modals schließen
+            // Escape = Modals schließen (immer aktiv)
             if (e.key === 'Escape') {
                 this.closeAllModals();
             }
