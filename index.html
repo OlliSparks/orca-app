@@ -65,6 +65,19 @@
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                 </button>
+                <button class="header-action-btn" onclick="router.navigate('/messages')" title="Nachrichten" aria-label="Nachrichten">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </button>
+                <button class="header-action-btn" onclick="router.navigate('/kpi')" title="KPI Dashboard" aria-label="KPIs">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10"></path>
+                        <path d="M12 20V4"></path>
+                        <path d="M6 20v-6"></path>
+                    </svg>
+                </button>
                 <button class="header-action-btn" onclick="router.navigate('/glossar')" title="Hilfe & Glossar" aria-label="Hilfe">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -78,9 +91,7 @@
             <div class="nav-dropdown-container">
                 <select id="navDropdown" class="nav-dropdown" onchange="router.navigate(this.value)">
                     <option value="/dashboard">🏠 Dashboard</option>
-                    <option value="/messages">📬 Nachrichten</option>
                     <option value="/agenten">🤖 Agenten</option>
-                    <option value="/kpi">📊 KPI Dashboard</option>
                     <option value="/tools">🔧 Werkzeugübersicht</option>
                     <option value="/fm-akte">📂 FM-Akte</option>
                     <option value="/inventur">🔍 Inventur</option>
@@ -90,7 +101,6 @@
                     <option value="/partnerwechsel">🔄 Vertragspartnerwechsel</option>
                     <option value="/verschrottung">♻️ Verschrottung</option>
                     <option value="/unternehmen">🏢 Unternehmen</option>
-                    <option value="/glossar">📖 Glossar & Hilfe</option>
                     <option value="/settings">⚙️ Einstellungen</option>
                 </select>
             </div>
@@ -180,4 +190,3 @@
     <script src="js/app.js" defer></script>
 </body>
 </html>
-<\!-- Cache bust Do, 04. Dez 2025 18:38:22 -->
