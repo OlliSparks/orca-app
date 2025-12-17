@@ -8,6 +8,13 @@ class AgentSkillsPage {
         this.currentSkill = null;
         this.originalContent = '';
         this.skillsPath = 'C:\\Users\\orcao\\OneDrive - orca. organizing company assets GmbH\\Orca-Skills';
+        this.viewMode = 'list'; // 'list' or 'read'
+
+        // Load preloaded skills if localStorage is empty
+        if (this.skills.length === 0 && typeof PRELOADED_SKILLS !== 'undefined') {
+            this.skills = PRELOADED_SKILLS;
+            this.saveToStorage();
+        }
     }
 
     render() {
@@ -62,7 +69,9 @@ class AgentSkillsPage {
 
                     <!-- Main Content -->
                     <div class="skills-main">
-                        ${this.currentSkill ? this.renderEditor() : this.renderSkillList()}
+                        ${this.currentSkill
+                            ? (this.viewMode === 'read' ? this.renderReadView() : this.renderEditor())
+                            : this.renderSkillList()}
                     </div>
                 </div>
 
@@ -115,6 +124,105 @@ class AgentSkillsPage {
                 `).join('')}
             </div>
         `;
+    }
+
+    renderReadView() {
+        const skill = this.currentSkill;
+        const renderedContent = this.renderMarkdown(skill.content);
+
+        return `
+            <div class="skill-read-view">
+                <div class="read-header">
+                    <button class="btn-back" onclick="agentSkillsPage.closeEditor()">
+                        ← Zurück
+                    </button>
+                    <div class="read-meta">
+                        <span class="skill-category-badge">${this.getCategoryIcon(skill.category)} ${skill.category}</span>
+                        ${skill.folder ? `<span class="skill-folder">📁 ${skill.folder}</span>` : ''}
+                    </div>
+                    <div class="read-actions">
+                        <button class="btn-secondary" onclick="agentSkillsPage.switchToEdit()">
+                            ✏️ Bearbeiten
+                        </button>
+                        <button class="btn-secondary" onclick="agentSkillsPage.exportSkill('${skill.id}')">
+                            📤 Export
+                        </button>
+                        <button class="btn-secondary" onclick="agentSkillsPage.copySkillContent()">
+                            📋 Kopieren
+                        </button>
+                    </div>
+                </div>
+
+                <div class="read-content">
+                    ${renderedContent}
+                </div>
+
+                ${skill.path ? `
+                <div class="read-footer">
+                    <span class="file-path">📍 ${skill.path}</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    renderMarkdown(content) {
+        if (!content) return '<p>Kein Inhalt</p>';
+
+        // Simple markdown rendering
+        let html = this.escapeHtml(content);
+
+        // Headers
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+        // Code blocks
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+
+        // Inline code
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Bold and italic
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+        // Tables
+        html = html.replace(/^\|(.+)\|$/gm, (match, content) => {
+            const cells = content.split('|').map(c => c.trim());
+            if (cells.every(c => /^-+$/.test(c))) {
+                return ''; // Skip separator row
+            }
+            const isHeader = cells.some(c => c.includes('**'));
+            const tag = isHeader ? 'th' : 'td';
+            return `<tr>${cells.map(c => `<${tag}>${c}</${tag}>`).join('')}</tr>`;
+        });
+        html = html.replace(/(<tr>[\s\S]*?<\/tr>\n?)+/g, '<table>$&</table>');
+
+        // Lists
+        html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, '<ul>$&</ul>');
+
+        // Paragraphs (lines not already wrapped)
+        html = html.replace(/^(?!<[a-z])((?!<\/)[^\n]+)$/gm, '<p>$1</p>');
+
+        // Clean up empty paragraphs
+        html = html.replace(/<p>\s*<\/p>/g, '');
+        html = html.replace(/<p>(<[a-z])/g, '$1');
+        html = html.replace(/(<\/[a-z]+>)<\/p>/g, '$1');
+
+        return html;
+    }
+
+    switchToEdit() {
+        this.viewMode = 'edit';
+        this.render();
+    }
+
+    copySkillContent() {
+        navigator.clipboard.writeText(this.currentSkill.content).then(() => {
+            alert('Skill-Inhalt kopiert!');
+        });
     }
 
     renderEditor() {
@@ -195,6 +303,7 @@ Beispiele:
         if (skill) {
             this.currentSkill = { ...skill };
             this.originalContent = skill.content;
+            this.viewMode = 'read'; // Open in read mode first
             this.render();
         }
     }
@@ -613,6 +722,44 @@ Beispielcode oder -text
             [data-theme="dark"] .preview-modal { background: #1e293b; }
             [data-theme="dark"] .preview-content { background: #0f172a; }
             [data-theme="dark"] .btn-small { background: #334155; border-color: #475569; color: #e2e8f0; }
+
+            /* Read View Styles */
+            .skill-read-view { display: flex; flex-direction: column; height: 100%; }
+            .read-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+            .read-meta { display: flex; gap: 0.75rem; flex: 1; }
+            .skill-category-badge { background: #f3f4f6; padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.85rem; }
+            .skill-folder { color: #6b7280; font-size: 0.85rem; }
+            .read-actions { display: flex; gap: 0.5rem; }
+
+            .read-content { flex: 1; overflow: auto; padding: 1rem; background: #fafbfc; border-radius: 8px; line-height: 1.7; }
+            .read-content h1 { font-size: 1.75rem; color: #2c4a8c; margin: 0 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #2c4a8c; }
+            .read-content h2 { font-size: 1.35rem; color: #2c3e50; margin: 1.5rem 0 0.75rem 0; padding-bottom: 0.25rem; border-bottom: 1px solid #e5e7eb; }
+            .read-content h3 { font-size: 1.1rem; color: #374151; margin: 1.25rem 0 0.5rem 0; }
+            .read-content p { margin: 0.5rem 0; }
+            .read-content ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+            .read-content li { margin: 0.25rem 0; }
+            .read-content code { background: #e5e7eb; padding: 0.15rem 0.4rem; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+            .read-content pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+            .read-content pre code { background: transparent; padding: 0; color: inherit; }
+            .read-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+            .read-content th, .read-content td { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; text-align: left; }
+            .read-content th { background: #f9fafb; font-weight: 600; }
+            .read-content strong { color: #2c3e50; }
+
+            .read-footer { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+            .file-path { font-size: 0.8rem; color: #9ca3af; font-family: monospace; }
+
+            /* Dark mode read view */
+            [data-theme="dark"] .read-content { background: #0f172a; }
+            [data-theme="dark"] .read-content h1 { color: #60a5fa; border-color: #60a5fa; }
+            [data-theme="dark"] .read-content h2 { color: #e2e8f0; border-color: #334155; }
+            [data-theme="dark"] .read-content h3 { color: #cbd5e1; }
+            [data-theme="dark"] .read-content code { background: #334155; }
+            [data-theme="dark"] .read-content th { background: #1e293b; }
+            [data-theme="dark"] .read-content th, [data-theme="dark"] .read-content td { border-color: #334155; }
+            [data-theme="dark"] .skill-category-badge { background: #334155; }
+            [data-theme="dark"] .read-header { border-color: #334155; }
+            [data-theme="dark"] .read-footer { border-color: #334155; }
 
             @media (max-width: 900px) {
                 .skills-layout { grid-template-columns: 1fr; }
