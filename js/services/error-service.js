@@ -609,20 +609,17 @@ class ErrorService {
 const errorService = new ErrorService();
 
 // Globale Error-Handler für unbehandelte Fehler
+// Nur kritische Fehler dem User zeigen, Console-Logs für Debugging
 window.addEventListener('error', (event) => {
     console.error('Unhandled error:', event.error);
-    // Nur kritische Fehler dem User zeigen
-    if (event.error && event.error.message && !event.error.message.includes('Script error')) {
-        errorService.show(event.error);
-    }
+    // Nicht alle Fehler als Toast zeigen - nur wenn es ein echter Crash ist
+    // Die meisten Fehler werden durch try/catch in den jeweiligen Modulen behandelt
 });
 
 window.addEventListener('unhandledrejection', (event) => {
     console.error('Unhandled promise rejection:', event.reason);
-    // API-Fehler dem User zeigen
-    if (event.reason && event.reason.message) {
-        errorService.show(event.reason);
-    }
+    // API-Fehler nur loggen, nicht als Toast zeigen
+    // Spezifische Fehler werden von den API-Calls selbst behandelt
 });
 
 // Offline/Online Events
