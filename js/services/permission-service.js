@@ -39,7 +39,7 @@ class PermissionService {
             'nachrichten': { name: 'Nachrichten', icon: '✉️', route: '/messages' },
             'kpi': { name: 'KPI', icon: '📊', route: '/kpi' },
             'glossar': { name: 'Glossar', icon: '📖', route: '/glossar' },
-            'einstellungen': { name: 'Einstellungen', icon: '⚙️', route: '/settings' },
+            'einstellungen': { name: 'Einstellungen', icon: '⚙️', route: '/einstellungen' },
             'agenten-lieferant': { name: 'Agenten (Lieferanten)', icon: '🤖', route: '/agenten' },
             'agenten-intern': { name: 'Agenten (Intern)', icon: '🔧', route: '/agenten-intern' }
         };
@@ -110,7 +110,7 @@ class PermissionService {
                     }
                     // WVL - Werkzeugverantwortlicher (erweiterte Rechte)
                     else if (roleKey === 'WVL') {
-                        if (['dashboard', 'inventur', 'verlagerung', 'planung', 'unternehmen', 'nachrichten', 'agenten-lieferant', 'einstellungen'].includes(viewKey)) {
+                        if (['dashboard', 'inventur', 'verlagerung', 'planung', 'unternehmen', 'nachrichten', 'agenten-lieferant'].includes(viewKey)) {
                             matrix[roleKey][viewKey] = this.levels.ADMIN;
                         } else if (['abl', 'partnerwechsel', 'verschrottung', 'kpi', 'fm-akte', 'glossar'].includes(viewKey)) {
                             matrix[roleKey][viewKey] = this.levels.WRITE;
@@ -140,7 +140,7 @@ class PermissionService {
                     }
                     // ITL - IT-Verantwortlicher
                     else if (roleKey === 'ITL') {
-                        if (['dashboard', 'agenten-lieferant', 'einstellungen'].includes(viewKey)) {
+                        if (['dashboard', 'agenten-lieferant'].includes(viewKey)) {
                             matrix[roleKey][viewKey] = this.levels.ADMIN;
                         } else if (['glossar', 'nachrichten', 'kpi'].includes(viewKey)) {
                             matrix[roleKey][viewKey] = this.levels.READ;
@@ -247,11 +247,20 @@ class PermissionService {
         if (route.startsWith('/verschrottung')) return 'verschrottung';
         if (route.startsWith('/agent-')) {
             // Interne Agenten
-            if (route.includes('api-monitor') || route.includes('berechtigungen')) {
+            if (route.includes('api-monitor') || route.includes('berechtigungen') ||
+                route.includes('bugs') || route.includes('backlog') ||
+                route.includes('skills') || route.includes('allgemein')) {
                 return 'agenten-intern';
             }
             return 'agenten-lieferant';
         }
+        if (route === '/einstellungen') return 'einstellungen';
+        if (route === '/glossar') return 'glossar';
+        if (route === '/messages') return 'nachrichten';
+        if (route === '/kpi') return 'kpi';
+        if (route === '/planung') return 'planung';
+        if (route === '/fm-akte') return 'fm-akte';
+        if (route === '/unternehmen') return 'unternehmen';
 
         return null;
     }

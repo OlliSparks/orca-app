@@ -23,6 +23,12 @@ class Router {
         this.currentRoute = hash;
         this.queryParams = this.parseQueryString(queryString);
 
+        // Permission check
+        if (typeof permissionService !== 'undefined' && !permissionService.canAccessRoute(hash)) {
+            this.showAccessDenied(hash);
+            return;
+        }
+
         // Update active nav links
         this.updateActiveNavLinks();
 
@@ -151,6 +157,39 @@ class Router {
     }
 
     // Show 404 page
+    showAccessDenied(route) {
+        const app = document.getElementById('app');
+        const viewKey = typeof permissionService !== 'undefined' ?
+            permissionService.getViewKeyFromRoute(route) : 'unbekannt';
+        const currentRole = typeof permissionService !== 'undefined' ?
+            permissionService.getCurrentRole() : '?';
+        const roleInfo = typeof permissionService !== 'undefined' ?
+            permissionService.getRoleInfo(currentRole) : null;
+
+        app.innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:2rem">
+                <div style="font-size:4rem;margin-bottom:1rem">🔒</div>
+                <h1 style="font-size:1.5rem;color:#1e3a5f;margin-bottom:0.5rem">Zugriff verweigert</h1>
+                <p style="color:#6b7280;margin-bottom:1.5rem">
+                    Ihre Rolle <strong>${roleInfo ? roleInfo.name : currentRole}</strong> hat keinen Zugriff auf <strong>${viewKey}</strong>.
+                </p>
+                <div style="display:flex;gap:1rem">
+                    <a href="#/dashboard" style="padding:0.75rem 1.5rem;background:#2c4a8c;color:white;border-radius:8px;text-decoration:none">
+                        Zum Dashboard
+                    </a>
+                    <a href="#/glossar" style="padding:0.75rem 1.5rem;border:1px solid #d1d5db;border-radius:8px;text-decoration:none;color:#374151">
+                        Glossar
+                    </a>
+                </div>
+            </div>
+        `;
+
+        // Header aktualisieren
+        document.getElementById('headerTitle').textContent = 'Zugriff verweigert';
+        document.getElementById('headerSubtitle').textContent = '';
+        document.getElementById('headerStats').style.display = 'none';
+    }
+
     show404() {
         const app = document.getElementById('app');
         app.innerHTML = `
