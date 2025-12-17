@@ -3,6 +3,15 @@ class AgentenPage {
     constructor() {
         this.agents = [
             {
+                id: 'allgemein',
+                name: 'Allgemein-Agent',
+                icon: '🤖',
+                description: 'Ihr persönlicher KI-Assistent. Stellen Sie beliebige Fragen zu ORCA, Prozessen, Status-Codes und mehr.',
+                features: ['Freie Fragen', 'Prozess-Beratung', 'Status-Erklärung', 'Anleitungen'],
+                status: 'active',
+                route: '/agent-allgemein'
+            },
+            {
                 id: 'inventur',
                 name: 'Inventur-Agent',
                 icon: '🤖',

@@ -176,6 +176,10 @@ class OrcaApp {
         });
 
         // Inventur-Agent
+        router.addRoute('/agent-allgemein', () => {
+            agentAllgemeinPage.render();
+        });
+
         router.addRoute('/agent-inventur', () => {
             agentInventurPage.render();
         });
