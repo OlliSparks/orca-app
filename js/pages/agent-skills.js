@@ -3,21 +3,32 @@
 
 class AgentSkillsPage {
     constructor() {
-        this.skills = JSON.parse(localStorage.getItem('orca_skills') || '[]');
+        this.skills = [];
         this.categories = JSON.parse(localStorage.getItem('orca_skill_categories') || '["Fachliche Skills", "Prozess-Skills", "Rollen-Skills", "Technische Skills"]');
         this.currentSkill = null;
         this.originalContent = '';
         this.skillsPath = 'C:\\Users\\orcao\\OneDrive - orca. organizing company assets GmbH\\Orca-Skills';
         this.viewMode = 'list'; // 'list' or 'read'
 
-        // Load preloaded skills if localStorage is empty
-        if (this.skills.length === 0 && typeof PRELOADED_SKILLS !== 'undefined') {
+
+    }
+
+    loadSkills() {
+        const stored = localStorage.getItem('orca_skills');
+        if (stored) {
+            try {
+                this.skills = JSON.parse(stored);
+                if (this.skills.length > 0) return;
+            } catch (e) { console.warn('Failed to parse stored skills:', e); }
+        }
+        if (typeof PRELOADED_SKILLS !== 'undefined' && PRELOADED_SKILLS.length > 0) {
             this.skills = PRELOADED_SKILLS;
             this.saveToStorage();
         }
     }
 
     render() {
+        this.loadSkills();
         const container = document.getElementById('app');
         container.innerHTML = `
             <div class="agent-skills-page">
