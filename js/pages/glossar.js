@@ -201,6 +201,20 @@ class GlossarPage {
     }
 
     renderTerm(term, data) {
+        // Route für Agenten-Einträge
+        const agentRoutes = {
+            'Inventur-Agent': '/agent-inventur',
+            'ABL-Agent': '/agent-abl',
+            'Reporting-Agent': '/agent-reporting',
+            'Verlagerungs-Agent': '/agent-verlagerung-beantragen',
+            'VPW-Agent': '/agent-vpw',
+            'Verschrottungs-Agent': '/agent-verschrottung',
+            'Inventurplanungs-Agent': '/agent-inventurplanung',
+            'Integrations-Assistent': '/agent-api-setup',
+            'Agenten (Überblick)': '/agenten'
+        };
+        const route = agentRoutes[term];
+
         return `
             <div class="glossar-term" id="term-${term.replace(/\s+/g, '-')}">
                 <div class="term-header" onclick="this.parentElement.classList.toggle('expanded')">
@@ -212,11 +226,13 @@ class GlossarPage {
                 </div>
                 <div class="term-content">
                     <p class="term-long">${data.long}</p>
+                    ${route ? `
                     <div class="term-actions">
-                        <button class="btn-term-copy" onclick="glossarPage.copyTerm('${term}', '${data.short.replace(/'/g, "\\'")}')">
-                            📋 Kopieren
+                        <button class="btn-term-link" onclick="router.navigate('${route}')">
+                            🚀 Zum Agenten
                         </button>
                     </div>
+                    ` : ''}
                 </div>
             </div>
         `;
