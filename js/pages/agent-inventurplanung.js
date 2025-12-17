@@ -53,6 +53,9 @@ class AgentInventurplanungPage {
                                     <button class="quick-date-btn" data-days="14">In 2 Wochen</button>
                                     <button class="quick-date-btn" data-days="30">In 1 Monat</button>
                                 </div>
+                                <button class="action-btn primary accept-date-btn" id="acceptDateBtn">
+                                    Datum uebernehmen →
+                                </button>
                             </div>
                         </div>
 
@@ -164,6 +167,15 @@ class AgentInventurplanungPage {
         // Confirm button
         document.getElementById('confirmBtn')?.addEventListener('click', () => {
             this.confirmAndNavigate();
+        });
+
+        // Accept date button (direct date selection)
+        document.getElementById('acceptDateBtn')?.addEventListener('click', () => {
+            const dateInput = document.getElementById('targetDate');
+            if (dateInput && dateInput.value) {
+                this.selectedDate = new Date(dateInput.value);
+                this.showConfirmation();
+            }
         });
     }
 
