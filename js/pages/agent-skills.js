@@ -347,28 +347,101 @@ Beispiele:
         }
     }
 
-    integrateInput() {
+    async integrateInput() {
         const input = document.getElementById('skillInput').value.trim();
-        const content = document.getElementById('skillContent');
+        const contentEl = document.getElementById('skillContent');
+        const currentContent = contentEl.value;
+        const btn = document.querySelector('.btn-integrate');
 
         if (!input) {
-            alert('Bitte gib erst einen Input ein.');
+            errorService.showToast('Bitte gib erst einen Input ein.', 'warning');
             return;
         }
 
-        // Einfache Integration: Input als neuen Abschnitt hinzufügen
-        const integration = `
+        // API Key aus Einstellungen holen
+        const apiConfig = JSON.parse(localStorage.getItem('orca_api_config') || '{}');
+        const apiKey = apiConfig.claudeApiKey;
 
-## Update ${new Date().toLocaleDateString('de-DE')}
+        if (!apiKey) {
+            errorService.showToast('Kein Claude API Key konfiguriert. Bitte in Einstellungen hinterlegen.', 'error');
+            return;
+        }
 
+        // Loading State
+        const originalBtnText = btn.innerHTML;
+        btn.innerHTML = '⏳ Integriere...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 4096,
+                    system: `Du bist ein Skill-Editor für das ORCA Asset-Management-System.
+Deine Aufgabe ist es, Änderungswünsche des Users intelligent in bestehende Skills zu integrieren.
+
+REGELN:
+1. Füge neue Informationen an der LOGISCH RICHTIGEN Stelle ein
+2. Aktualisiere bestehende Informationen statt sie zu duplizieren
+3. Behalte das Markdown-Format und die Struktur bei
+4. Wenn es um Begriffsänderungen geht (z.B. "VVL steht für X"), aktualisiere ALLE relevanten Stellen
+5. Füge KEIN "## Update DATUM" am Ende hinzu - integriere direkt
+6. Antworte NUR mit dem aktualisierten Skill-Inhalt, keine Erklärungen
+
+WICHTIG: Gib NUR den aktualisierten Markdown-Inhalt zurück, nichts anderes.`,
+                    messages: [{
+                        role: 'user',
+                        content: `BESTEHENDER SKILL-INHALT:
+\`\`\`markdown
+${currentContent}
+\`\`\`
+
+ÄNDERUNGSWUNSCH:
 ${input}
-`;
-        content.value += integration;
-        this.currentSkill.content = content.value;
-        document.getElementById('skillInput').value = '';
-        this.markChanged();
 
-        alert('Input wurde als neuer Abschnitt hinzugefügt. Bearbeite den Skill-Inhalt nach Bedarf.');
+Bitte integriere die Änderungen intelligent und gib den vollständigen aktualisierten Skill-Inhalt zurück.`
+                    }]
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'API-Fehler');
+            }
+
+            const data = await response.json();
+            const updatedContent = data.content[0].text;
+
+            // Inhalt aktualisieren
+            contentEl.value = updatedContent;
+            this.currentSkill.content = updatedContent;
+            document.getElementById('skillInput').value = '';
+            this.markChanged();
+
+            errorService.showToast('Änderungen intelligent integriert!', 'success');
+
+        } catch (error) {
+            console.error('Integration error:', error);
+            errorService.showToast(`Fehler: ${error.message}`, 'error');
+
+            // Fallback: Einfache Anhängung
+            if (confirm('API-Fehler. Soll der Input stattdessen als neuer Abschnitt angehängt werden?')) {
+                contentEl.value += `\n\n## Update ${new Date().toLocaleDateString('de-DE')}\n\n${input}`;
+                this.currentSkill.content = contentEl.value;
+                document.getElementById('skillInput').value = '';
+                this.markChanged();
+            }
+        } finally {
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+        }
     }
 
     saveSkill() {
