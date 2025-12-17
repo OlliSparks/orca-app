@@ -1,13 +1,7 @@
 // ORCA 2.0 - Inventur-Planung Page
 class PlanungPage {
     constructor() {
-        this.locations = [
-            { id: 'loc1', name: 'Werk München - Halle A' },
-            { id: 'loc2', name: 'Werk München - Halle B' },
-            { id: 'loc3', name: 'Werk Stuttgart - Presswerk' },
-            { id: 'loc4', name: 'Werk Leipzig - Montage' },
-            { id: 'loc5', name: 'Lager Augsburg' }
-        ];
+        this.locations = []; // Wird aus API geladen
 
         this.tools = [];
         this.currentFilter = 'all';
@@ -108,7 +102,7 @@ class PlanungPage {
                                 <th class="sortable" data-sort="name">Werkzeug</th>
                                 <th class="sortable" data-sort="location">Standort</th>
                                 <th class="sortable" data-sort="dueDate">Fälligkeitsdatum</th>
-                                <th class="sortable" data-sort="startDate">Starttermin</th>
+                                <th class="sortable" data-sort="planDate">Plantermin</th>
                                 <th class="sortable" data-sort="inventoryType">Inventurtyp</th>
                                 <th>Status</th>
                             </tr>
@@ -199,18 +193,49 @@ class PlanungPage {
     }
 
     async loadData() {
-        // Generate mock data
+        // Load locations from API (use supplier's company)
+        await this.loadLocations();
+
+        // Load planning data
         const response = await api.getPlanningData();
         if (response.success) {
             this.tools = response.data.map(tool => ({
                 ...tool,
-                status: this.calculateInventoryStatus(tool.startDate),
+                status: this.calculateInventoryStatus(tool.planDate),
                 selected: false
             }));
+
+            // Extract unique locations from tools if API locations empty
+            if (this.locations.length === 0) {
+                const uniqueLocations = [...new Set(this.tools.map(t => t.location).filter(l => l && l !== '-'))];
+                this.locations = uniqueLocations.map((loc, i) => ({
+                    id: 'loc_' + i,
+                    name: loc
+                }));
+            }
         }
 
         // Check if coming from Inventurplanungs-Agent with a target date
         this.applyAgentPlanningDate();
+    }
+
+    async loadLocations() {
+        try {
+            // Get company key from auth or use default
+            const companyKey = api.companyKey || api.supplierCompanyKey;
+            if (companyKey) {
+                const response = await api.getCompanyLocations(companyKey);
+                if (response.success && response.data) {
+                    // Map API format to dropdown format (id, name)
+                    this.locations = response.data.map(loc => ({
+                        id: loc.key,
+                        name: loc.city && loc.country ? `${loc.city}, ${loc.country}` : (loc.name || loc.city || 'Unbekannt')
+                    }));
+                }
+            }
+        } catch (e) {
+            console.warn('[Planung] Could not load locations:', e);
+        }
     }
 
     applyAgentPlanningDate() {
@@ -234,7 +259,7 @@ class PlanungPage {
             const targetDate = planningData.targetDate;
             if (targetDate) {
                 this.tools.forEach(tool => {
-                    tool.startDate = targetDate;
+                    tool.planDate = targetDate;
                     tool.status = this.calculateInventoryStatus(targetDate);
                     tool.selected = true; // Select all for bulk confirmation
                 });
@@ -330,21 +355,24 @@ class PlanungPage {
         setTimeout(() => notification.remove(), 10000);
     }
 
-    calculateInventoryStatus(startDateString) {
+    calculateInventoryStatus(planDateString) {
+        // Ohne Plantermin = offen
+        if (!planDateString) {
+            return 'offen';
+        }
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const startDate = new Date(startDateString);
-        startDate.setHours(0, 0, 0, 0);
+        const planDate = new Date(planDateString);
+        planDate.setHours(0, 0, 0, 0);
 
-        const diffTime = startDate - today;
+        const diffTime = planDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays <= 0) {
-            return 'in-inventur';
-        } else if (diffDays > 180) {
-            return 'offen';
+            return 'in-inventur';  // Plantermin erreicht oder ueberschritten
         } else {
-            return 'feinplanung';
+            return 'feinplanung';  // Hat Plantermin in der Zukunft
         }
     }
 
@@ -513,7 +541,7 @@ class PlanungPage {
                         <td>
                             <input type="date"
                                    class="date-input"
-                                   value="${tool.startDate}"
+                                   value="${tool.planDate}"
                                    data-tool-id="${tool.id}"
                                    onchange="planungPage.updateStartDate(${tool.id}, this.value)">
                         </td>
@@ -565,7 +593,8 @@ class PlanungPage {
 
     updateSpeedometer() {
         const total = this.tools.length;
-        const geplant = this.tools.filter(t => t.status === 'feinplanung' || t.status === 'in-inventur').length;
+        // Geplant = hat Plantermin gesetzt (nicht leer)
+        const geplant = this.tools.filter(t => t.planDate && t.planDate.trim() !== '').length;
 
         if (total === 0) {
             document.getElementById('speedometerPercentage').textContent = '0%';
@@ -667,8 +696,8 @@ class PlanungPage {
                                 <div>${this.formatDate(tool.dueDate)}</div>
                             </div>
                             <div>
-                                <div style="color: #6b7280;">Starttermin</div>
-                                <div>${this.formatDate(tool.startDate)}</div>
+                                <div style="color: #6b7280;">Plantermin</div>
+                                <div>${this.formatDate(tool.planDate)}</div>
                             </div>
                         </div>
                         <div style="margin-bottom: 0.5rem;">
@@ -787,7 +816,7 @@ class PlanungPage {
     updateStartDate(toolId, newDate) {
         const tool = this.tools.find(t => t.id === toolId);
         if (tool && newDate) {
-            tool.startDate = newDate;
+            tool.planDate = newDate;
             // Status wird automatisch neu berechnet beim nächsten Render
             if (this.currentView === 'table') {
                 this.renderTable();
@@ -799,7 +828,9 @@ class PlanungPage {
     }
 
     getLocationName(locationId) {
-        const location = this.locations.find(loc => loc.id === locationId);
+        // locationId kann ein Key oder ein String wie "Muenchen, DE" sein
+        if (!locationId || locationId === '-') return '-';
+        const location = this.locations.find(loc => loc.id === locationId || loc.key === locationId);
         return location ? location.name : locationId;
     }
 

@@ -904,26 +904,36 @@ class APIService {
         return this.callWithFallback(
             // Live API call
             async () => {
-                // For planning, we use the asset-list with planning-specific filters
                 const params = new URLSearchParams();
+                if (this.supplierNumber) params.append('supplier', this.supplierNumber);
                 if (filters.status) params.append('status', filters.status);
                 if (filters.location) params.append('location', filters.location);
                 params.append('limit', '100');
 
                 const endpoint = `/asset-list?${params.toString()}`;
                 const response = await this.call(endpoint, 'GET');
-                const rawData = response.data || response || [];
+                const rawData = Array.isArray(response) ? response : (response.data || []);
 
-                // Transform API response to planning format
-                const items = (Array.isArray(rawData) ? rawData : []).map((item, index) => ({
-                    id: item.assetKey || item.key || item.id || index + 1,
-                    name: item.name || item.toolName || item.description || 'Unbekanntes Werkzeug',
-                    number: item.identifier || item.toolNumber || item.assetNumber || '-',
-                    location: item.locationKey || item.location || item.locationId || '-',
-                    dueDate: item.nextInventoryDate || item.dueDate || this.calculateDueDate(index),
-                    startDate: item.plannedStartDate || item.startDate || '',
-                    inventoryType: item.inventoryType || item.type || 'IA'
-                }));
+                // Transform API response - use same mapping as getFMData
+                const items = rawData.map((item, index) => {
+                    const city = item.meta?.assetCity || '';
+                    const country = item.meta?.assetCountry || '';
+                    const locationStr = city && country ? `${city}, ${country}` : (city || country || '-');
+
+                    return {
+                        id: item.context?.key || index + 1,
+                        number: item.meta?.inventoryNumber || item.context?.key || '-',
+                        name: item.meta?.inventoryText || item.meta?.partNumberText || 'Unbekanntes Werkzeug',
+                        location: locationStr,
+                        locationKey: item.meta?.locationKey || '',
+                        dueDate: item.meta?.['p.inv.plan.due'] || this.calculateDueDate(index),
+                        planDate: item.meta?.['p.inv.plan.start'] || '',
+                        inventoryType: item.meta?.inventoryType || 'IA',
+                        supplier: item.meta?.supplier || '',
+                        status: item.meta?.status || '',
+                        processStatus: item.meta?.processStatus || ''
+                    };
+                });
 
                 return {
                     success: true,
