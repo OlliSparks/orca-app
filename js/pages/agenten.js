@@ -95,13 +95,20 @@ class AgentenPage {
         ];
     }
 
-    // Sortierte Agenten: Verfügbar zuerst, dann Demnächst
-    getSortedAgents() {
-        return [...this.agents].sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (a.status !== 'active' && b.status === 'active') return 1;
-            return 0;
-        });
+    // Lieferanten-Agenten (alle außer API-Monitor)
+    getSupplierAgents() {
+        return this.agents
+            .filter(a => a.id !== 'api-monitor')
+            .sort((a, b) => {
+                if (a.status === 'active' && b.status !== 'active') return -1;
+                if (a.status !== 'active' && b.status === 'active') return 1;
+                return 0;
+            });
+    }
+
+    // Interne Agenten (nur API-Monitor)
+    getInternalAgents() {
+        return this.agents.filter(a => a.id === 'api-monitor');
     }
 
     render() {
@@ -118,16 +125,15 @@ class AgentenPage {
             navDropdown.value = '/agenten';
         }
 
+        const supplierAgents = this.getSupplierAgents();
+        const internalAgents = this.getInternalAgents();
+
         app.innerHTML = `
             <div class="container agenten-page">
                 <div class="page-intro">
                     <h2>Willkommen bei den ORCA-Agenten</h2>
                     <p>Unsere KI-Agenten helfen Ihnen, Ihre Daten effizient zu verarbeiten und mit dem System zu verbinden.
                        Wählen Sie einen Agenten, um zu starten.</p>
-                </div>
-
-                <div class="agents-grid">
-                    ${this.getSortedAgents().map(agent => this.renderAgentCard(agent)).join('')}
                 </div>
 
                 <div class="agents-info">
@@ -140,6 +146,28 @@ class AgentenPage {
                         </div>
                     </div>
                 </div>
+
+                <div class="agents-section">
+                    <div class="section-header">
+                        <h3>🏭 Lieferanten-Agenten</h3>
+                        <p>Assistenten für Ihre täglichen Aufgaben</p>
+                    </div>
+                    <div class="agents-grid">
+                        ${supplierAgents.map(agent => this.renderAgentCard(agent)).join('')}
+                    </div>
+                </div>
+
+                ${internalAgents.length > 0 ? `
+                <div class="agents-section internal-section">
+                    <div class="section-header">
+                        <h3>🔧 Interne Agenten</h3>
+                        <p>Werkzeuge für Administration und Monitoring</p>
+                    </div>
+                    <div class="agents-grid">
+                        ${internalAgents.map(agent => this.renderAgentCard(agent)).join('')}
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
 
@@ -332,7 +360,44 @@ class AgentenPage {
             }
 
             .agents-info {
+                margin-bottom: 2rem;
+            }
+
+            .agents-section {
+                margin-bottom: 3rem;
+            }
+
+            .section-header {
+                margin-bottom: 1.5rem;
+                padding-bottom: 1rem;
+                border-bottom: 2px solid #e5e7eb;
+            }
+
+            .section-header h3 {
+                font-size: 1.25rem;
+                color: #1f2937;
+                margin-bottom: 0.25rem;
+            }
+
+            .section-header p {
+                color: #6b7280;
+                font-size: 0.9rem;
+                margin: 0;
+            }
+
+            .internal-section {
                 margin-top: 2rem;
+                padding-top: 2rem;
+                border-top: 1px dashed #d1d5db;
+            }
+
+            .internal-section .section-header {
+                border-bottom-color: #fbbf24;
+            }
+
+            .internal-section .agent-card.active:hover {
+                border-color: #f59e0b;
+                box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
             }
 
             .info-card {
