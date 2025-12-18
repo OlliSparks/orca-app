@@ -178,107 +178,100 @@ class AgentLookupPage {
     async executeSearch(recognition) {
         if (!recognition.strategy) return null;
 
-        // Token von api.bearerToken holen (gleiche Quelle wie alle anderen API-Calls)
-        let token = null;
-        if (typeof api !== 'undefined' && api.bearerToken) {
-            token = api.bearerToken.startsWith('Bearer ')
-                ? api.bearerToken.substring(7)
-                : api.bearerToken;
-        }
-        if (!token) {
-            return { noToken: true, message: 'Kein Auth-Token verfügbar. Bitte einloggen.' };
+        // Prüfe ob api verfügbar ist
+        if (typeof api === 'undefined') {
+            return { error: 'API Service nicht verfügbar' };
         }
 
         const strategy = recognition.strategy;
-        let endpoint, params;
+        const entityType = recognition.matches?.[0]?.type;
+        const value = recognition.matches?.[0]?.value || recognition.input;
 
-        // Primary Strategy extrahieren
-        if (strategy.primary) {
-            endpoint = strategy.primary.endpoint;
-            params = strategy.primary.params;
-        } else if (strategy.tryInOrder) {
-            // Bei UUID: ersten Versuch nehmen
-            endpoint = strategy.tryInOrder[0].endpoint;
-            params = strategy.tryInOrder[0].params;
-        } else {
-            return null;
-        }
-
-        // API-Katalog verwenden
-        if (typeof API_CATALOG === 'undefined') {
-            return { error: 'API_CATALOG nicht verfügbar' };
-        }
-
-        const apiDef = API_CATALOG[endpoint];
-        if (!apiDef) {
-            return { error: `Endpoint ${endpoint} nicht im Katalog gefunden` };
-        }
-
-        // URL bauen
-        let url = API_CATALOG.baseUrl + apiDef.path;
-
-        // Path-Parameter ersetzen
-        if (apiDef.input?.pathParams) {
-            for (const p of apiDef.input.pathParams) {
-                if (params[p.name]) {
-                    url = url.replace(`{${p.name}}`, params[p.name]);
-                }
-            }
-        }
-
-        // Query-Parameter anhängen
-        const queryParts = [];
-        if (params) {
-            for (const [key, value] of Object.entries(params)) {
-                if (value !== undefined && !apiDef.input?.pathParams?.some(p => p.name === key)) {
-                    if (Array.isArray(value)) {
-                        value.forEach(v => queryParts.push(`${key}=${encodeURIComponent(v)}`));
-                    } else {
-                        queryParts.push(`${key}=${encodeURIComponent(value)}`);
-                    }
-                }
-            }
-        }
-
-        // Für inventory-list: status ist required
-        if (endpoint === 'inventoryList' && !params.status) {
-            ['I0', 'I1', 'I2', 'I3', 'I4', 'I5', 'I6'].forEach(s => {
-                queryParts.push(`status=${s}`);
-            });
-        }
-
-        if (queryParts.length > 0) {
-            url += '?' + queryParts.join('&');
-        }
-
-        // Fetch
         try {
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
+            // Nutze api.js Methoden je nach Entity-Typ
+            if (entityType === 'toolNumber') {
+                // Werkzeugnummer -> api.getAssetByNumber()
+                const result = await api.getAssetByNumber(value);
                 return {
-                    error: `HTTP ${response.status}`,
-                    url,
-                    endpoint
+                    success: result.success,
+                    endpoint: 'assetList',
+                    data: result.success ? result.data : null,
+                    error: result.error,
+                    count: result.success ? 1 : 0
                 };
             }
 
-            const data = await response.json();
+            if (entityType === 'companyNumber' || entityType === 'companyName') {
+                // Firma -> api.searchCompanies()
+                const result = await api.searchCompanies(value);
+                return {
+                    success: Array.isArray(result) && result.length > 0,
+                    endpoint: 'companiesSearch',
+                    data: result,
+                    count: Array.isArray(result) ? result.length : 0
+                };
+            }
+
+            if (entityType === 'inventoryNumber') {
+                // Inventurnummer -> api.getInventoryList()
+                const result = await api.getInventoryList();
+                const filtered = Array.isArray(result)
+                    ? result.filter(inv => inv.inventoryNumber?.includes(value))
+                    : [];
+                return {
+                    success: filtered.length > 0,
+                    endpoint: 'inventoryList',
+                    data: filtered,
+                    count: filtered.length
+                };
+            }
+
+            if (entityType === 'uuid') {
+                // UUID -> könnte Asset, Prozess oder Inventur sein
+                // Versuche Asset zuerst
+                try {
+                    const assetResult = await api.call(`/asset/${value}`, 'GET');
+                    if (assetResult) {
+                        return {
+                            success: true,
+                            endpoint: 'assetDetail',
+                            data: assetResult,
+                            count: 1
+                        };
+                    }
+                } catch (e) {
+                    // Asset nicht gefunden, versuche Prozess
+                }
+
+                try {
+                    const processResult = await api.call(`/process/${value}`, 'GET');
+                    if (processResult) {
+                        return {
+                            success: true,
+                            endpoint: 'processDetail',
+                            data: processResult,
+                            count: 1
+                        };
+                    }
+                } catch (e) {
+                    // Prozess nicht gefunden
+                }
+
+                return { error: 'UUID nicht gefunden (weder Asset noch Prozess)' };
+            }
+
+            // Fallback: Generische Suche über asset-list
+            const fallbackResult = await api.getAssetByNumber(value);
             return {
-                success: true,
-                url,
-                endpoint,
-                data,
-                count: Array.isArray(data) ? data.length : 1
+                success: fallbackResult.success,
+                endpoint: 'assetList',
+                data: fallbackResult.success ? fallbackResult.data : null,
+                error: fallbackResult.error,
+                count: fallbackResult.success ? 1 : 0
             };
 
         } catch (error) {
-            return { error: error.message, url };
+            return { error: error.message };
         }
     }
 
