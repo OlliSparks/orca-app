@@ -178,16 +178,13 @@ class AgentLookupPage {
     async executeSearch(recognition) {
         if (!recognition.strategy) return null;
 
-        // Token refreshen falls nötig, dann holen
-        if (typeof authService !== 'undefined' && authService.updateToken) {
-            try {
-                await authService.updateToken();
-            } catch (e) {
-                console.warn('Token refresh fehlgeschlagen:', e);
-            }
+        // Token von api.bearerToken holen (gleiche Quelle wie alle anderen API-Calls)
+        let token = null;
+        if (typeof api !== 'undefined' && api.bearerToken) {
+            token = api.bearerToken.startsWith('Bearer ')
+                ? api.bearerToken.substring(7)
+                : api.bearerToken;
         }
-
-        const token = typeof authService !== 'undefined' ? authService.getToken() : null;
         if (!token) {
             return { noToken: true, message: 'Kein Auth-Token verfügbar. Bitte einloggen.' };
         }
