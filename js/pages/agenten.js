@@ -142,6 +142,16 @@ class AgentenPage {
                 status: 'active',
                 route: '/agent-backlog',
                 internal: true
+            },
+            {
+                id: 'lookup',
+                name: 'Lookup-Agent',
+                icon: '🔎',
+                description: 'Universelle Suche: Erkennt automatisch was eine Eingabe ist und findet zugehoerige Daten.',
+                features: ['Entity-Erkennung', 'API-Katalog', 'Auto-Suche', 'Daten-Preview'],
+                status: 'active',
+                route: '/agent-lookup',
+                internal: true
             }
         ];
     }

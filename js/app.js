@@ -243,6 +243,10 @@ class OrcaApp {
             agentBacklogPage.render();
         });
 
+        router.addRoute('/agent-lookup', () => {
+            agentLookupPage.render();
+        });
+
         // Verlagerung beantragen Agent
         router.addRoute('/agent-verlagerung-beantragen', () => {
             agentVerlagerungBeantragenPage.render();
