@@ -14,6 +14,12 @@ class AgentLookupPage {
                 { name: 'Inventuren', icon: '📦', loader: 'loadAssetInventories' },
                 { name: 'Dokumente', icon: '📄', loader: 'loadAssetDocuments' }
             ],
+            identifier: [
+                { name: 'FM-Akte', icon: '📁', route: '/fm-akte?tool={key}', loader: null },
+                { name: 'Prozess-Historie', icon: '📜', loader: 'loadProcessHistory' },
+                { name: 'Inventuren', icon: '📦', loader: 'loadAssetInventories' },
+                { name: 'Dokumente', icon: '📄', loader: 'loadAssetDocuments' }
+            ],
             companyNumber: [
                 { name: 'Standorte', icon: '📍', loader: 'loadCompanyLocations' },
                 { name: 'Lieferanten', icon: '🏭', loader: 'loadCompanySuppliers' },
@@ -24,6 +30,15 @@ class AgentLookupPage {
                 { name: 'Standorte', icon: '📍', loader: 'loadCompanyLocations' },
                 { name: 'Lieferanten', icon: '🏭', loader: 'loadCompanySuppliers' },
                 { name: 'User', icon: '👥', loader: 'loadCompanyUsers' }
+            ],
+            owner: [
+                { name: 'Werkzeuge', icon: '🔧', loader: 'loadOwnerAssets' }
+            ],
+            derivat: [
+                { name: 'Werkzeuge', icon: '🔧', loader: 'loadDerivatAssets' }
+            ],
+            project: [
+                { name: 'Werkzeuge', icon: '🔧', loader: 'loadProjectAssets' }
             ],
             inventoryNumber: [
                 { name: 'Positionen', icon: '📋', loader: 'loadInventoryPositions' },
@@ -41,6 +56,9 @@ class AgentLookupPage {
                 { name: 'User-Profil', icon: '👤', loader: 'loadUserByEmail' },
                 { name: 'Firmen', icon: '🏢', loader: 'loadUserCompanies' },
                 { name: 'Gruppen', icon: '👥', loader: 'loadUserGroups' }
+            ],
+            roleCode: [
+                { name: 'User mit Rolle', icon: '👥', loader: 'loadUsersWithRole' }
             ]
         };
     }
@@ -82,9 +100,10 @@ class AgentLookupPage {
                             <div class="example-chips">
                                 <button onclick="agentLookupPage.search('10255187')">10255187</button>
                                 <button onclick="agentLookupPage.search('A1-0010010376')">A1-0010010376</button>
-                                <button onclick="agentLookupPage.search('I2')">I2</button>
-                                <button onclick="agentLookupPage.search('Radolfzell')">Radolfzell</button>
-                                <button onclick="agentLookupPage.search('IVL')">IVL</button>
+                                <button onclick="agentLookupPage.search('G70')">G70</button>
+                                <button onclick="agentLookupPage.search('BMW AG')">BMW AG</button>
+                                <button onclick="agentLookupPage.search('FEK')">FEK</button>
+                                <button onclick="agentLookupPage.search('aktiv')">aktiv</button>
                             </div>
                         </div>
                     </aside>
@@ -602,6 +621,52 @@ class AgentLookupPage {
         try {
             const data = await api.call(`/users/${key}/groups`, 'GET');
             return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Owner: Werkzeuge nach Eigentümer
+    async loadOwnerAssets(_, __, ownerValue) {
+        try {
+            const data = await api.call(`/asset-list?owner=${encodeURIComponent(ownerValue)}&limit=50`, 'GET');
+            const assets = data?.content || data || [];
+            return { data: assets, count: Array.isArray(assets) ? assets.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Derivat: Werkzeuge nach Fahrzeug-Derivat
+    async loadDerivatAssets(_, __, derivatValue) {
+        try {
+            const data = await api.call(`/asset-list?derivat=${encodeURIComponent(derivatValue)}&limit=50`, 'GET');
+            const assets = data?.content || data || [];
+            return { data: assets, count: Array.isArray(assets) ? assets.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Project: Werkzeuge nach Projekt
+    async loadProjectAssets(_, __, projectValue) {
+        try {
+            const data = await api.call(`/asset-list?project=${encodeURIComponent(projectValue)}&limit=50`, 'GET');
+            const assets = data?.content || data || [];
+            return { data: assets, count: Array.isArray(assets) ? assets.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Role: User mit bestimmter Rolle
+    async loadUsersWithRole(_, __, roleCode) {
+        try {
+            // Hinweis: Diese API existiert möglicherweise nicht direkt
+            // Fallback: Alle User laden und nach Rolle filtern
+            const data = await api.call(`/users?query=${encodeURIComponent(roleCode)}&limit=50`, 'GET');
+            const users = data?.content || data || [];
+            return { data: users, count: Array.isArray(users) ? users.length : 0 };
         } catch (e) {
             return { data: null, count: 0 };
         }

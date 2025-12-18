@@ -29,6 +29,205 @@ const ENTITY_PATTERNS = {
         relatedEntities: ['inventoryPosition', 'processPosition', 'orderPosition']
     },
 
+    identifier: {
+        name: 'Identifier',
+        description: 'Vollständiger Werkzeug-Identifier mit Suffix',
+        patterns: [
+            /^[A-Z]\d-\d{10}-\d{3}$/,       // A1-0010010376-001
+            /^[A-Z]\d-\d{7,12}-\d{1,3}$/    // Varianten mit Suffix
+        ],
+        examples: ['A1-0010010376-001', 'B2-0012345678-002'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { query: '{input}' }
+            }
+        },
+        relatedEntities: ['toolNumber', 'orderPosition']
+    },
+
+    partNumber: {
+        name: 'Teilenummer',
+        description: 'Sachnummer/Teilenummer (factNumberAI)',
+        patterns: [
+            /^\d{4,8}[A-Z]{0,2}$/,          // 12345AB
+            /^[A-Z]{2,4}\d{4,8}$/,          // ABC12345
+            /^\d{2}\.\d{2}\.\d{3,4}$/,      // 12.34.567 (BMW Format)
+            /^\d{7,10}[A-Z]?$/              // 1234567A
+        ],
+        examples: ['1234567', '12.34.567', 'ABC12345'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { factNumberAI: '{input}' }
+            }
+        },
+        priority: 'medium'
+    },
+
+    derivat: {
+        name: 'Derivat',
+        description: 'Fahrzeug-Derivat/Baureihe',
+        patterns: [
+            /^[A-Z]\d{1,2}$/,               // G70, F40, E90
+            /^[A-Z]{2}\d{1,2}$/,            // iX1, iX3
+            /^(G\d{2}|F\d{2}|E\d{2}|U\d{2})$/  // BMW Baureihen
+        ],
+        examples: ['G70', 'F40', 'E90', 'U11'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { derivat: '{input}' }
+            }
+        },
+        isFilter: true
+    },
+
+    project: {
+        name: 'Projekt',
+        description: 'Projektnummer oder -name',
+        patterns: [
+            /^PRJ-\d{4,10}$/,               // PRJ-2024001
+            /^[A-Z]{2,4}-\d{4,8}$/,         // BMW-20240001
+            /^P\d{6,10}$/                   // P123456
+        ],
+        examples: ['PRJ-2024001', 'BMW-12345678', 'P123456'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { project: '{input}' }
+            }
+        },
+        isFilter: true
+    },
+
+    department: {
+        name: 'Abteilung',
+        description: 'Abteilungscode oder -name',
+        patterns: [
+            /^[A-Z]{2,4}-\d{2,4}$/,         // FT-12, PZ-001
+            /^(FT|PZ|TE|QM|EK|IT|HR|FZ)\d{0,4}$/i  // Bekannte Kürzel
+        ],
+        examples: ['FT-12', 'PZ-001', 'TE', 'QM'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { department: '{input}' }
+            }
+        },
+        isFilter: true
+    },
+
+    area: {
+        name: 'Bereich',
+        description: 'Unternehmensbereich',
+        patterns: [
+            /^(Produktion|Entwicklung|Logistik|Qualität|Einkauf|IT|Verwaltung)$/i,
+            /^[A-Z]{2,5}\d{0,3}$/           // PRD, DEV, LOG
+        ],
+        examples: ['Produktion', 'Entwicklung', 'PRD', 'DEV'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { area: '{input}' }
+            }
+        },
+        isFilter: true,
+        priority: 'low'
+    },
+
+    owner: {
+        name: 'Eigentümer',
+        description: 'Asset-Eigentümer (OEM)',
+        patterns: [
+            /^(BMW|Audi|VW|Mercedes|Porsche|Daimler)$/i
+        ],
+        examples: ['BMW', 'Audi', 'VW'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { owner: '{input}' }
+            }
+        },
+        isFilter: true
+    },
+
+    wvoName: {
+        name: 'WVO-Name',
+        description: 'Werkzeugverantwortlicher OEM',
+        patterns: [
+            /^[A-Za-zÄÖÜäöüß]+,\s?[A-Za-zÄÖÜäöüß]+$/,  // Mustermann, Max
+            /^WVO:\s?.+$/i                              // WVO: Name
+        ],
+        examples: ['Mustermann, Max', 'WVO: Schmidt'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { WVO_Name: '{input}' }
+            }
+        },
+        priority: 'low'
+    },
+
+    fekId: {
+        name: 'FEK-ID',
+        description: 'Facheinkäufer-Kennung',
+        patterns: [
+            /^FEK\d{3,8}$/,                 // FEK12345
+            /^Q-\d{5,8}$/,                  // Q-12345 (Q-Nummer)
+            /^\d{5,8}$/                     // Nur Nummer (niedrige Priorität)
+        ],
+        examples: ['FEK12345', 'Q-12345'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { query: '{input}' }
+            }
+        },
+        priority: 'low'
+    },
+
+    lifecycleStatus: {
+        name: 'Lifecycle-Status',
+        description: 'Lebenszyklus-Status eines Werkzeugs',
+        patterns: [
+            /^(aktiv|inaktiv|verschrottet|verlagert|gesperrt)$/i,
+            /^(ACTIVE|INACTIVE|SCRAPPED|RELOCATED|BLOCKED)$/i
+        ],
+        examples: ['aktiv', 'inaktiv', 'ACTIVE', 'INACTIVE'],
+        values: {
+            'aktiv': 'Werkzeug ist aktiv im Einsatz',
+            'inaktiv': 'Werkzeug ist nicht mehr im Einsatz',
+            'verschrottet': 'Werkzeug wurde verschrottet',
+            'verlagert': 'Werkzeug wurde verlagert',
+            'gesperrt': 'Werkzeug ist gesperrt'
+        },
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { lifecycleStatus: '{input}' }
+            }
+        },
+        isFilter: true
+    },
+
+    ownership: {
+        name: 'Eigentumsverhältnis',
+        description: 'Art des Eigentums am Werkzeug',
+        patterns: [
+            /^(Eigentum|Miete|Leasing|Leihe|Beistellung)$/i,
+            /^(OWN|RENT|LEASE|LOAN|PROVIDED)$/i
+        ],
+        examples: ['Eigentum', 'Miete', 'OWN', 'RENT'],
+        searchStrategy: {
+            primary: {
+                endpoint: 'assetList',
+                params: { ownership: '{input}' }
+            }
+        },
+        isFilter: true
+    },
+
     // ============================================================
     // BESTELLPOSITION
     // ============================================================
