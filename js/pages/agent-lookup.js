@@ -189,12 +189,17 @@ class AgentLookupPage {
 
                 // Verknüpfte Objekte laden wenn primäres Ergebnis erfolgreich
                 if (apiResult?.success && recognition.match?.type) {
+                    console.log('Loading related objects for type:', recognition.match.type);
+                    console.log('Primary data:', apiResult.data);
                     const relatedObjects = await this.loadRelatedObjects(
                         recognition.match.type,
                         apiResult.data,
                         input
                     );
+                    console.log('Related objects loaded:', relatedObjects);
                     this.lastResult.relatedObjects = relatedObjects;
+                } else {
+                    console.log('Skipping related objects - success:', apiResult?.success, 'type:', recognition.match?.type);
                 }
             } catch (error) {
                 this.lastResult.error = error.message;
