@@ -5,6 +5,44 @@ class AgentLookupPage {
     constructor() {
         this.lastResult = null;
         this.isSearching = false;
+
+        // Verknüpfungs-Map: Welche Objekte können zu welchem Typ geladen werden?
+        this.relatedObjectsMap = {
+            toolNumber: [
+                { name: 'FM-Akte', icon: '📁', route: '/fm-akte?tool={key}', loader: null },
+                { name: 'Prozess-Historie', icon: '📜', loader: 'loadProcessHistory' },
+                { name: 'Inventuren', icon: '📦', loader: 'loadAssetInventories' },
+                { name: 'Dokumente', icon: '📄', loader: 'loadAssetDocuments' }
+            ],
+            companyNumber: [
+                { name: 'Standorte', icon: '📍', loader: 'loadCompanyLocations' },
+                { name: 'Lieferanten', icon: '🏭', loader: 'loadCompanySuppliers' },
+                { name: 'User', icon: '👥', loader: 'loadCompanyUsers' },
+                { name: 'Werkzeuge', icon: '🔧', loader: 'loadCompanyAssets' }
+            ],
+            companyName: [
+                { name: 'Standorte', icon: '📍', loader: 'loadCompanyLocations' },
+                { name: 'Lieferanten', icon: '🏭', loader: 'loadCompanySuppliers' },
+                { name: 'User', icon: '👥', loader: 'loadCompanyUsers' }
+            ],
+            inventoryNumber: [
+                { name: 'Positionen', icon: '📋', loader: 'loadInventoryPositions' },
+                { name: 'Partitionen', icon: '📊', loader: 'loadInventoryPartitions' }
+            ],
+            uuid: [
+                { name: 'Details', icon: '🔍', loader: 'loadUuidDetails' },
+                { name: 'Historie', icon: '📜', loader: 'loadUuidHistory' },
+                { name: 'Positionen', icon: '📋', loader: 'loadUuidPositions' }
+            ],
+            orderPosition: [
+                { name: 'Werkzeug-Details', icon: '🔧', loader: 'loadOrderPositionAsset' }
+            ],
+            email: [
+                { name: 'User-Profil', icon: '👤', loader: 'loadUserByEmail' },
+                { name: 'Firmen', icon: '🏢', loader: 'loadUserCompanies' },
+                { name: 'Gruppen', icon: '👥', loader: 'loadUserGroups' }
+            ]
+        };
     }
 
     render() {
@@ -148,6 +186,16 @@ class AgentLookupPage {
             try {
                 const apiResult = await this.executeSearch(recognition);
                 this.lastResult.apiResult = apiResult;
+
+                // Verknüpfte Objekte laden wenn primäres Ergebnis erfolgreich
+                if (apiResult?.success && recognition.match?.type) {
+                    const relatedObjects = await this.loadRelatedObjects(
+                        recognition.match.type,
+                        apiResult.data,
+                        input
+                    );
+                    this.lastResult.relatedObjects = relatedObjects;
+                }
             } catch (error) {
                 this.lastResult.error = error.message;
             }
@@ -275,6 +323,285 @@ class AgentLookupPage {
         }
     }
 
+    // Lädt alle verknüpften Objekte basierend auf Entity-Typ und primären Daten
+    async loadRelatedObjects(entityType, primaryData, inputValue) {
+        const relatedConfig = this.relatedObjectsMap[entityType];
+        if (!relatedConfig) return [];
+
+        const results = [];
+        const key = primaryData?.key || primaryData?.context?.key || primaryData?.originalData?.context?.key;
+
+        for (const config of relatedConfig) {
+            try {
+                let data = null;
+                let route = config.route;
+                let count = 0;
+
+                // Loader aufrufen wenn vorhanden
+                if (config.loader && this[config.loader]) {
+                    const result = await this[config.loader](key, primaryData, inputValue);
+                    data = result?.data;
+                    count = result?.count || (Array.isArray(data) ? data.length : (data ? 1 : 0));
+                    route = result?.route || route;
+                }
+
+                // Route mit Key ersetzen
+                if (route && key) {
+                    route = route.replace('{key}', key).replace('{value}', inputValue);
+                }
+
+                results.push({
+                    name: config.name,
+                    icon: config.icon,
+                    route,
+                    data,
+                    count,
+                    loaded: config.loader ? true : false
+                });
+            } catch (e) {
+                results.push({
+                    name: config.name,
+                    icon: config.icon,
+                    error: e.message,
+                    count: 0
+                });
+            }
+        }
+
+        return results;
+    }
+
+    // === LOADER FUNKTIONEN ===
+
+    // Werkzeug: Prozess-Historie laden
+    async loadProcessHistory(assetKey) {
+        if (!assetKey) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/asset/${assetKey}/process-history`, 'GET');
+            return {
+                data,
+                count: Array.isArray(data) ? data.length : 0,
+                route: `/verlagerung?asset=${assetKey}`
+            };
+        } catch (e) {
+            return { data: null, count: 0, error: e.message };
+        }
+    }
+
+    // Werkzeug: Inventuren finden
+    async loadAssetInventories(assetKey, primaryData) {
+        // Suche Inventuren die dieses Asset enthalten
+        const inventoryNumber = primaryData?.inventoryNumber || primaryData?.meta?.inventoryNumber;
+        if (!inventoryNumber) return { data: null, count: 0 };
+
+        try {
+            const inventories = await api.getInventoryList();
+            const matching = Array.isArray(inventories)
+                ? inventories.filter(inv => inv.inventoryNumber === inventoryNumber)
+                : [];
+            return {
+                data: matching,
+                count: matching.length,
+                route: matching.length === 1 ? `/inventur-detail?key=${matching[0].key}` : '/inventur'
+            };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Werkzeug: Dokumente laden
+    async loadAssetDocuments(assetKey) {
+        if (!assetKey) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/asset/${assetKey}/documents`, 'GET');
+            return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Firma: Standorte laden
+    async loadCompanyLocations(companyKey, primaryData) {
+        const key = companyKey || primaryData?.key || primaryData?.[0]?.key;
+        if (!key) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/companies/${key}/locations`, 'GET');
+            return {
+                data,
+                count: Array.isArray(data) ? data.length : 0,
+                route: `/unternehmen?key=${key}`
+            };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Firma: Lieferanten laden
+    async loadCompanySuppliers(companyKey, primaryData) {
+        const key = companyKey || primaryData?.key || primaryData?.[0]?.key;
+        if (!key) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/companies/${key}/suppliers`, 'GET');
+            return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Firma: User laden
+    async loadCompanyUsers(companyKey, primaryData) {
+        const key = companyKey || primaryData?.key || primaryData?.[0]?.key;
+        if (!key) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/access/companies/${key}/users`, 'GET');
+            return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Firma: Werkzeuge laden (über asset-list mit Supplier-Filter)
+    async loadCompanyAssets(companyKey, primaryData) {
+        const supplierNumber = primaryData?.supplierNumber || primaryData?.[0]?.supplierNumber;
+        if (!supplierNumber) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/asset-list?supplier=${supplierNumber}&limit=10`, 'GET');
+            return {
+                data,
+                count: Array.isArray(data) ? data.length : 0,
+                route: `/werkzeuge?supplier=${supplierNumber}`
+            };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Inventur: Positionen laden
+    async loadInventoryPositions(inventoryKey, primaryData) {
+        const key = inventoryKey || primaryData?.key || primaryData?.[0]?.key;
+        if (!key) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/inventory/${key}/positions`, 'GET');
+            return {
+                data,
+                count: Array.isArray(data) ? data.length : 0,
+                route: `/inventur-detail?key=${key}`
+            };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Inventur: Partitionen laden
+    async loadInventoryPartitions(inventoryKey, primaryData) {
+        const key = inventoryKey || primaryData?.key || primaryData?.[0]?.key;
+        if (!key) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/inventory/${key}/partitions`, 'GET');
+            return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // UUID: Details laden (versucht Asset, dann Prozess, dann Inventur)
+    async loadUuidDetails(uuid) {
+        if (!uuid) return { data: null, count: 0 };
+
+        // Versuche Asset
+        try {
+            const asset = await api.call(`/asset/${uuid}`, 'GET');
+            if (asset) return { data: asset, count: 1, route: `/fm-akte?key=${uuid}`, type: 'Asset' };
+        } catch (e) {}
+
+        // Versuche Prozess
+        try {
+            const process = await api.call(`/process/${uuid}`, 'GET');
+            if (process) return { data: process, count: 1, route: `/verlagerung?key=${uuid}`, type: 'Prozess' };
+        } catch (e) {}
+
+        // Versuche Inventur
+        try {
+            const inventory = await api.call(`/inventory/${uuid}`, 'GET');
+            if (inventory) return { data: inventory, count: 1, route: `/inventur-detail?key=${uuid}`, type: 'Inventur' };
+        } catch (e) {}
+
+        return { data: null, count: 0 };
+    }
+
+    // UUID: Historie laden
+    async loadUuidHistory(uuid) {
+        if (!uuid) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/process/${uuid}/history`, 'GET');
+            return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // UUID: Positionen laden
+    async loadUuidPositions(uuid) {
+        if (!uuid) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/process/${uuid}/positions`, 'GET');
+            return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // Bestellposition: Werkzeug laden
+    async loadOrderPositionAsset(_, __, inputValue) {
+        try {
+            const result = await api.getAssetByNumber(inputValue);
+            if (result.success) {
+                return {
+                    data: result.data,
+                    count: 1,
+                    route: `/fm-akte?key=${result.data.key}`
+                };
+            }
+            return { data: null, count: 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // User: Nach Email suchen
+    async loadUserByEmail(_, __, email) {
+        try {
+            const users = await api.call(`/users?query=${encodeURIComponent(email)}`, 'GET');
+            return { data: users, count: Array.isArray(users) ? users.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // User: Firmen laden
+    async loadUserCompanies(userKey, primaryData) {
+        const key = userKey || primaryData?.key || primaryData?.[0]?.key;
+        if (!key) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/users/${key}/companies`, 'GET');
+            return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // User: Gruppen laden
+    async loadUserGroups(userKey, primaryData) {
+        const key = userKey || primaryData?.key || primaryData?.[0]?.key;
+        if (!key) return { data: null, count: 0 };
+        try {
+            const data = await api.call(`/users/${key}/groups`, 'GET');
+            return { data, count: Array.isArray(data) ? data.length : 0 };
+        } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
     renderResult(result) {
         if (!result) return '';
 
@@ -357,7 +684,6 @@ class AgentLookupPage {
                             <span>Endpoint: <code>${api.endpoint}</code></span>
                             <span>Treffer: <strong>${api.count}</strong></span>
                         </div>
-                        <code class="api-url">${api.url}</code>
                         <div class="api-data">
                             <details>
                                 <summary>Rohdaten anzeigen (${JSON.stringify(api.data).length} Bytes)</summary>
@@ -370,7 +696,53 @@ class AgentLookupPage {
             }
         }
 
+        // Verknüpfte Objekte anzeigen
+        if (result.relatedObjects && result.relatedObjects.length > 0) {
+            html += this.renderRelatedObjects(result.relatedObjects);
+        }
+
         html += '</div>';
+        return html;
+    }
+
+    renderRelatedObjects(relatedObjects) {
+        if (!relatedObjects || relatedObjects.length === 0) return '';
+
+        let html = `
+            <div class="related-objects-section">
+                <h4>🔗 Verknüpfte Objekte</h4>
+                <div class="related-cards">
+        `;
+
+        for (const obj of relatedObjects) {
+            const hasData = obj.count > 0;
+            const clickable = hasData && obj.route;
+
+            html += `
+                <div class="related-card ${hasData ? 'has-data' : 'no-data'} ${clickable ? 'clickable' : ''}"
+                     ${clickable ? `onclick="window.location.hash='${obj.route}'"` : ''}>
+                    <div class="related-icon">${obj.icon}</div>
+                    <div class="related-info">
+                        <div class="related-name">${obj.name}</div>
+                        <div class="related-count">
+                            ${obj.error
+                                ? `<span class="error-text">Fehler</span>`
+                                : obj.count > 0
+                                    ? `<strong>${obj.count}</strong> gefunden`
+                                    : 'Keine'
+                            }
+                        </div>
+                    </div>
+                    ${clickable ? '<div class="related-arrow">→</div>' : ''}
+                </div>
+            `;
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+
         return html;
     }
 
@@ -806,6 +1178,107 @@ class AgentLookupPage {
                 font-style: italic;
             }
 
+            /* Related Objects */
+            .related-objects-section {
+                margin-top: 1.5rem;
+                padding-top: 1.5rem;
+                border-top: 2px solid #e5e7eb;
+            }
+
+            .related-objects-section h4 {
+                margin: 0 0 1rem 0;
+                font-size: 1rem;
+                color: #374151;
+            }
+
+            .related-cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 0.75rem;
+            }
+
+            .related-card {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 1rem;
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                transition: all 0.2s;
+            }
+
+            .related-card.has-data {
+                background: #f0fdf4;
+                border-color: #86efac;
+            }
+
+            .related-card.clickable {
+                cursor: pointer;
+            }
+
+            .related-card.clickable:hover {
+                background: #dcfce7;
+                border-color: #22c55e;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+            }
+
+            .related-card.no-data {
+                background: #f9fafb;
+                border-color: #e5e7eb;
+                opacity: 0.7;
+            }
+
+            .related-icon {
+                font-size: 1.5rem;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+
+            .related-info {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .related-name {
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: #1f2937;
+            }
+
+            .related-count {
+                font-size: 0.8rem;
+                color: #6b7280;
+                margin-top: 0.125rem;
+            }
+
+            .related-count strong {
+                color: #22c55e;
+            }
+
+            .related-count .error-text {
+                color: #ef4444;
+            }
+
+            .related-arrow {
+                font-size: 1.25rem;
+                color: #22c55e;
+                opacity: 0;
+                transition: opacity 0.2s, transform 0.2s;
+            }
+
+            .related-card.clickable:hover .related-arrow {
+                opacity: 1;
+                transform: translateX(3px);
+            }
+
             /* Dark Mode */
             [data-theme="dark"] .lookup-sidebar,
             [data-theme="dark"] .search-box,
@@ -836,6 +1309,32 @@ class AgentLookupPage {
             [data-theme="dark"] .preview-card {
                 background: #0f172a;
                 border-color: #334155;
+            }
+
+            [data-theme="dark"] .related-objects-section {
+                border-top-color: #334155;
+            }
+
+            [data-theme="dark"] .related-objects-section h4 {
+                color: #e2e8f0;
+            }
+
+            [data-theme="dark"] .related-card {
+                background: #1e293b;
+                border-color: #334155;
+            }
+
+            [data-theme="dark"] .related-card.has-data {
+                background: #14532d;
+                border-color: #22c55e;
+            }
+
+            [data-theme="dark"] .related-icon {
+                background: #0f172a;
+            }
+
+            [data-theme="dark"] .related-name {
+                color: #e2e8f0;
             }
 
             /* Responsive */
