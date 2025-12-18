@@ -1,18 +1,19 @@
 // ORCA 2.0 - Allgemein-Agent (ORCA-Kontext Only)
-// Antwortet AUSSCHLIESSLICH aus Glossar + Skills - kein allgemeines Wissen
+// Antwortet AUSSCHLIESSLICH aus Glossar + Website - kein allgemeines Wissen
 
 class AgentAllgemeinPage {
     constructor() {
         this.messages = [];
         this.isLoading = false;
         this.glossar = [];
-        this.skills = [];
+        this.websiteContent = {};
+        this.websiteLoaded = false;
     }
 
     async render() {
         const container = document.getElementById('app');
         document.getElementById('headerTitle').textContent = 'orca 2.0 - Allgemein-Agent';
-        document.getElementById('headerSubtitle').textContent = 'ORCA Wissensbasis';
+        document.getElementById('headerSubtitle').textContent = 'ORCA Wissensdatenbank';
         document.getElementById('headerStats').style.display = 'none';
 
         // Daten laden
@@ -29,22 +30,8 @@ class AgentAllgemeinPage {
                 <style>${this.getStyles()}</style>
 
                 <div class="agent-layout">
-                    <!-- Sidebar mit Stats + Quick-Links -->
+                    <!-- Sidebar mit Quick-Links -->
                     <aside class="agent-sidebar">
-                        <div class="sidebar-section">
-                            <h3>Wissensbasis</h3>
-                            <div class="stat-item">
-                                <span class="stat-icon">📖</span>
-                                <span class="stat-label">Glossar-Eintraege</span>
-                                <span class="stat-value">${this.glossar.length}</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-icon">🧠</span>
-                                <span class="stat-label">Skills</span>
-                                <span class="stat-value">${this.skills.length}</span>
-                            </div>
-                        </div>
-
                         <div class="sidebar-section">
                             <h3>Prozess-Agenten</h3>
                             <a href="#/agent-inventur" class="quick-link" onclick="router.navigate('/agent-inventur'); return false;">
@@ -66,11 +53,14 @@ class AgentAllgemeinPage {
                             <a href="#/glossar" class="quick-link" onclick="router.navigate('/glossar'); return false;">
                                 📖 Glossar oeffnen
                             </a>
+                            <a href="https://ollisparks.github.io/Relaunch-Website/support.html" target="_blank" class="quick-link">
+                                🌐 Support-Seite
+                            </a>
                         </div>
 
                         <div class="sidebar-info">
-                            <p>Dieser Agent antwortet <strong>ausschliesslich</strong> aus der ORCA-Wissensbasis (Glossar + Skills).</p>
-                            <p>Allgemeine Fragen ausserhalb des ORCA-Kontexts werden als solche gekennzeichnet.</p>
+                            <p>Dieser Agent antwortet <strong>ausschliesslich</strong> aus der ORCA-Wissensdatenbank (Glossar + Website).</p>
+                            <p>Fragen ausserhalb des ORCA-Kontexts werden entsprechend gekennzeichnet.</p>
                         </div>
                     </aside>
 
@@ -108,14 +98,6 @@ class AgentAllgemeinPage {
                                 </div>
                             </div>
                         </div>
-
-                        <div class="quick-questions">
-                            <span class="quick-label">Schnellfragen:</span>
-                            <button onclick="agentAllgemeinPage.askQuick('Was ist eine ABL?')">📦 Was ist ABL?</button>
-                            <button onclick="agentAllgemeinPage.askQuick('Was bedeutet VVL?')">👤 Was ist VVL?</button>
-                            <button onclick="agentAllgemeinPage.askQuick('Welche Inventur-Status gibt es?')">📋 Inventur-Status</button>
-                            <button onclick="agentAllgemeinPage.askQuick('Was ist ein VPW?')">🔄 Was ist VPW?</button>
-                        </div>
                     </main>
                 </div>
             </div>
@@ -135,22 +117,42 @@ class AgentAllgemeinPage {
             this.glossar = [];
         }
 
-        // Skills laden
-        try {
-            if (typeof PRELOADED_SKILLS !== 'undefined') {
-                this.skills = PRELOADED_SKILLS || [];
-            }
-        } catch (e) {
-            console.warn('Skills nicht verfuegbar:', e);
-            this.skills = [];
+        // Website-Inhalte laden (einmalig)
+        if (!this.websiteLoaded) {
+            await this.loadWebsiteContent();
         }
+    }
+
+    async loadWebsiteContent() {
+        const baseUrl = 'https://ollisparks.github.io/Relaunch-Website/';
+        const pages = ['support.html', 'prozesse.html', 'ueber-uns.html', 'lieferanten.html'];
+
+        for (const page of pages) {
+            try {
+                const response = await fetch(baseUrl + page);
+                if (response.ok) {
+                    const html = await response.text();
+                    // Text-Inhalt extrahieren (ohne HTML-Tags)
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    // Script- und Style-Tags entfernen
+                    tempDiv.querySelectorAll('script, style, nav, footer').forEach(el => el.remove());
+                    const text = tempDiv.textContent || tempDiv.innerText || '';
+                    // Bereinigen
+                    this.websiteContent[page] = text.replace(/\s+/g, ' ').trim();
+                }
+            } catch (e) {
+                console.warn('Website-Seite nicht ladbar:', page, e);
+            }
+        }
+        this.websiteLoaded = true;
     }
 
     buildOrcaContext(query) {
         const q = query.toLowerCase();
         const results = {
             glossar: [],
-            skills: [],
+            website: [],
             found: false
         };
 
@@ -169,15 +171,22 @@ class AgentAllgemeinPage {
             }
         }
 
-        // Skills durchsuchen
-        for (const skill of this.skills) {
-            const skillName = (skill.name || '').toLowerCase();
-            const skillDesc = (skill.description || '').toLowerCase();
-            const skillContent = (skill.content || '').toLowerCase();
+        // Website-Inhalte durchsuchen
+        for (const [page, content] of Object.entries(this.websiteContent)) {
+            const contentLower = content.toLowerCase();
+            if (contentLower.includes(q)) {
+                // Relevanten Ausschnitt extrahieren (500 Zeichen um den Treffer)
+                const idx = contentLower.indexOf(q);
+                const start = Math.max(0, idx - 250);
+                const end = Math.min(content.length, idx + 250);
+                let snippet = content.substring(start, end);
+                if (start > 0) snippet = '...' + snippet;
+                if (end < content.length) snippet = snippet + '...';
 
-            if (q.includes(skillName) || skillName.includes(q) ||
-                skillDesc.includes(q) || skillContent.includes(q)) {
-                results.skills.push(skill);
+                results.website.push({
+                    page: page.replace('.html', ''),
+                    snippet: snippet
+                });
                 results.found = true;
             }
         }
@@ -203,17 +212,11 @@ class AgentAllgemeinPage {
             }
         }
 
-        if (context.skills.length > 0) {
-            text += '=== SKILL-DOKUMENTATION ===\n\n';
-            for (const skill of context.skills) {
-                text += `### ${skill.name}\n`;
-                if (skill.description) text += `${skill.description}\n\n`;
-                if (skill.content) {
-                    const contentPreview = skill.content.substring(0, 2000);
-                    text += contentPreview;
-                    if (skill.content.length > 2000) text += '\n[...]';
-                }
-                text += '\n\n';
+        if (context.website.length > 0) {
+            text += '=== WEBSITE-INFORMATIONEN ===\n\n';
+            for (const hit of context.website) {
+                text += `### Seite: ${hit.page}\n`;
+                text += hit.snippet + '\n\n';
             }
         }
 
@@ -224,11 +227,11 @@ class AgentAllgemeinPage {
         const hasContext = context.found;
         const contextText = this.formatContextForPrompt(context);
 
-        return `Du bist der ORCA Wissens-Assistent. Du antwortest AUSSCHLIESSLICH auf Basis der folgenden ORCA-Wissensbasis.
+        return `Du bist der ORCA Wissens-Assistent. Du antwortest AUSSCHLIESSLICH auf Basis der folgenden ORCA-Wissensdatenbank.
 
 STRIKTE REGELN:
 1. Antworte NUR mit Informationen aus dem unten stehenden ORCA-Kontext
-2. Wenn die Frage NICHT aus dem Kontext beantwortet werden kann, sage KLAR: "Diese Information ist nicht in der ORCA-Wissensbasis vorhanden."
+2. Wenn die Frage NICHT aus dem Kontext beantwortet werden kann, sage KLAR: "Diese Information ist nicht in der ORCA-Wissensdatenbank vorhanden."
 3. ERFINDE NIEMALS Informationen - auch keine plausibel klingenden
 4. Bei Abkuerzungen: Gib NUR die Definition aus dem Glossar, nicht dein allgemeines Wissen
 5. Antworte auf Deutsch, kompakt und praezise
@@ -238,8 +241,8 @@ ${hasContext ? `
 VERFUEGBARER ORCA-KONTEXT:
 ${contextText}
 ` : `
-HINWEIS: Zur Frage wurde KEIN passender Eintrag in Glossar oder Skills gefunden.
-Antworte mit: "Zu dieser Frage habe ich keine Informationen in der ORCA-Wissensbasis gefunden. Bitte pruefen Sie das Glossar oder fragen Sie einen Spezial-Agenten."
+HINWEIS: Zur Frage wurde KEIN passender Eintrag gefunden.
+Antworte mit: "Zu dieser Frage habe ich keine Informationen in der ORCA-Wissensdatenbank gefunden. Bitte pruefen Sie das Glossar oder fragen Sie einen Spezial-Agenten."
 `}
 
 WICHTIG: Dein Wissen ist auf den obigen Kontext beschraenkt. Nutze KEIN externes Wissen.`;
@@ -256,7 +259,7 @@ Ich beantworte Fragen zu:
 - **Rollen** im System (IVL, WVL, VVL...)
 - **Prozessen** (Inventur, Verlagerung, Verschrottung...)
 
-Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
+Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensdatenbank.`;
     }
 
     renderMessages() {
@@ -274,7 +277,7 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
                     <div class="message-avatar">🤖</div>
                     <div class="message-content">
                         <div class="typing-indicator">
-                            <span class="typing-text">Durchsuche ORCA-Wissensbasis</span>
+                            <span class="typing-text">Durchsuche ORCA-Wissensdatenbank</span>
                             <span class="typing-dots">
                                 <span></span><span></span><span></span>
                             </span>
@@ -299,14 +302,6 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
     scrollToBottom() {
         const chat = document.getElementById('chatMessages');
         if (chat) chat.scrollTop = chat.scrollHeight;
-    }
-
-    askQuick(question) {
-        const input = document.getElementById('userInput');
-        if (input) {
-            input.value = question;
-            this.send();
-        }
     }
 
     async send() {
@@ -380,12 +375,12 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
     getLocalResponse(message, context) {
         // Wenn kein Kontext gefunden
         if (!context.found) {
-            return `Zu dieser Frage habe ich keine Informationen in der ORCA-Wissensbasis gefunden.
+            return `Zu dieser Frage habe ich keine Informationen in der ORCA-Wissensdatenbank gefunden.
 
 **Moegliche Optionen:**
 - Pruefen Sie das Glossar fuer Begriffsdefinitionen
 - Nutzen Sie einen Spezial-Agenten fuer Prozess-Fragen
-- Formulieren Sie die Frage mit anderen Begriffen`;
+- Besuchen Sie die Support-Seite fuer weitere Hilfe`;
         }
 
         // Glossar-Treffer formatieren
@@ -404,10 +399,13 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
             return response.trim();
         }
 
-        // Skill-Treffer formatieren
-        if (context.skills.length > 0) {
-            const skill = context.skills[0];
-            return `**${skill.name}**\n\n${skill.description || ''}\n\n*Fuer Details siehe den vollstaendigen Skill in der Skills-Dokumentation.*`;
+        // Website-Treffer formatieren
+        if (context.website.length > 0) {
+            let response = 'Aus der ORCA-Website:\n\n';
+            for (const hit of context.website) {
+                response += `**${hit.page}:** ${hit.snippet}\n\n`;
+            }
+            return response.trim();
         }
 
         return 'Keine passenden Informationen gefunden.';
@@ -460,26 +458,6 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
                 margin: 0 0 1rem 0;
             }
 
-            .stat-item {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.5rem 0;
-            }
-
-            .stat-icon { font-size: 1.25rem; }
-
-            .stat-label { flex: 1; color: #374151; }
-
-            .stat-value {
-                font-weight: 600;
-                color: #2c4a8c;
-                background: #e0e7ff;
-                padding: 0.25rem 0.75rem;
-                border-radius: 12px;
-                font-size: 0.9rem;
-            }
-
             .quick-link {
                 display: block;
                 padding: 0.625rem 0.75rem;
@@ -522,7 +500,7 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
                 flex-direction: column;
                 flex: 1;
                 min-height: 500px;
-                max-height: calc(100vh - 220px);
+                max-height: calc(100vh - 160px);
             }
 
             .chat-header {
@@ -659,54 +637,6 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
                 50% { opacity: 1; }
             }
 
-            .quick-questions {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                flex-wrap: wrap;
-            }
-
-            .quick-label {
-                font-size: 0.85rem;
-                color: #6b7280;
-                margin-right: 0.5rem;
-            }
-
-            .quick-questions button {
-                padding: 0.5rem 1rem;
-                border: 1px solid #e5e7eb;
-                border-radius: 20px;
-                background: white;
-                color: #374151;
-                font-size: 0.85rem;
-                cursor: pointer;
-                transition: all 0.2s;
-            }
-
-            .quick-questions button:hover {
-                background: #f0f4ff;
-                border-color: #2c4a8c;
-                color: #2c4a8c;
-            }
-
-            /* Dark Mode */
-            [data-theme="dark"] .agent-sidebar,
-            [data-theme="dark"] .chat-container { background: #1e293b; }
-
-            [data-theme="dark"] .sidebar-section { border-bottom-color: #334155; }
-            [data-theme="dark"] .sidebar-section h3 { color: #94a3b8; }
-            [data-theme="dark"] .stat-label { color: #e2e8f0; }
-            [data-theme="dark"] .stat-value { background: #334155; color: #93c5fd; }
-            [data-theme="dark"] .quick-link { color: #e2e8f0; }
-            [data-theme="dark"] .quick-link:hover { background: #334155; color: #93c5fd; }
-            [data-theme="dark"] .sidebar-info { background: #334155; color: #94a3b8; }
-            [data-theme="dark"] .chat-input-area { background: #0f172a; border-top-color: #334155; }
-            [data-theme="dark"] .input-row textarea { background: #1e293b; border-color: #334155; color: #e2e8f0; }
-            [data-theme="dark"] .message.assistant .message-content { background: #334155; color: #e2e8f0; }
-            [data-theme="dark"] .quick-questions button { background: #1e293b; border-color: #334155; color: #e2e8f0; }
-            [data-theme="dark"] .quick-questions button:hover { background: #334155; color: #93c5fd; }
-            [data-theme="dark"] .api-warning { background: #422006; color: #fcd34d; }
-
             /* Typing Indicator */
             .typing-indicator {
                 display: flex;
@@ -716,7 +646,7 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
 
             .typing-text {
                 color: #6b7280;
-                font-size: 0.9rem;
+                font-style: italic;
             }
 
             .typing-dots {
@@ -725,53 +655,76 @@ Meine Antworten basieren **ausschliesslich** auf der ORCA-Wissensbasis.`;
             }
 
             .typing-dots span {
-                width: 8px;
-                height: 8px;
+                width: 6px;
+                height: 6px;
                 background: #2c4a8c;
                 border-radius: 50%;
-                animation: typingBounce 1.4s infinite ease-in-out both;
+                animation: typingBounce 1.4s infinite ease-in-out;
             }
 
-            .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-            .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-            .typing-dots span:nth-child(3) { animation-delay: 0s; }
+            .typing-dots span:nth-child(1) { animation-delay: 0s; }
+            .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+            .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 
             @keyframes typingBounce {
-                0%, 80%, 100% {
-                    transform: scale(0.6);
-                    opacity: 0.5;
-                }
-                40% {
-                    transform: scale(1);
-                    opacity: 1;
-                }
+                0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+                40% { transform: scale(1.2); opacity: 1; }
             }
 
-            .message.typing .message-content {
-                background: #f8fafc;
-                border: 1px dashed #d1d5db;
+            /* Dark Mode */
+            [data-theme="dark"] .agent-sidebar,
+            [data-theme="dark"] .chat-container { background: #1e293b; }
+
+            [data-theme="dark"] .sidebar-section { border-bottom-color: #334155; }
+            [data-theme="dark"] .sidebar-section h3 { color: #94a3b8; }
+            [data-theme="dark"] .quick-link { color: #e2e8f0; }
+            [data-theme="dark"] .quick-link:hover { background: #334155; color: #93c5fd; }
+
+            [data-theme="dark"] .sidebar-info {
+                background: #334155;
+                color: #94a3b8;
             }
 
-            [data-theme="dark"] .typing-text { color: #94a3b8; }
-            [data-theme="dark"] .typing-dots span { background: #60a5fa; }
-            [data-theme="dark"] .message.typing .message-content {
+            [data-theme="dark"] .chat-messages { background: #1e293b; }
+            [data-theme="dark"] .message.assistant .message-content { background: #334155; color: #e2e8f0; }
+            [data-theme="dark"] .chat-input-area { background: #0f172a; border-top-color: #334155; }
+
+            [data-theme="dark"] .input-row textarea {
                 background: #1e293b;
-                border-color: #475569;
+                border-color: #334155;
+                color: #e2e8f0;
             }
+
+            [data-theme="dark"] .input-row textarea:focus { border-color: #60a5fa; }
 
             /* Responsive */
             @media (max-width: 900px) {
-                .agent-layout { grid-template-columns: 1fr; }
+                .agent-layout {
+                    grid-template-columns: 1fr;
+                }
+
                 .agent-sidebar {
                     position: static;
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    display: flex;
+                    flex-wrap: wrap;
                     gap: 1rem;
                 }
-                .sidebar-section { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+
+                .sidebar-section {
+                    flex: 1;
+                    min-width: 200px;
+                    margin-bottom: 0;
+                    padding-bottom: 0;
+                    border-bottom: none;
+                }
+
+                .sidebar-info {
+                    width: 100%;
+                }
             }
         `;
     }
 }
 
+// Globale Instanz
 const agentAllgemeinPage = new AgentAllgemeinPage();
