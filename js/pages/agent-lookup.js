@@ -256,8 +256,9 @@ class AgentLookupPage {
         }
 
         const strategy = recognition.strategy;
-        const entityType = recognition.matches?.[0]?.type;
-        const value = recognition.matches?.[0]?.value || recognition.input;
+        const entityType = recognition.matches?.[0]?.entityType;  // FIX: .entityType statt .type
+        const value = recognition.input;  // Immer die Originaleingabe verwenden
+        console.log('executeSearch - entityType:', entityType, 'value:', value);
 
         try {
             // Nutze api.js Methoden je nach Entity-Typ
@@ -398,16 +399,20 @@ class AgentLookupPage {
     // === LOADER FUNKTIONEN ===
 
     // Werkzeug: Prozess-Historie laden
-    async loadProcessHistory(assetKey) {
-        if (!assetKey) return { data: null, count: 0 };
+    async loadProcessHistory(assetKey, primaryData) {
+        const key = assetKey || primaryData?.context?.key || primaryData?.key;
+        console.log('loadProcessHistory - key:', key);
+        if (!key) return { data: null, count: 0 };
         try {
-            const data = await api.call(`/asset/${assetKey}/process-history`, 'GET');
+            const data = await api.call(`/asset/${key}/process-history`, 'GET');
+            console.log('Process history result:', data);
             return {
                 data,
                 count: Array.isArray(data) ? data.length : 0,
-                route: `/verlagerung?asset=${assetKey}`
+                route: `/verlagerung?asset=${key}`
             };
         } catch (e) {
+            console.log('Process history error:', e.message);
             return { data: null, count: 0, error: e.message };
         }
     }
@@ -434,12 +439,16 @@ class AgentLookupPage {
     }
 
     // Werkzeug: Dokumente laden
-    async loadAssetDocuments(assetKey) {
-        if (!assetKey) return { data: null, count: 0 };
+    async loadAssetDocuments(assetKey, primaryData) {
+        const key = assetKey || primaryData?.context?.key || primaryData?.key;
+        console.log('loadAssetDocuments - key:', key);
+        if (!key) return { data: null, count: 0 };
         try {
-            const data = await api.call(`/asset/${assetKey}/documents`, 'GET');
+            const data = await api.call(`/asset/${key}/documents`, 'GET');
+            console.log('Documents result:', data);
             return { data, count: Array.isArray(data) ? data.length : 0 };
         } catch (e) {
+            console.log('Documents error:', e.message);
             return { data: null, count: 0 };
         }
     }
