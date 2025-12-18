@@ -178,8 +178,8 @@ class AgentLookupPage {
     async executeSearch(recognition) {
         if (!recognition.strategy) return null;
 
-        // Token holen
-        const token = typeof auth !== 'undefined' ? auth.getToken() : null;
+        // Token holen (authService ist die globale Instanz)
+        const token = typeof authService !== 'undefined' ? authService.getToken() : null;
         if (!token) {
             return { noToken: true, message: 'Kein Auth-Token verfügbar. Bitte einloggen.' };
         }
