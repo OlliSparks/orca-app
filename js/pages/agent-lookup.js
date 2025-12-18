@@ -178,7 +178,15 @@ class AgentLookupPage {
     async executeSearch(recognition) {
         if (!recognition.strategy) return null;
 
-        // Token holen (authService ist die globale Instanz)
+        // Token refreshen falls nötig, dann holen
+        if (typeof authService !== 'undefined' && authService.updateToken) {
+            try {
+                await authService.updateToken();
+            } catch (e) {
+                console.warn('Token refresh fehlgeschlagen:', e);
+            }
+        }
+
         const token = typeof authService !== 'undefined' ? authService.getToken() : null;
         if (!token) {
             return { noToken: true, message: 'Kein Auth-Token verfügbar. Bitte einloggen.' };
