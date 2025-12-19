@@ -12,12 +12,14 @@ class AgentLookupPage {
                 { name: 'FM-Akte', icon: '📁', route: '/fm-akte?tool={key}', loader: null },
                 { name: 'Prozess-Historie', icon: '📜', loader: 'loadProcessHistory' },
                 { name: 'Inventuren', icon: '📦', loader: 'loadAssetInventories' },
+                { name: 'ABL-Prozesse', icon: '✅', loader: 'loadABLProcesses' },
                 { name: 'Dokumente', icon: '📄', loader: 'loadAssetDocuments' }
             ],
             identifier: [
                 { name: 'FM-Akte', icon: '📁', route: '/fm-akte?tool={key}', loader: null },
                 { name: 'Prozess-Historie', icon: '📜', loader: 'loadProcessHistory' },
                 { name: 'Inventuren', icon: '📦', loader: 'loadAssetInventories' },
+                { name: 'ABL-Prozesse', icon: '✅', loader: 'loadABLProcesses' },
                 { name: 'Dokumente', icon: '📄', loader: 'loadAssetDocuments' }
             ],
             companyNumber: [
@@ -50,7 +52,11 @@ class AgentLookupPage {
                 { name: 'Positionen', icon: '📋', loader: 'loadUuidPositions' }
             ],
             orderPosition: [
-                { name: 'Werkzeug-Details', icon: '🔧', loader: 'loadOrderPositionAsset' }
+                { name: 'FM-Akte', icon: '📁', route: '/fm-akte?tool={key}', loader: null },
+                { name: 'Werkzeug-Details', icon: '🔧', loader: 'loadOrderPositionAsset' },
+                { name: 'Prozess-Historie', icon: '📜', loader: 'loadProcessHistory' },
+                { name: 'Inventuren', icon: '📦', loader: 'loadAssetInventories' },
+                { name: 'ABL-Prozesse', icon: '✅', loader: 'loadABLProcesses' }
             ],
             email: [
                 { name: 'User-Profil', icon: '👤', loader: 'loadUserByEmail' },
@@ -354,19 +360,22 @@ class AgentLookupPage {
         if (!relatedConfig) return [];
 
         const results = [];
-        const key = primaryData?.key || primaryData?.context?.key || primaryData?.originalData?.context?.key;
+        // Key aus verschiedenen Strukturen extrahieren (auch Arrays)
+        const primaryItem = Array.isArray(primaryData) ? primaryData[0] : primaryData;
+        const key = primaryItem?.key || primaryItem?.context?.key || primaryItem?.originalData?.context?.key;
+        console.log('loadRelatedObjects - entityType:', entityType, 'key:', key);
 
         for (const config of relatedConfig) {
             try {
-                let data = null;
+                let resultData = null;
                 let route = config.route;
                 let count = 0;
 
                 // Loader aufrufen wenn vorhanden
                 if (config.loader && this[config.loader]) {
                     const result = await this[config.loader](key, primaryData, inputValue);
-                    data = result?.data;
-                    count = result?.count || (Array.isArray(data) ? data.length : (data ? 1 : 0));
+                    resultData = result?.data;
+                    count = result?.count || (Array.isArray(resultData) ? resultData.length : (resultData ? 1 : 0));
                     route = result?.route || route;
                 }
 
@@ -379,7 +388,7 @@ class AgentLookupPage {
                     name: config.name,
                     icon: config.icon,
                     route,
-                    data,
+                    data: resultData,
                     count,
                     loaded: config.loader ? true : false
                 });
@@ -677,6 +686,31 @@ class AgentLookupPage {
             const users = data?.content || data || [];
             return { data: users, count: Array.isArray(users) ? users.length : 0 };
         } catch (e) {
+            return { data: null, count: 0 };
+        }
+    }
+
+    // ABL: Abnahmebereitschaftserklärungen für Asset
+    async loadABLProcesses(assetKey, primaryData) {
+        const key = assetKey || primaryData?.context?.key || primaryData?.key;
+        const identifier = primaryData?.identifier || primaryData?.inventoryNumber;
+        console.log('loadABLProcesses - key:', key, 'identifier:', identifier);
+        if (!key && !identifier) return { data: null, count: 0 };
+        try {
+            // ABL-Prozesse über process-history oder direkt suchen
+            const data = await api.call(`/asset/${key}/process-history`, 'GET');
+            // Filtern auf ABL-Prozesse (Type: ABL oder ACCEPTANCE)
+            const ablProcesses = Array.isArray(data)
+                ? data.filter(p => p.type === 'ABL' || p.type === 'ACCEPTANCE' || p.processType?.includes('ABL'))
+                : [];
+            console.log('ABL processes found:', ablProcesses);
+            return {
+                data: ablProcesses,
+                count: ablProcesses.length,
+                route: ablProcesses.length > 0 ? `/abl?asset=${key}` : '/abl'
+            };
+        } catch (e) {
+            console.log('ABL processes error:', e.message);
             return { data: null, count: 0 };
         }
     }
