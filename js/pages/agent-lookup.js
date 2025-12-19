@@ -347,7 +347,7 @@ class AgentLookupPage {
 
                 try {
                     // Versuche quick-search mit identifier
-                    const endpoint = `/asset-list/quick-search?criteria=identifier&value=${identifier}`;
+                    const endpoint = `/asset-list/quick-search?criteria=inventoryNumber&value=${identifier}`;
                     const result = await api.call(endpoint, 'GET');
                     const items = Array.isArray(result) ? result : (result.data || []);
 
