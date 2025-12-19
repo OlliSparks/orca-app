@@ -339,6 +339,94 @@ class AgentLookupPage {
                 return { error: 'UUID nicht gefunden (weder Asset noch Prozess)' };
             }
 
+            if (entityType === 'orderPosition' || entityType === 'identifier') {
+                // Bestellposition (A1-433478429) oder Identifier -> Suche per identifier
+                // Extrahiere numerischen Teil wenn A1- Prefix vorhanden
+                const identifier = value.replace(/^[A-Z]\d-/, '');
+                console.log('orderPosition/identifier search - input:', value, 'identifier:', identifier);
+
+                try {
+                    // Versuche quick-search mit identifier
+                    const endpoint = `/asset-list/quick-search?criteria=identifier&value=${identifier}`;
+                    const result = await api.call(endpoint, 'GET');
+                    const items = Array.isArray(result) ? result : (result.data || []);
+
+                    if (items.length > 0) {
+                        const item = items[0];
+                        return {
+                            success: true,
+                            endpoint: 'assetQuickSearch',
+                            data: {
+                                key: item.context?.key || '',
+                                inventoryNumber: item.meta?.inventoryNumber || identifier,
+                                description: item.meta?.inventoryText || item.meta?.partNumberText || '',
+                                name: item.meta?.inventoryText || '',
+                                supplier: item.meta?.supplier || '',
+                                location: `${item.meta?.assetCity || ''}, ${item.meta?.assetCountry || ''}`.replace(/^, |, $/g, ''),
+                                city: item.meta?.assetCity || '',
+                                country: item.meta?.assetCountry || '',
+                                status: item.meta?.status || '',
+                                processStatus: item.meta?.processStatus || '',
+                                originalData: item
+                            },
+                            count: items.length
+                        };
+                    }
+                } catch (e) {
+                    console.log('Quick-search failed, trying asset-list:', e.message);
+                }
+
+                // Fallback: asset-list mit query
+                try {
+                    const endpoint = `/asset-list?query=${identifier}&limit=10`;
+                    const result = await api.call(endpoint, 'GET');
+                    const items = Array.isArray(result) ? result : (result.data || []);
+
+                    // Filter für exakten Match auf identifier
+                    const exactMatch = items.find(item =>
+                        item.meta?.inventoryNumber === identifier ||
+                        item.meta?.identifier === identifier
+                    );
+
+                    if (exactMatch) {
+                        return {
+                            success: true,
+                            endpoint: 'assetList',
+                            data: {
+                                key: exactMatch.context?.key || '',
+                                inventoryNumber: exactMatch.meta?.inventoryNumber || identifier,
+                                description: exactMatch.meta?.inventoryText || '',
+                                name: exactMatch.meta?.inventoryText || '',
+                                supplier: exactMatch.meta?.supplier || '',
+                                location: `${exactMatch.meta?.assetCity || ''}, ${exactMatch.meta?.assetCountry || ''}`.replace(/^, |, $/g, ''),
+                                originalData: exactMatch
+                            },
+                            count: 1
+                        };
+                    }
+
+                    // Kein exakter Match - zeige alle Treffer
+                    if (items.length > 0) {
+                        return {
+                            success: true,
+                            endpoint: 'assetList',
+                            data: items.map(item => ({
+                                key: item.context?.key || '',
+                                inventoryNumber: item.meta?.inventoryNumber || '',
+                                description: item.meta?.inventoryText || '',
+                                supplier: item.meta?.supplier || '',
+                                originalData: item
+                            })),
+                            count: items.length
+                        };
+                    }
+                } catch (e) {
+                    console.log('Asset-list search failed:', e.message);
+                }
+
+                return { error: `Keine Treffer für Bestellposition/Identifier: ${value}` };
+            }
+
             // Fallback: Generische Suche über asset-list
             const fallbackResult = await api.getAssetByNumber(value);
             return {
