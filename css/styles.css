@@ -8173,3 +8173,9 @@ body.high-contrast .card {
         margin-bottom: 0.5rem;
     }
 }
+/* Hide mock data indicator on mobile - it blocks the screen */
+@media (max-width: 768px) {
+    #apiStatus {
+        display: none !important;
+    }
+}
