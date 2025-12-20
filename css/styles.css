@@ -4696,7 +4696,7 @@ table td input[type="text"] {
 
 /* Extra Help Section */
 .glossar-extra-help {
-    margin-top: 2rem;
+    margin-bottom: 1.5rem;
     background: var(--primary-light);
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     border-radius: 12px;
@@ -5565,7 +5565,7 @@ table td input[type="text"] {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-top: 2rem;
 }
 
 .skeleton-actions {
