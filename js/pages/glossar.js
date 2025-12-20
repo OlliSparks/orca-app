@@ -37,34 +37,7 @@ class GlossarPage {
                     <p class="page-subtitle">Alle wichtigen Begriffe im ORCA-System erklärt</p>
                 </div>
 
-                <!-- Suche und Filter -->
-                <div class="glossar-controls">
-                    <div class="glossar-search">
-                        <input type="text"
-                               id="glossarSearch"
-                               placeholder="Begriff suchen..."
-                               oninput="glossarPage.filterGlossary()"
-                        />
-                        <span class="search-icon">🔍</span>
-                    </div>
-                    <div class="glossar-categories">
-                        <button class="category-btn active" data-category="all" onclick="glossarPage.setCategory('all')">
-                            Alle
-                        </button>
-                        ${categories.map(cat => `
-                            <button class="category-btn" data-category="${cat}" onclick="glossarPage.setCategory('${cat}')">
-                                ${this.getCategoryIcon(cat)} ${cat}
-                            </button>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <!-- Glossar-Liste -->
-                <div class="glossar-list" id="glossarList">
-                    ${this.renderGlossaryList(glossary)}
-                </div>
-
-                <!-- Zusätzliche Hilfe -->
+                <!-- Hilfe-Optionen (oben) -->
                 <div class="glossar-extra-help">
                     <h3>Brauchen Sie mehr Hilfe?</h3>
                     <div class="help-options">
@@ -90,6 +63,33 @@ class GlossarPage {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Suche und Filter -->
+                <div class="glossar-controls">
+                    <div class="glossar-search">
+                        <input type="text"
+                               id="glossarSearch"
+                               placeholder="Begriff suchen..."
+                               oninput="glossarPage.filterGlossary()"
+                        />
+                        <span class="search-icon">🔍</span>
+                    </div>
+                    <div class="glossar-categories">
+                        <button class="category-btn active" data-category="all" onclick="glossarPage.setCategory('all')">
+                            Alle
+                        </button>
+                        ${categories.map(cat => `
+                            <button class="category-btn" data-category="${cat}" onclick="glossarPage.setCategory('${cat}')">
+                                ${this.getCategoryIcon(cat)} ${cat}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Glossar-Liste -->
+                <div class="glossar-list" id="glossarList">
+                    ${this.renderGlossaryList(glossary)}
                 </div>
             </div>
         `;
