@@ -66,11 +66,6 @@ class VerschrottungPage {
                 </div>
 
                 <!-- API MODE INDICATOR -->
-                <div class="api-mode-indicator" id="apiModeIndicator" style="margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <span id="apiModeIcon">●</span>
-                    <span id="apiModeText">Modus wird geladen...</span>
-                </div>
-
                 <!-- CONTROLS -->
                 <div class="controls">
                     <div class="search-bar">
@@ -149,7 +144,7 @@ class VerschrottungPage {
         this.injectStyles();
 
         // Show API mode
-        this.updateApiModeIndicator();
+        // API indicator removed
 
         // Load data and setup
         await this.loadData();
