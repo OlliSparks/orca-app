@@ -158,7 +158,7 @@ class PartnerwechselPage {
             </div>
 
             <!-- Confirm Modal -->
-            <div class="modal" id="confirmModal">
+            <div class="modal" id="confirmModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2 id="confirmModalTitle">Bestätigung</h2>

@@ -210,7 +210,7 @@ class InventurPage {
             </div>
 
             <!-- Relocation Modal -->
-            <div class="modal" id="relocationModal">
+            <div class="modal" id="relocationModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>Werkzeug verschoben</h2>
@@ -231,7 +231,7 @@ class InventurPage {
             </div>
 
             <!-- Location Filter Modal -->
-            <div class="modal" id="bulkLocationModal">
+            <div class="modal" id="bulkLocationModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>Nach Standort filtern</h2>
@@ -248,7 +248,7 @@ class InventurPage {
             </div>
 
             <!-- Responsible Filter Modal -->
-            <div class="modal" id="responsibleFilterModal">
+            <div class="modal" id="responsibleFilterModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>Nach Verantwortlichem filtern</h2>
@@ -265,7 +265,7 @@ class InventurPage {
             </div>
 
             <!-- Submit Confirmation Modal -->
-            <div class="modal" id="submitModal">
+            <div class="modal" id="submitModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>📤 Inventur einreichen</h2>
@@ -285,7 +285,7 @@ class InventurPage {
             </div>
 
             <!-- Photo Upload Modal -->
-            <div class="modal" id="photoModal">
+            <div class="modal" id="photoModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>📷 Foto hinzufügen</h2>
@@ -313,7 +313,7 @@ class InventurPage {
             </div>
 
             <!-- Missing Tool Modal -->
-            <div class="modal" id="missingModal">
+            <div class="modal" id="missingModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>❌ Werkzeug nicht vorhanden</h2>
@@ -337,7 +337,7 @@ class InventurPage {
             </div>
 
             <!-- Delegate/Change Responsible Modal -->
-            <div class="modal" id="delegateModal">
+            <div class="modal" id="delegateModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>👤 Verantwortlichen ändern</h2>

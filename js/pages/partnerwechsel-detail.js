@@ -190,7 +190,7 @@ class PartnerwechselDetailPage {
             </div>
 
             <!-- Confirm Modal -->
-            <div class="modal" id="vpwConfirmModal">
+            <div class="modal" id="vpwConfirmModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2 id="vpwModalTitle">Bestätigung</h2>

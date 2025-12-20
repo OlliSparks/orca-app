@@ -139,7 +139,7 @@ class PlanungPage {
             </div>
 
             <!-- Relocation Modal -->
-            <div class="modal" id="relocationModal">
+            <div class="modal" id="relocationModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>Werkzeug verschoben</h2>
@@ -160,7 +160,7 @@ class PlanungPage {
             </div>
 
             <!-- Bulk Location Modal -->
-            <div class="modal" id="bulkLocationModal">
+            <div class="modal" id="bulkLocationModal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>Standortplanung</h2>
